@@ -1,65 +1,100 @@
-import Image from "next/image";
+// app/page.tsx
+import Link from 'next/link'
 
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+export default function LandingPage() {
+    return (
+        <div className="min-h-screen bg-background">
+            {/* Header */}
+            <header className="border-b">
+                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-primary rounded-lg" />
+                        <span className="font-semibold text-lg">SaaS Platform</span>
+                    </div>
+                    <nav className="flex items-center gap-4">
+                        <Link
+                            href="/login"
+                            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            Admin
+                        </Link>
+                    </nav>
+                </div>
+            </header>
+
+            {/* Hero */}
+            <main className="container mx-auto px-4 py-24">
+                <div className="max-w-3xl mx-auto text-center">
+                    <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+                        Plataforma SaaS
+                        <span className="block text-primary">Multi-Tenant</span>
+                    </h1>
+                    <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+                        Gestiona múltiples negocios desde una sola plataforma.
+                        Módulos personalizables, templates adaptables y configuración por cliente.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <Link
+                            href="/login"
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                        >
+                            Acceder al Admin
+                        </Link>
+                        <Link
+                            href="#demo"
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-8 border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
+                        >
+                            Ver Demo
+                        </Link>
+                    </div>
+                </div>
+
+                {/* Features Preview */}
+                <div className="mt-24 grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                    <div className="p-6 rounded-lg border bg-card">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                            <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                        </div>
+                        <h3 className="font-semibold mb-2">Multi-Tenant</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Cada cliente tiene su propio espacio aislado con datos, configuración y branding personalizado.
+                        </p>
+                    </div>
+
+                    <div className="p-6 rounded-lg border bg-card">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                            <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                            </svg>
+                        </div>
+                        <h3 className="font-semibold mb-2">Módulos</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Activa solo los módulos que cada cliente necesita. Desde citas hasta e-commerce.
+                        </p>
+                    </div>
+
+                    <div className="p-6 rounded-lg border bg-card">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                            <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                            </svg>
+                        </div>
+                        <h3 className="font-semibold mb-2">Temas & Templates</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Personaliza colores, layout y componentes para cada cliente.
+                        </p>
+                    </div>
+                </div>
+            </main>
+
+            {/* Footer */}
+            <footer className="border-t mt-24">
+                <div className="container mx-auto px-4 py-8 text-center text-sm text-muted-foreground">
+                    © 2025 SaaS Platform. Built with Next.js, Supabase & shadcn/ui.
+                </div>
+            </footer>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+    )
 }
