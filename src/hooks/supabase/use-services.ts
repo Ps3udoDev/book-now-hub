@@ -75,7 +75,7 @@ export function useServicesByCategory(tenantId: string | null, category: string 
         tenantId && category ? `services:category:${tenantId}:${category}` : null,
         () =>
             tenantId && category
-                ? servicesService.getServicesByCategory(tenantId, category)
+                ? servicesService.getServicesByCategory(tenantId, category as "hair" | "nails" | "skin" | "makeup" | "spa" | "barber" | "other")
                 : [],
         {
             revalidateOnFocus: false,
