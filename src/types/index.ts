@@ -12,10 +12,15 @@ export type Tenant = Tables["tenants"]["Row"];
 export type TenantModule = Tables["tenant_modules"]["Row"];
 export type TenantUser = Tables["tenant_users"]["Row"];
 
+export type Service = Tables["services"]["Row"];
+export type ServiceVariant = Tables["service_variants"]["Row"];
+
 export type GlobalRole = "super_admin" | "admin" | "support";
 export type TenantRole = "owner" | "admin" | "manager" | "employee";
 export type TenantStatus = "active" | "suspended" | "trial" | "cancelled";
 export type ModuleStatus = "active" | "beta" | "deprecated" | "coming_soon";
+
+
 
 export interface LayoutConfig {
   sidebar: {

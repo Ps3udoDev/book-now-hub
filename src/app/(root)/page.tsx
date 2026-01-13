@@ -1,44 +1,31 @@
 // src/app/(root)/page.tsx
-import Link from "next/link";
-import {
-  Building2,
-  Puzzle,
-  Layout,
-  Palette,
-  Plus,
-  ArrowRight,
-} from "lucide-react";
+"use client";
 
+import Link from "next/link";
+import { Building2, Puzzle, Layout, Palette, Plus, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+
+import { useActiveModules } from "@/hooks/supabase/use-modules";
+import { useAllTenants, useTenantsStats } from "@/hooks/supabase/use-tenant";
 
 export default function RootDashboard() {
-  // En producción, estos datos vendrían de Supabase
+  const { stats: tenantsStats, isLoading: loadingTenants } = useTenantsStats();
+  const { modules, isLoading: loadingModules } = useActiveModules();
+  const { tenants: recentTenants } = useAllTenants();
+
+  const isLoading = loadingTenants || loadingModules;
+
   const stats = {
-    tenants: 2,
-    modules: 9,
+    tenants: tenantsStats.total,
+    tenantsActive: tenantsStats.active,
+    modules: modules.length,
+    modulesCore: modules.filter((m) => m.is_core).length,
     templates: 1,
     themes: 1,
   };
-
-  // Datos de ejemplo
-  const recentTenants = [
-    {
-      id: "1",
-      name: "Elviz Studio",
-      slug: "elviz-studio",
-      status: "active",
-      modules: "6 core + 2 addon",
-    },
-    {
-      id: "2",
-      name: "Denti Med",
-      slug: "denti-med",
-      status: "trial",
-      modules: "6 core",
-    },
-  ];
 
   return (
     <div className="space-y-8">
@@ -52,34 +39,52 @@ export default function RootDashboard() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Tenants"
-          value={stats.tenants}
-          description="Empresas activas"
-          href="/tenants"
-          icon={Building2}
-        />
-        <StatCard
-          title="Módulos"
-          value={stats.modules}
-          description="Disponibles"
-          href="/modules"
-          icon={Puzzle}
-        />
-        <StatCard
-          title="Templates"
-          value={stats.templates}
-          description="Creados"
-          href="/templates"
-          icon={Layout}
-        />
-        <StatCard
-          title="Temas"
-          value={stats.themes}
-          description="Disponibles"
-          href="/themes"
-          icon={Palette}
-        />
+        {isLoading ? (
+          <>
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardHeader className="pb-2">
+                  <Skeleton className="h-4 w-20" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-12 mb-1" />
+                  <Skeleton className="h-3 w-16" />
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        ) : (
+          <>
+            <StatCard
+              title="Tenants"
+              value={stats.tenants}
+              description={`${stats.tenantsActive} activos`}
+              href="/tenants"
+              icon={Building2}
+            />
+            <StatCard
+              title="Módulos"
+              value={stats.modules}
+              description={`${stats.modulesCore} core`}
+              href="/modules"
+              icon={Puzzle}
+            />
+            <StatCard
+              title="Templates"
+              value={stats.templates}
+              description="Creados"
+              href="/templates"
+              icon={Layout}
+            />
+            <StatCard
+              title="Temas"
+              value={stats.themes}
+              description="Disponibles"
+              href="/themes"
+              icon={Palette}
+            />
+          </>
+        )}
       </div>
 
       {/* Quick Actions */}
@@ -121,46 +126,64 @@ export default function RootDashboard() {
 
         <Card>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left p-4 font-medium">Nombre</th>
-                    <th className="text-left p-4 font-medium">Slug</th>
-                    <th className="text-left p-4 font-medium">Estado</th>
-                    <th className="text-left p-4 font-medium">Módulos</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentTenants.map((tenant) => (
-                    <tr key={tenant.id} className="border-b last:border-0">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                            {tenant.name.charAt(0)}
-                          </div>
-                          <Link
-                            href={`/tenants/${tenant.id}`}
-                            className="font-medium hover:underline"
-                          >
-                            {tenant.name}
-                          </Link>
-                        </div>
-                      </td>
-                      <td className="p-4 text-muted-foreground">
-                        {tenant.slug}
-                      </td>
-                      <td className="p-4">
-                        <StatusBadge status={tenant.status} />
-                      </td>
-                      <td className="p-4 text-muted-foreground">
-                        {tenant.modules}
-                      </td>
+            {recentTenants.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left p-4 font-medium">Nombre</th>
+                      <th className="text-left p-4 font-medium">Slug</th>
+                      <th className="text-left p-4 font-medium">Estado</th>
+                      <th className="text-left p-4 font-medium">Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {recentTenants.slice(0, 5).map((tenant) => (
+                      <tr key={tenant.id} className="border-b last:border-0">
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                              {tenant.name.charAt(0)}
+                            </div>
+                            <Link
+                              href={`/tenants/${tenant.id}`}
+                              className="font-medium hover:underline"
+                            >
+                              {tenant.name}
+                            </Link>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <code className="text-sm text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {tenant.slug}
+                          </code>
+                        </td>
+                        <td className="p-4">
+                          <StatusBadge status={tenant.status ?? "unknown"} />
+                        </td>
+                        <td className="p-4">
+                          <Link
+                            href={`/t/${tenant.slug}/login`}
+                            target="_blank"
+                            className="text-sm text-primary hover:underline"
+                          >
+                            Abrir ↗
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Building2 className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                <p>No hay tenants registrados</p>
+                <Button variant="link" asChild className="mt-2">
+                  <Link href="/tenants/new">Crear el primero</Link>
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -168,8 +191,7 @@ export default function RootDashboard() {
   );
 }
 
-// Componentes auxiliares
-
+// Componentes auxiliares (igual que antes)
 interface StatCardProps {
   title: string;
   value: number;
@@ -202,12 +224,7 @@ interface QuickActionCardProps {
   description: string;
 }
 
-function QuickActionCard({
-  href,
-  icon: Icon,
-  title,
-  description,
-}: QuickActionCardProps) {
+function QuickActionCard({ href, icon: Icon, title, description }: QuickActionCardProps) {
   return (
     <Link
       href={href}
@@ -224,24 +241,19 @@ function QuickActionCard({
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status }: { status: string | null }) {
+  const safeStatus = status ?? "unknown";
   const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     active: "default",
     trial: "secondary",
     suspended: "destructive",
     cancelled: "outline",
   };
-
   const labels: Record<string, string> = {
     active: "Activo",
     trial: "Prueba",
     suspended: "Suspendido",
     cancelled: "Cancelado",
   };
-
-  return (
-    <Badge variant={variants[status] || "outline"}>
-      {labels[status] || status}
-    </Badge>
-  );
+  return <Badge variant={variants[safeStatus] || "outline"}>{labels[safeStatus] || safeStatus}</Badge>;
 }

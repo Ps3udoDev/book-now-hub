@@ -1,37 +1,69 @@
+// src/middleware.ts
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Landing pública
 const PUBLIC_ROUTES = ["/"];
 
-// Rutas de ADMIN (root console) (no tenant)
-const ADMIN_PREFIXES = [
+// Rutas de ADMIN (root console) - sin /t/
+const ADMIN_ROUTES = [
   "/login",
   "/register",
   "/forgot-password",
-  "/modules",
   "/tenants",
+  "/modules",
+  "/templates",
+  "/themes",
   "/users",
   "/settings",
 ];
 
-function isAdminPath(pathname: string) {
-  return ADMIN_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`)
+// Slugs reservados que no pueden ser usados como tenant
+const RESERVED_SLUGS = [
+  "admin",
+  "api",
+  "auth",
+  "login",
+  "register",
+  "t",
+  "tenants",
+  "modules",
+  "settings",
+  "public",
+  "static",
+  "_next",
+];
+
+function isAdminRoute(pathname: string): boolean {
+  if (pathname === "/") return false;
+  return ADMIN_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
+}
+
+function isTenantRoute(pathname: string): boolean {
+  return pathname.startsWith("/t/");
+}
+
+function extractTenantSlug(pathname: string): string | null {
+  const match = pathname.match(/^\/t\/([^/]+)/);
+  return match ? match[1] : null;
+}
+
+function getTenantSubPath(pathname: string): string {
+  const match = pathname.match(/^\/t\/[^/]+(\/.*)?$/);
+  return match?.[1] || "/";
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1) públicas
+  // 1. Rutas públicas - pasar directo
   if (PUBLIC_ROUTES.includes(pathname)) {
     return NextResponse.next();
   }
 
-  // 2) si es admin route, no la trates como tenant
-  const adminRoute = isAdminPath(pathname);
-
+  // Crear cliente de Supabase
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -57,53 +89,76 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // ---------- ADMIN ----------
-  if (adminRoute) {
-    // login admin permitido sin sesión
-    if (pathname === "/login" || pathname === "/register" || pathname === "/forgot-password") {
-      // si ya está logeado, mándalo al home admin (ajusta a tu página real)
-      if (user) return NextResponse.redirect(new URL("/tenants", request.url));
+  // ============================================
+  // 2. RUTAS DE TENANT (/t/[tenant]/...)
+  // ============================================
+  if (isTenantRoute(pathname)) {
+    const tenantSlug = extractTenantSlug(pathname);
+    const subPath = getTenantSubPath(pathname);
+
+    if (!tenantSlug) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    // Verificar que no sea un slug reservado
+    if (RESERVED_SLUGS.includes(tenantSlug.toLowerCase())) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    // Rutas públicas del tenant (login, register)
+    const tenantPublicPaths = ["/login", "/register", "/forgot-password"];
+    const isPublicTenantPath = tenantPublicPaths.includes(subPath);
+
+    if (isPublicTenantPath) {
+      // IMPORTANTE: NO redirigir aunque haya sesión
+      // El login page verificará si el usuario pertenece al tenant
+      // y mostrará el formulario o redirigirá según corresponda
+      response.headers.set("x-tenant-slug", tenantSlug);
       return response;
     }
 
-    // el resto de admin requiere auth
-    if (!user) return NextResponse.redirect(new URL("/login", request.url));
-
-    return response;
-  }
-
-  // ---------- TENANT ----------
-  // Interpretamos el primer segmento como tenantSlug: /{tenant}/...
-  const segments = pathname.split("/").filter(Boolean);
-  const tenantSlug = segments[0]; // primer segmento
-  const tenantPath = `/${segments.slice(1).join("/")}` || "/";
-
-  // Si por alguna razón no hay segmento (ej "/") ya se manejó arriba
-  if (!tenantSlug) return response;
-
-  // (opcional pero recomendado) proteger palabras reservadas para que no sean tenant
-  // si algún slug coincide con admin prefix, lo tratamos como admin (evita colisiones raras)
-  if (isAdminPath(`/${tenantSlug}`)) {
-    // ej tenantSlug = "login" -> lo tratamos como admin
-    if (!user) return NextResponse.redirect(new URL("/login", request.url));
-    return response;
-  }
-
-  // Rutas públicas del tenant
-  if (tenantPath === "/login" || tenantPath === "/register") {
-    if (user) {
-      return NextResponse.redirect(new URL(`/${tenantSlug}/dashboard`, request.url));
+    // Rutas privadas del tenant - requieren auth
+    if (!user) {
+      return NextResponse.redirect(
+        new URL(`/t/${tenantSlug}/login`, request.url)
+      );
     }
+
+    // Usuario autenticado - pasar el slug en headers
+    // La verificación de pertenencia al tenant se hace en el layout
     response.headers.set("x-tenant-slug", tenantSlug);
     return response;
   }
 
-  // Rutas privadas del tenant
-  if (!user) {
-    return NextResponse.redirect(new URL(`/${tenantSlug}/login`, request.url));
+  // ============================================
+  // 3. RUTAS DE ADMIN (/tenants, /modules, etc.)
+  // ============================================
+  if (isAdminRoute(pathname)) {
+    const adminAuthPaths = ["/login", "/register", "/forgot-password"];
+    const isAdminAuthPath = adminAuthPaths.includes(pathname);
+
+    if (isAdminAuthPath) {
+      if (user) {
+        return NextResponse.redirect(new URL("/tenants", request.url));
+      }
+      return response;
+    }
+
+    // Otras rutas admin requieren auth
+    if (!user) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    return response;
   }
 
-  response.headers.set("x-tenant-slug", tenantSlug);
+  // ============================================
+  // 4. OTRAS RUTAS - Por defecto requieren auth
+  // ============================================
+  if (!user) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
   return response;
 }
 
