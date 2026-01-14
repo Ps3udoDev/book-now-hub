@@ -1,7 +1,7 @@
 // src/app/(root)/layout.tsx
 "use client";
 
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -15,6 +15,9 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+
+  const isLogin = pathname === "/login";
+
   const {
     isAuthenticated,
     isGlobalAdmin,
@@ -23,31 +26,34 @@ export default function RootLayout({ children }: RootLayoutProps) {
     initialized,
   } = useAuthStore();
 
-  // Hidratar auth al montar
+  // 1) Hidratar auth al montar (SIEMPRE)
   useEffect(() => {
     if (!initialized) {
       hydrateGlobal();
     }
   }, [initialized, hydrateGlobal]);
 
-  // Si es la página de login, renderizar sin el layout admin
-  if (pathname === "/login") {
-    return <>{children}</>;
-  }
-
-  // Redirigir a login si no está autenticado
+  // 2) Redirigir a login si no está autenticado (PERO solo si NO es login)
   useEffect(() => {
+    if (isLogin) return;
     if (initialized && !isAuthenticated) {
       router.replace("/login");
     }
-  }, [initialized, isAuthenticated, router]);
+  }, [isLogin, initialized, isAuthenticated, router]);
 
   const handleLogout = async () => {
     await logout();
     router.replace("/login");
   };
 
-  // Loading inicial
+  // Breadcrumbs (memo para no recalcular)
+  const breadcrumbs = useMemo(() => generateBreadcrumbs(pathname), [pathname]);
+
+  // ✅ Ahora sí: returns condicionales (sin hooks después)
+  if (isLogin) {
+    return <>{children}</>;
+  }
+
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -59,7 +65,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
     );
   }
 
-  // Redirigiendo...
   if (!isAuthenticated || !isGlobalAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -70,9 +75,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
       </div>
     );
   }
-
-  // Generar breadcrumbs basado en el pathname
-  const breadcrumbs = generateBreadcrumbs(pathname);
 
   return (
     <SidebarProvider>
@@ -102,7 +104,9 @@ function generateBreadcrumbs(pathname: string) {
     new: "Nuevo",
   };
 
-  const breadcrumbs: { label: string; href?: string }[] = [{ label: "Dashboard", href: "/" }];
+  const breadcrumbs: { label: string; href?: string }[] = [
+    { label: "Dashboard", href: "/" },
+  ];
 
   let currentPath = "";
   for (let i = 0; i < paths.length; i++) {

@@ -138,9 +138,9 @@ export async function middleware(request: NextRequest) {
     const isAdminAuthPath = adminAuthPaths.includes(pathname);
 
     if (isAdminAuthPath) {
-      if (user) {
-        return NextResponse.redirect(new URL("/tenants", request.url));
-      }
+      // No redirigir automáticamente aunque haya sesión
+      // La página de login verificará si el usuario es admin global
+      // y mostrará opciones apropiadas (logout) si no lo es
       return response;
     }
 

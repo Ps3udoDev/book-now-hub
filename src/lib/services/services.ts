@@ -51,6 +51,7 @@ export interface CreateVariantData {
     price_modifier: number;
     is_active?: boolean;
     sort_order?: number;
+    tenant_id: string;
 }
 
 export interface UpdateVariantData {
@@ -312,6 +313,7 @@ class ServicesService {
                     price_modifier: variant.price_modifier ?? 0,
                     is_active: variant.is_active ?? true,
                     sort_order: variant.sort_order ?? 0,
+                    tenant_id: original.tenant_id,
                 });
             }
         }
@@ -365,6 +367,7 @@ class ServicesService {
             price_modifier: data.price_modifier,
             is_active: data.is_active ?? true,
             sort_order: data.sort_order ?? 0,
+            tenant_id: data.tenant_id,
         };
 
         const { data: variant, error } = await this.supabase

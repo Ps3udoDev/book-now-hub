@@ -649,15 +649,18 @@ export type Database = {
           document_number: string | null
           document_type: string | null
           email: string | null
+          first_name: string
           full_name: string
           gender: string | null
           how_found_us: string | null
           id: string
           is_active: boolean | null
+          last_name: string
           last_visit_at: string | null
           loyalty_points: number | null
           notes: string | null
           phone: string | null
+          phone_country_code: string | null
           phone_secondary: string | null
           preferred_branch_id: string | null
           preferred_specialist_id: string | null
@@ -676,15 +679,18 @@ export type Database = {
           document_number?: string | null
           document_type?: string | null
           email?: string | null
+          first_name?: string
           full_name: string
           gender?: string | null
           how_found_us?: string | null
           id?: string
           is_active?: boolean | null
+          last_name?: string
           last_visit_at?: string | null
           loyalty_points?: number | null
           notes?: string | null
           phone?: string | null
+          phone_country_code?: string | null
           phone_secondary?: string | null
           preferred_branch_id?: string | null
           preferred_specialist_id?: string | null
@@ -703,15 +709,18 @@ export type Database = {
           document_number?: string | null
           document_type?: string | null
           email?: string | null
+          first_name?: string
           full_name?: string
           gender?: string | null
           how_found_us?: string | null
           id?: string
           is_active?: boolean | null
+          last_name?: string
           last_visit_at?: string | null
           loyalty_points?: number | null
           notes?: string | null
           phone?: string | null
+          phone_country_code?: string | null
           phone_secondary?: string | null
           preferred_branch_id?: string | null
           preferred_specialist_id?: string | null
@@ -1358,6 +1367,7 @@ export type Database = {
           price_modifier: number | null
           service_id: string
           sort_order: number | null
+          tenant_id: string
         }
         Insert: {
           created_at?: string | null
@@ -1369,6 +1379,7 @@ export type Database = {
           price_modifier?: number | null
           service_id: string
           sort_order?: number | null
+          tenant_id: string
         }
         Update: {
           created_at?: string | null
@@ -1380,6 +1391,7 @@ export type Database = {
           price_modifier?: number | null
           service_id?: string
           sort_order?: number | null
+          tenant_id?: string
         }
         Relationships: [
           {
@@ -1387,6 +1399,13 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_variants_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -1480,6 +1499,7 @@ export type Database = {
           is_active: boolean | null
           specialist_id: string
           start_time: string
+          tenant_id: string
         }
         Insert: {
           branch_id: string
@@ -1492,6 +1512,7 @@ export type Database = {
           is_active?: boolean | null
           specialist_id: string
           start_time: string
+          tenant_id: string
         }
         Update: {
           branch_id?: string
@@ -1504,6 +1525,7 @@ export type Database = {
           is_active?: boolean | null
           specialist_id?: string
           start_time?: string
+          tenant_id?: string
         }
         Relationships: [
           {
@@ -1527,6 +1549,13 @@ export type Database = {
             referencedRelation: "v_specialist_availability"
             referencedColumns: ["specialist_id"]
           },
+          {
+            foreignKeyName: "specialist_schedules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
         ]
       }
       specialist_services: {
@@ -1539,6 +1568,7 @@ export type Database = {
           service_id: string
           skill_level: number | null
           specialist_id: string
+          tenant_id: string
         }
         Insert: {
           created_at?: string | null
@@ -1549,6 +1579,7 @@ export type Database = {
           service_id: string
           skill_level?: number | null
           specialist_id: string
+          tenant_id: string
         }
         Update: {
           created_at?: string | null
@@ -1559,6 +1590,7 @@ export type Database = {
           service_id?: string
           skill_level?: number | null
           specialist_id?: string
+          tenant_id?: string
         }
         Relationships: [
           {
@@ -1581,6 +1613,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_specialist_availability"
             referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "specialist_services_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2123,7 +2162,12 @@ export type Database = {
           specialist_name: string
         }[]
       }
+      get_user_tenant_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["tenant_role"]
+      }
       is_global_admin: { Args: never; Returns: boolean }
+      is_tenant_owner_or_admin: { Args: never; Returns: boolean }
       user_belongs_to_tenant: {
         Args: { check_tenant_id: string }
         Returns: boolean

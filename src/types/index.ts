@@ -15,6 +15,14 @@ export type TenantUser = Tables["tenant_users"]["Row"];
 export type Service = Tables["services"]["Row"];
 export type ServiceVariant = Tables["service_variants"]["Row"];
 
+export type Customer = Tables["customers"]["Row"];
+
+export type Profile = Tables["profiles"]["Row"];
+export type Branch = Tables["branches"]["Row"];
+export type SpecialistSchedule = Tables["specialist_schedules"]["Row"];
+export type ScheduleException = Tables["schedule_exceptions"]["Row"];
+export type SpecialistService = Tables["specialist_services"]["Row"];
+
 export type GlobalRole = "super_admin" | "admin" | "support";
 export type TenantRole = "owner" | "admin" | "manager" | "employee";
 export type TenantStatus = "active" | "suspended" | "trial" | "cancelled";

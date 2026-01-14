@@ -8,7 +8,9 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { TenantSidebar } from "@/components/tenant/tenant-sidebar";
 import { TenantProvider } from "@/providers/tenant-provider";
 import { TenantHeader } from "@/components/tenant";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface TenantLayoutProps {
   children: ReactNode;
@@ -24,12 +26,14 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
     isAuthenticated,
     isTenantUser,
     tenant,
+    user,
     hydrateTenant,
     logout,
   } = useAuthStore();
 
   const [isValidating, setIsValidating] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
+  const [redirectTimeout, setRedirectTimeout] = useState(false);
 
   // Páginas públicas del tenant (sin layout completo)
   const publicPages = [
@@ -90,13 +94,67 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
     );
   }
 
-  // Sin acceso - redirigiendo (mostrar loading mientras redirige)
+  // Sin acceso - mostrar opciones claras de acción
   if (!hasAccess || !isAuthenticated || !isTenantUser || tenant?.slug !== tenantSlug) {
+    // Detectar si la redirección está tomando demasiado tiempo (posible loop)
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setRedirectTimeout(true);
+      }, 3000); // 3 segundos antes de mostrar opciones
+      return () => clearTimeout(timer);
+    }, []);
+
+    // Si ya pasó el timeout, mostrar opciones claras
+    if (redirectTimeout) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="w-full max-w-md p-8">
+            <div className="bg-card rounded-lg border shadow-sm p-8 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-950/50 flex items-center justify-center">
+                <AlertCircle className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h1 className="text-xl font-semibold mb-2">Acceso no disponible</h1>
+              <p className="text-muted-foreground mb-6">
+                {isAuthenticated
+                  ? `Tu sesión actual (${user?.email}) no tiene acceso a esta empresa.`
+                  : "Necesitas iniciar sesión para acceder a esta empresa."
+                }
+              </p>
+              <div className="flex flex-col gap-3">
+                <Link href={`/t/${tenantSlug}/login`}>
+                  <Button className="w-full">
+                    Ir al login de esta empresa
+                  </Button>
+                </Link>
+                {isAuthenticated && (
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      await logout();
+                      window.location.reload();
+                    }}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Cerrar sesión actual
+                  </Button>
+                )}
+                <Link href="/">
+                  <Button variant="ghost" className="w-full text-muted-foreground">
+                    Volver al inicio
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Redirigiendo al login...</p>
+          <p className="text-sm text-muted-foreground">Verificando acceso...</p>
         </div>
       </div>
     );

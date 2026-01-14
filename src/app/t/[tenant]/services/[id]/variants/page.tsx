@@ -47,13 +47,16 @@ export default function ServiceVariantsPage() {
     const isLoading = serviceLoading || variantsLoading;
 
     const handleCreateVariant = async (
-        data: Omit<CreateVariantData, "service_id">
+        data: Omit<CreateVariantData, "service_id" | "tenant_id">
     ) => {
+        if (!service) return;
+
         setIsSubmitting(true);
         try {
             await servicesService.createVariant({
                 ...data,
                 service_id: serviceId,
+                tenant_id: service.tenant_id,
             });
             toast.success("Variante agregada");
             setIsDialogOpen(false);
