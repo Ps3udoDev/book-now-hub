@@ -35,7 +35,7 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
   const [hasAccess, setHasAccess] = useState(false);
   const [redirectTimeout, setRedirectTimeout] = useState(false);
 
-  // Páginas públicas del tenant (sin layout completo)
+  // Páginas públicas
   const publicPages = [
     `/t/${tenantSlug}/login`,
     `/t/${tenantSlug}/register`,
@@ -43,23 +43,19 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
   ];
   const isPublicPage = publicPages.includes(pathname);
 
-  // Verificar acceso al tenant
+  // 1. Hook de verificación de acceso
   useEffect(() => {
     const checkAccess = async () => {
-      // En páginas públicas no necesitamos verificar
       if (isPublicPage) {
         setIsValidating(false);
         return;
       }
 
       setIsValidating(true);
-
-      // Verificar si el usuario tiene acceso a este tenant
       const access = await hydrateTenant(tenantSlug);
       setHasAccess(access);
       setIsValidating(false);
 
-      // Si no tiene acceso, redirigir al login
       if (!access) {
         router.replace(`/t/${tenantSlug}/login`);
       }
@@ -68,12 +64,33 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
     checkAccess();
   }, [tenantSlug, isPublicPage, hydrateTenant, router]);
 
+  // Condición de error de acceso
+  const showAccessDenied = !isValidating && !isPublicPage && (
+    !hasAccess || !isAuthenticated || !isTenantUser || tenant?.slug !== tenantSlug
+  );
+
+  // 2. Hook de Timeout (MOVIDO AQUÍ - NIVEL SUPERIOR) ✅
+  // Solo activamos el timeout si estamos en estado de "Access Denied"
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    
+    if (showAccessDenied) {
+      timer = setTimeout(() => {
+        setRedirectTimeout(true);
+      }, 3000);
+    }
+
+    return () => clearTimeout(timer);
+  }, [showAccessDenied]); // Dependencia clave
+
   const handleLogout = async () => {
     await logout();
     router.replace(`/t/${tenantSlug}/login`);
   };
 
-  // Páginas públicas - renderizar sin layout completo
+  // --- RENDERIZADO ---
+
+  // A. Páginas públicas
   if (isPublicPage) {
     return (
       <TenantProvider tenantSlug={tenantSlug}>
@@ -82,7 +99,7 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
     );
   }
 
-  // Loading mientras verifica acceso
+  // B. Loading
   if (isValidating) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -94,17 +111,9 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
     );
   }
 
-  // Sin acceso - mostrar opciones claras de acción
-  if (!hasAccess || !isAuthenticated || !isTenantUser || tenant?.slug !== tenantSlug) {
-    // Detectar si la redirección está tomando demasiado tiempo (posible loop)
-    useEffect(() => {
-      const timer = setTimeout(() => {
-        setRedirectTimeout(true);
-      }, 3000); // 3 segundos antes de mostrar opciones
-      return () => clearTimeout(timer);
-    }, []);
-
-    // Si ya pasó el timeout, mostrar opciones claras
+  // C. Sin acceso (Mostrar UI de error si pasó el timeout o inmediatamente si prefieres)
+  if (showAccessDenied) {
+    // Solo mostramos la UI de error si ya pasó el timeout para evitar parpadeos durante el redirect
     if (redirectTimeout) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-background">
@@ -149,18 +158,19 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
         </div>
       );
     }
-
+    
+    // Si hay error pero no ha pasado el timeout (está intentando redirigir), seguimos mostrando loading
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Verificando acceso...</p>
+          <p className="text-sm text-muted-foreground">Redirigiendo...</p>
         </div>
       </div>
     );
   }
 
-  // Generar breadcrumbs
+  // D. Layout Principal (Acceso concedido)
   const breadcrumbs = generateBreadcrumbs(pathname, tenantSlug);
 
   return (
@@ -176,6 +186,7 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
   );
 }
 
+// Función auxiliar (se mantiene igual)
 function generateBreadcrumbs(pathname: string, tenantSlug: string) {
   const cleanPath = pathname.replace(`/t/${tenantSlug}`, "") || "/";
   const paths = cleanPath.split("/").filter(Boolean);

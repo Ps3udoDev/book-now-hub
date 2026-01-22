@@ -669,6 +669,7 @@ export type Database = {
           total_spent: number | null
           total_visits: number | null
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           accepts_marketing?: boolean | null
@@ -699,6 +700,7 @@ export type Database = {
           total_spent?: number | null
           total_visits?: number | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           accepts_marketing?: boolean | null
@@ -729,6 +731,7 @@ export type Database = {
           total_spent?: number | null
           total_visits?: number | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -2162,12 +2165,26 @@ export type Database = {
           specialist_name: string
         }[]
       }
+      get_or_create_customer_for_user: {
+        Args: {
+          p_email: string
+          p_full_name?: string
+          p_phone?: string
+          p_tenant_id: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       get_user_tenant_role: {
         Args: never
         Returns: Database["public"]["Enums"]["tenant_role"]
       }
       is_global_admin: { Args: never; Returns: boolean }
       is_tenant_owner_or_admin: { Args: never; Returns: boolean }
+      link_customer_to_user: {
+        Args: { p_customer_id: string; p_user_id: string }
+        Returns: boolean
+      }
       user_belongs_to_tenant: {
         Args: { check_tenant_id: string }
         Returns: boolean

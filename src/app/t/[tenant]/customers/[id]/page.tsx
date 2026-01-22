@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CustomerForm } from "@/components/customers";
+import { CustomerForm, LinkAccountDialog } from "@/components/customers";
 import { useCustomer } from "@/hooks/supabase/use-customers";
 import {
   customersService,
@@ -117,6 +117,9 @@ export default function CustomerDetailPage() {
 
         {/* Acciones rápidas */}
         <div className="flex items-center gap-2">
+          {/* Link Account Dialog */}
+          <LinkAccountDialog customer={customer} onSuccess={() => mutate()} />
+
           {whatsappLink && (
             <Button variant="outline" size="sm" asChild>
               <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
