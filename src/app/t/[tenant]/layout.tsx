@@ -73,7 +73,7 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
   // Solo activamos el timeout si estamos en estado de "Access Denied"
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    
+
     if (showAccessDenied) {
       timer = setTimeout(() => {
         setRedirectTimeout(true);
@@ -158,10 +158,10 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
         </div>
       );
     }
-    
+
     // Si hay error pero no ha pasado el timeout (está intentando redirigir), seguimos mostrando loading
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground">Redirigiendo...</p>
@@ -205,7 +205,12 @@ function generateBreadcrumbs(pathname: string, tenantSlug: string) {
     pos: "Punto de Venta",
     reports: "Reportes",
     settings: "Configuración",
+    branches: "Sucursales",
+    appearance: "Apariencia",
+    notifications: "Notificaciones",
+    account: "Mi Cuenta",
     new: "Nuevo",
+    schedule: "Horario",
   };
 
   const breadcrumbs: { label: string; href?: string }[] = [

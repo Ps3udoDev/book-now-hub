@@ -162,15 +162,22 @@ export function SpecialistForm({
                         <div className="space-y-2">
                             <Label htmlFor="branch_id">Sucursal</Label>
                             <Select
-                                value={branch_id || ""}
-                                onValueChange={(value) => setValue("branch_id", value || null)}
+                                // 1. Si es null/vacío, el valor visual debe ser "unassigned" para que coincida con el Item
+                                value={branch_id || "unassigned"}
+
+                                // 2. Al cambiar: si eligen "unassigned", guardamos null en el formulario. Si no, el ID real.
+                                onValueChange={(value) =>
+                                    setValue("branch_id", value === "unassigned" ? null : value)
+                                }
                                 disabled={loading}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Seleccionar sucursal..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">Sin sucursal asignada</SelectItem>
+                                    {/* 3. ✅ CORREGIDO: Usamos un valor real, no vacío */}
+                                    <SelectItem value="unassigned">Sin sucursal asignada</SelectItem>
+
                                     {branches.map((branch) => (
                                         <SelectItem key={branch.id} value={branch.id}>
                                             {branch.name}

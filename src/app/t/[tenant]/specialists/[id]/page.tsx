@@ -49,6 +49,7 @@ import {
   type UpdateSpecialistData,
   SPECIALTIES,
 } from "@/lib/services/specialists";
+import { useBranches } from "@/hooks/supabase/use-branches";
 
 export default function SpecialistDetailPage() {
   const params = useParams();
@@ -59,6 +60,9 @@ export default function SpecialistDetailPage() {
   const { specialist, isLoading, error, mutate } = useSpecialist(specialistId);
   const { services: assignedServices, mutate: mutateServices } =
     useSpecialistServices(specialistId);
+
+  // Obtener sucursales para el formulario
+  const { branches } = useBranches(specialist?.tenant_id || null);
 
   // Para asignar servicios
   const { services: allServices } = useServices(specialist?.tenant_id || null);
@@ -230,6 +234,7 @@ export default function SpecialistDetailPage() {
             <CardContent>
               <SpecialistForm
                 specialist={specialist}
+                branches={branches}
                 onSubmit={handleSubmit}
                 onCancel={() => router.push(`/t/${tenantSlug}/specialists`)}
               />

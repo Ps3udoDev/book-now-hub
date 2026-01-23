@@ -34,6 +34,7 @@ import {
   type CreateSpecialistData,
   type CreateSpecialistResult,
 } from "@/lib/services/specialists";
+import { useBranches } from "@/hooks/supabase/use-branches";
 
 export default function NewSpecialistPage() {
   const params = useParams();
@@ -54,8 +55,8 @@ export default function NewSpecialistPage() {
   const [useCustomPassword, setUseCustomPassword] = useState(false);
   const [customPassword, setCustomPassword] = useState("");
 
-  // TODO: Obtener sucursales del tenant con useBranches hook
-  const branches: never[] = [];
+  // Obtener sucursales del tenant con hook
+  const { branches } = useBranches(tenant?.id || null);
 
   const handleSubmit = async (
     data: Omit<CreateSpecialistData, "tenant_id" | "password"> & {
