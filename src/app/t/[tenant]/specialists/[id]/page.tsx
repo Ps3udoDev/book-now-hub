@@ -49,6 +49,7 @@ import {
   type UpdateSpecialistData,
   SPECIALTIES,
 } from "@/lib/services/specialists";
+import { storageService } from "@/lib/services/storage";
 import { useBranches } from "@/hooks/supabase/use-branches";
 
 export default function SpecialistDetailPage() {
@@ -71,10 +72,37 @@ export default function SpecialistDetailPage() {
   const [isAssigning, setIsAssigning] = useState(false);
 
   const handleSubmit = async (
-    data: UpdateSpecialistData & { specialties: string[] }
+    data: UpdateSpecialistData & {
+      specialties: string[];
+      avatarFile?: File | null;
+      avatar_url?: string | null;
+    }
   ) => {
     try {
-      await specialistsService.updateSpecialist(specialistId, data);
+      let newAvatarUrl = data.avatar_url;
+
+      // Si se subió un nuevo archivo
+      if (data.avatarFile && specialist) {
+        // Eliminar imagen anterior si existe
+        if (specialist.avatar_url) {
+          const oldPath = storageService.extractPath(specialist.avatar_url);
+          if (oldPath) await storageService.deleteImage(oldPath).catch(() => {});
+        }
+        const path = storageService.buildPath("specialists", specialist.tenant_id, data.avatarFile.name);
+        newAvatarUrl = await storageService.uploadImage(data.avatarFile, path);
+      }
+
+      // Si se eliminó la imagen (avatar_url es null y no hay archivo nuevo)
+      if (data.avatar_url === null && !data.avatarFile && specialist?.avatar_url) {
+        const oldPath = storageService.extractPath(specialist.avatar_url);
+        if (oldPath) await storageService.deleteImage(oldPath).catch(() => {});
+      }
+
+      const { avatarFile: _af, avatar_url: _au, ...rest } = data;
+      await specialistsService.updateSpecialist(specialistId, {
+        ...rest,
+        ...(newAvatarUrl !== undefined && { avatar_url: newAvatarUrl }),
+      });
       toast.success("Especialista actualizado");
       mutate();
     } catch (error) {

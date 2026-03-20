@@ -29,6 +29,7 @@ export const PHONE_COUNTRY_CODES = [
   { value: "+1", label: "🇺🇸 +1 (USA)" },
   { value: "+34", label: "🇪🇸 +34 (España)" },
   { value: "+52", label: "🇲🇽 +52 (México)" },
+  { value: "+593", label: "🇪🇨 +593 (Ecuador)" },
 ] as const;
 
 // Tipos de documento

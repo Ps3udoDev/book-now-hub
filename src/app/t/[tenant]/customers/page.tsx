@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CustomerCard } from "@/components/customers";
+import { BulkImportButton } from "@/components/bulk-import";
 import {
   useCustomers,
   useCustomerStats,
@@ -127,12 +128,21 @@ export default function CustomersPage() {
             {stats.newThisMonth} nuevos este mes
           </p>
         </div>
-        <Button asChild>
-          <Link href={`/t/${tenantSlug}/customers/new`}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo cliente
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {tenant?.id && (
+            <BulkImportButton
+              entity="customers"
+              tenantId={tenant.id}
+              onImportComplete={() => mutate()}
+            />
+          )}
+          <Button asChild>
+            <Link href={`/t/${tenantSlug}/customers/new`}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo cliente
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}

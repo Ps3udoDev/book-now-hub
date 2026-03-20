@@ -4,7 +4,8 @@
 import Link from "next/link";
 import {
   Phone,
-  Mail,
+  Instagram,
+  
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -14,6 +15,7 @@ import {
   Calendar,
   MapPin,
 } from "lucide-react";
+import { FaInstagram } from "react-icons/fa";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -179,7 +181,7 @@ export function CustomerCard({
         <div className="space-y-1.5 text-sm">
           {customer.email && (
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Mail className="h-4 w-4 shrink-0" />
+              <Instagram className="h-4 w-4 shrink-0" />
               <a
                 href={`mailto:${customer.email}`}
                 className="truncate hover:text-foreground"

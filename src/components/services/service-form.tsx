@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { ImageUpload } from "@/components/ui/image-upload";
 import {
     Select,
     SelectContent,
@@ -63,7 +64,7 @@ export type ServiceFormData = z.infer<typeof serviceSchema>;
 
 interface ServiceFormProps {
     service?: Service | null;
-    onSubmit: (data: ServiceFormData) => Promise<void>;
+    onSubmit: (data: ServiceFormData & { imageFile?: File | null; image_url?: string | null }) => Promise<void>;
     onCancel?: () => void;
     isLoading?: boolean;
 }
@@ -75,6 +76,11 @@ export function ServiceForm({
     isLoading = false,
 }: ServiceFormProps) {
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(
+        service?.image_url || null
+    );
+    const [imageRemoved, setImageRemoved] = useState(false);
 
     const {
         register,
@@ -110,7 +116,11 @@ export function ServiceForm({
     const handleFormSubmit = async (data: ServiceFormData) => {
         try {
             setSubmitError(null);
-            await onSubmit(data);
+            await onSubmit({
+                ...data,
+                imageFile,
+                image_url: imageRemoved ? null : currentImageUrl,
+            });
         } catch (error) {
             setSubmitError(
                 error instanceof Error ? error.message : "Error al guardar"
@@ -125,6 +135,23 @@ export function ServiceForm({
             {/* Información básica */}
             <div className="space-y-4">
                 <h3 className="text-lg font-medium">Información básica</h3>
+
+                <div className="space-y-2">
+                    <Label>Imagen del servicio</Label>
+                    <ImageUpload
+                        variant="square"
+                        currentImageUrl={currentImageUrl}
+                        onImageChange={(file) => {
+                            setImageFile(file);
+                            if (file) setImageRemoved(false);
+                        }}
+                        onRemove={() => {
+                            setCurrentImageUrl(null);
+                            setImageRemoved(true);
+                        }}
+                        disabled={loading}
+                    />
+                </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">

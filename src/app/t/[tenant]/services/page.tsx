@@ -17,6 +17,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { ServiceCard, SERVICE_CATEGORIES } from "@/components/services";
+import { BulkImportButton } from "@/components/bulk-import";
 import { useServices, useServicesStats } from "@/hooks/supabase/use-services";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { servicesService } from "@/lib/services/services";
@@ -115,12 +116,21 @@ export default function ServicesPage() {
                         {stats.total} servicios · {stats.active} activos
                     </p>
                 </div>
-                <Button asChild>
-                    <Link href={`/t/${tenantSlug}/services/new`}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nuevo servicio
-                    </Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                    {tenant?.id && (
+                        <BulkImportButton
+                            entity="services"
+                            tenantId={tenant.id}
+                            onImportComplete={() => mutate()}
+                        />
+                    )}
+                    <Button asChild>
+                        <Link href={`/t/${tenantSlug}/services/new`}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Nuevo servicio
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             {/* Filtros */}

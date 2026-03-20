@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { ImageUpload } from "@/components/ui/image-upload";
 import {
     Select,
     SelectContent,
@@ -45,7 +46,7 @@ type SpecialistFormData = z.infer<typeof specialistSchema>;
 interface SpecialistFormProps {
     specialist?: Profile | null;
     branches?: Branch[];
-    onSubmit: (data: SpecialistFormData & { specialties: string[] }) => Promise<void>;
+    onSubmit: (data: SpecialistFormData & { specialties: string[]; avatar_url?: string | null; avatarFile?: File | null }) => Promise<void>;
     onCancel?: () => void;
     isLoading?: boolean;
 }
@@ -61,6 +62,11 @@ export function SpecialistForm({
     const [specialties, setSpecialties] = useState<string[]>(
         specialist?.specialties || []
     );
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(
+        specialist?.avatar_url || null
+    );
+    const [avatarRemoved, setAvatarRemoved] = useState(false);
 
     const {
         register,
@@ -92,7 +98,12 @@ export function SpecialistForm({
     const handleFormSubmit = async (data: SpecialistFormData) => {
         try {
             setSubmitError(null);
-            await onSubmit({ ...data, specialties });
+            await onSubmit({
+                ...data,
+                specialties,
+                avatarFile,
+                avatar_url: avatarRemoved ? null : currentAvatarUrl,
+            });
         } catch (error) {
             setSubmitError(
                 error instanceof Error ? error.message : "Error al guardar"
@@ -115,6 +126,24 @@ export function SpecialistForm({
             {/* Información personal */}
             <div className="space-y-4">
                 <h3 className="text-lg font-medium">Información personal</h3>
+
+                <div className="space-y-2">
+                    <Label>Foto de perfil</Label>
+                    <ImageUpload
+                        variant="circle"
+                        currentImageUrl={currentAvatarUrl}
+                        fallbackText={specialist?.full_name?.charAt(0) || ""}
+                        onImageChange={(file) => {
+                            setAvatarFile(file);
+                            if (file) setAvatarRemoved(false);
+                        }}
+                        onRemove={() => {
+                            setCurrentAvatarUrl(null);
+                            setAvatarRemoved(true);
+                        }}
+                        disabled={loading}
+                    />
+                </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">

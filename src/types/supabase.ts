@@ -639,6 +639,39 @@ export type Database = {
           },
         ]
       }
+      currencies: {
+        Row: {
+          code: string
+          created_at: string
+          decimal_places: number
+          is_active: boolean
+          is_base_currency: boolean
+          name: string
+          symbol: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          decimal_places?: number
+          is_active?: boolean
+          is_base_currency?: boolean
+          name: string
+          symbol: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          decimal_places?: number
+          is_active?: boolean
+          is_base_currency?: boolean
+          name?: string
+          symbol?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           accepts_marketing: boolean | null
@@ -757,6 +790,61 @@ export type Database = {
           },
           {
             foreignKeyName: "customers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exchange_rate_logs: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          from_currency: string
+          id: string
+          new_rate: number
+          old_rate: number | null
+          tenant_id: string
+          to_currency: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          from_currency: string
+          id?: string
+          new_rate: number
+          old_rate?: number | null
+          tenant_id: string
+          to_currency: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          from_currency?: string
+          id?: string
+          new_rate?: number
+          old_rate?: number | null
+          tenant_id?: string
+          to_currency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchange_rate_logs_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchange_rate_logs_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "exchange_rate_logs_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -984,6 +1072,7 @@ export type Database = {
       }
       invoices: {
         Row: {
+          amount_local: number | null
           appointment_id: string | null
           branch_id: string
           created_at: string | null
@@ -994,9 +1083,11 @@ export type Database = {
           customer_id: string | null
           customer_name: string | null
           discount_amount: number | null
+          exchange_rate_snapshot: number | null
           id: string
           invoice_number: string
           notes: string | null
+          order_id: string | null
           paid_at: string | null
           status: Database["public"]["Enums"]["invoice_status"] | null
           subtotal: number
@@ -1006,6 +1097,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          amount_local?: number | null
           appointment_id?: string | null
           branch_id: string
           created_at?: string | null
@@ -1016,9 +1108,11 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           discount_amount?: number | null
+          exchange_rate_snapshot?: number | null
           id?: string
           invoice_number: string
           notes?: string | null
+          order_id?: string | null
           paid_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"] | null
           subtotal?: number
@@ -1028,6 +1122,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          amount_local?: number | null
           appointment_id?: string | null
           branch_id?: string
           created_at?: string | null
@@ -1038,9 +1133,11 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           discount_amount?: number | null
+          exchange_rate_snapshot?: number | null
           id?: string
           invoice_number?: string
           notes?: string | null
+          order_id?: string | null
           paid_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"] | null
           subtotal?: number
@@ -1090,6 +1187,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -1210,6 +1314,174 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          currency_code: string
+          description: string
+          id: string
+          item_id: string | null
+          notes: string | null
+          order_id: string
+          quantity: number
+          subtotal: number
+          type: Database["public"]["Enums"]["order_item_type"]
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          currency_code?: string
+          description: string
+          id?: string
+          item_id?: string | null
+          notes?: string | null
+          order_id: string
+          quantity?: number
+          subtotal?: number
+          type?: Database["public"]["Enums"]["order_item_type"]
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          currency_code?: string
+          description?: string
+          id?: string
+          item_id?: string | null
+          notes?: string | null
+          order_id?: string
+          quantity?: number
+          subtotal?: number
+          type?: Database["public"]["Enums"]["order_item_type"]
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          appointment_id: string | null
+          branch_id: string
+          cancel_reason: string | null
+          cancelled_at: string | null
+          created_at: string
+          currency_code: string
+          customer_id: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          sent_at: string | null
+          specialist_id: string
+          status: Database["public"]["Enums"]["order_status"]
+          tenant_id: string
+          total: number
+        }
+        Insert: {
+          appointment_id?: string | null
+          branch_id: string
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          currency_code?: string
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          sent_at?: string | null
+          specialist_id: string
+          status?: Database["public"]["Enums"]["order_status"]
+          tenant_id: string
+          total?: number
+        }
+        Update: {
+          appointment_id?: string | null
+          branch_id?: string
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          currency_code?: string
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          sent_at?: string | null
+          specialist_id?: string
+          status?: Database["public"]["Enums"]["order_status"]
+          tenant_id?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_daily_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "orders_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2216,6 +2488,8 @@ export type Database = {
         | "cancelled"
         | "refunded"
       module_status: "active" | "beta" | "deprecated" | "coming_soon"
+      order_item_type: "service" | "product" | "cafeteria"
+      order_status: "draft" | "sent" | "paid" | "cancelled"
       resource_type: "human" | "physical"
       service_category:
         | "hair"
@@ -2381,6 +2655,8 @@ export const Constants = {
         "refunded",
       ],
       module_status: ["active", "beta", "deprecated", "coming_soon"],
+      order_item_type: ["service", "product", "cafeteria"],
+      order_status: ["draft", "sent", "paid", "cancelled"],
       resource_type: ["human", "physical"],
       service_category: [
         "hair",

@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ServiceForm, type ServiceFormData } from "@/components/services";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { servicesService } from "@/lib/services/services";
+import { storageService } from "@/lib/services/storage";
 
 export default function NewServicePage() {
     const params = useParams();
@@ -18,16 +19,25 @@ export default function NewServicePage() {
     const tenantSlug = params.tenant as string;
     const { tenant } = useAuthStore();
 
-    const handleSubmit = async (data: ServiceFormData) => {
+    const handleSubmit = async (data: ServiceFormData & { imageFile?: File | null; image_url?: string | null }) => {
         if (!tenant?.id) {
             toast.error("Error: No se pudo identificar el tenant");
             return;
         }
 
         try {
+            // Subir imagen si se seleccionó una
+            let image_url: string | undefined;
+            if (data.imageFile) {
+                const path = storageService.buildPath("services", tenant.id, data.imageFile.name);
+                image_url = await storageService.uploadImage(data.imageFile, path);
+            }
+
+            const { imageFile: _if, image_url: _iu, ...rest } = data;
             const service = await servicesService.createService({
-                ...data,
+                ...rest,
                 tenant_id: tenant.id,
+                ...(image_url && { image_url }),
             });
 
             toast.success("Servicio creado exitosamente");

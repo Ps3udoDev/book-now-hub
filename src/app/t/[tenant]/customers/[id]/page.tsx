@@ -12,6 +12,7 @@ import {
   Mail,
   MessageSquare,
 } from "lucide-react";
+import { FaInstagram } from "react-icons/fa";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -131,8 +132,8 @@ export default function CustomerDetailPage() {
           {customer.email && (
             <Button variant="outline" size="sm" asChild>
               <a href={`mailto:${customer.email}`}>
-                <Mail className="h-4 w-4 mr-2" />
-                Email
+                <FaInstagram className="h-4 w-4 mr-2" />
+                Instagram
               </a>
             </Button>
           )}

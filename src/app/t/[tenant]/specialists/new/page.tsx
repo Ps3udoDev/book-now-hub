@@ -34,6 +34,7 @@ import {
   type CreateSpecialistData,
   type CreateSpecialistResult,
 } from "@/lib/services/specialists";
+import { storageService } from "@/lib/services/storage";
 import { useBranches } from "@/hooks/supabase/use-branches";
 
 export default function NewSpecialistPage() {
@@ -61,6 +62,8 @@ export default function NewSpecialistPage() {
   const handleSubmit = async (
     data: Omit<CreateSpecialistData, "tenant_id" | "password"> & {
       specialties: string[];
+      avatarFile?: File | null;
+      avatar_url?: string | null;
     }
   ) => {
     if (!tenant?.id) {
@@ -75,11 +78,20 @@ export default function NewSpecialistPage() {
     }
 
     try {
+      // Subir avatar si se seleccionó uno
+      let avatar_url: string | undefined;
+      if (data.avatarFile) {
+        const path = storageService.buildPath("specialists", tenant.id, data.avatarFile.name);
+        avatar_url = await storageService.uploadImage(data.avatarFile, path);
+      }
+
+      const { avatarFile: _af, avatar_url: _au, ...rest } = data;
       const result: CreateSpecialistResult =
         await specialistsService.createSpecialist({
-          ...data,
+          ...rest,
           tenant_id: tenant.id,
           password: useCustomPassword ? customPassword : undefined,
+          ...(avatar_url && { avatar_url }),
         });
 
       toast.success("Especialista creado exitosamente");

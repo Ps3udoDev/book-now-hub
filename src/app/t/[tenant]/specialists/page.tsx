@@ -17,6 +17,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { SpecialistCard } from "@/components/specialists";
+import { BulkImportButton } from "@/components/bulk-import";
 import {
     useSpecialists,
     useSpecialistStats,
@@ -101,12 +102,21 @@ export default function SpecialistsPage() {
                         {stats.total} especialistas · {stats.active} activos
                     </p>
                 </div>
-                <Button asChild>
-                    <Link href={`/t/${tenantSlug}/specialists/new`}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nuevo especialista
-                    </Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                    {tenant?.id && (
+                        <BulkImportButton
+                            entity="specialists"
+                            tenantId={tenant.id}
+                            onImportComplete={() => mutate()}
+                        />
+                    )}
+                    <Button asChild>
+                        <Link href={`/t/${tenantSlug}/specialists/new`}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Nuevo especialista
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             {/* Stats Cards */}

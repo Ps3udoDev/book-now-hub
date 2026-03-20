@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { ServiceForm, type ServiceFormData } from "@/components/services";
 import { useService } from "@/hooks/supabase/use-services";
 import { servicesService } from "@/lib/services/services";
+import { storageService } from "@/lib/services/storage";
 
 export default function EditServicePage() {
     const params = useParams();
@@ -27,9 +28,32 @@ export default function EditServicePage() {
 
     const { service, variants, isLoading, error, mutate } = useService(serviceId);
 
-    const handleSubmit = async (data: ServiceFormData) => {
+    const handleSubmit = async (data: ServiceFormData & { imageFile?: File | null; image_url?: string | null }) => {
         try {
-            await servicesService.updateService(serviceId, data);
+            let newImageUrl = data.image_url;
+
+            // Si se subió un nuevo archivo
+            if (data.imageFile && service) {
+                // Eliminar imagen anterior si existe
+                if (service.image_url) {
+                    const oldPath = storageService.extractPath(service.image_url);
+                    if (oldPath) await storageService.deleteImage(oldPath).catch(() => {});
+                }
+                const path = storageService.buildPath("services", service.tenant_id, data.imageFile.name);
+                newImageUrl = await storageService.uploadImage(data.imageFile, path);
+            }
+
+            // Si se eliminó la imagen (image_url es null y no hay archivo nuevo)
+            if (data.image_url === null && !data.imageFile && service?.image_url) {
+                const oldPath = storageService.extractPath(service.image_url);
+                if (oldPath) await storageService.deleteImage(oldPath).catch(() => {});
+            }
+
+            const { imageFile: _if, image_url: _iu, ...rest } = data;
+            await servicesService.updateService(serviceId, {
+                ...rest,
+                ...(newImageUrl !== undefined && { image_url: newImageUrl }),
+            });
             toast.success("Servicio actualizado");
             mutate();
         } catch (error) {

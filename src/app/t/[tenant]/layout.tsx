@@ -7,7 +7,7 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { TenantSidebar } from "@/components/tenant/tenant-sidebar";
 import { TenantProvider } from "@/providers/tenant-provider";
-import { TenantHeader } from "@/components/tenant";
+import { TenantHeader, TenantThemeApplier } from "@/components/tenant";
 import { Loader2, AlertCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -175,6 +175,7 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
 
   return (
     <TenantProvider tenantSlug={tenantSlug}>
+      <TenantThemeApplier />
       <SidebarProvider>
         <TenantSidebar onLogout={handleLogout} />
         <SidebarInset>

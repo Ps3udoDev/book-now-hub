@@ -1,10 +1,24 @@
 // src/components/tenant/tenant-sidebar.tsx
 "use client";
 
+import {
+  BarChart3,
+  Calendar,
+  ClipboardList,
+  Coffee,
+  CreditCard,
+  LayoutDashboard,
+  LayoutGrid,
+  LogOut,
+  type LucideIcon,
+  Package,
+  Scissors,
+  Settings,
+  UserCog,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/auth-store";
-import { useTenant } from "@/providers/tenant-provider";
 import {
   Sidebar,
   SidebarContent,
@@ -17,21 +31,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import {
-  LayoutDashboard,
-  Scissors,
-  Calendar,
-  Users,
-  Package,
-  CreditCard,
-  BarChart3,
-  Settings,
-  LogOut,
-  UserCog,
-  LayoutGrid,
-  Coffee,
-  type LucideIcon,
-} from "lucide-react";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useTenant } from "@/providers/tenant-provider";
 
 // Mapeo de slugs de módulos a iconos
 const moduleIcons: Record<string, LucideIcon> = {
@@ -75,6 +76,20 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
     icon: moduleIcons[module.slug] || Scissors,
   }));
 
+  // Items de operación (siempre visibles)
+  const operationItems = [
+    {
+      title: "Comandas",
+      url: `${basePath}/orders`,
+      icon: ClipboardList,
+    },
+    {
+      title: "Caja",
+      url: `${basePath}/caja`,
+      icon: CreditCard,
+    },
+  ];
+
   // Items de configuración (siempre al final)
   const configItems = [
     {
@@ -84,13 +99,17 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
     },
   ];
 
-  const isActive = (url: string) => pathname === url || pathname.startsWith(`${url}/`);
+  const isActive = (url: string) =>
+    pathname === url || pathname.startsWith(`${url}/`);
 
   return (
     <Sidebar>
       {/* Header con logo del tenant */}
       <SidebarHeader className="border-b px-4 py-3">
-        <Link href={`${basePath}/dashboard`} className="flex items-center gap-3">
+        <Link
+          href={`${basePath}/dashboard`}
+          className="flex items-center gap-3"
+        >
           {tenant?.logo_url ? (
             <img
               src={tenant.logo_url}
@@ -106,7 +125,9 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
             <span className="font-semibold text-sm truncate max-w-[160px]">
               {tenant?.name || "Mi Empresa"}
             </span>
-            <span className="text-xs text-muted-foreground">Panel de control</span>
+            <span className="text-xs text-muted-foreground">
+              Panel de control
+            </span>
           </div>
         </Link>
       </SidebarHeader>
@@ -152,6 +173,25 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
           </SidebarGroup>
         )}
 
+        {/* Operaciones (comandas y caja) */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Operaciones</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {operationItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                    <Link href={item.url}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         {/* Configuración */}
         <SidebarGroup>
           <SidebarGroupLabel>Sistema</SidebarGroupLabel>
@@ -193,7 +233,10 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
             </div>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={onLogout} className="text-destructive hover:text-destructive">
+            <SidebarMenuButton
+              onClick={onLogout}
+              className="text-destructive hover:text-destructive"
+            >
               <LogOut className="h-4 w-4" />
               <span>Cerrar sesión</span>
             </SidebarMenuButton>
