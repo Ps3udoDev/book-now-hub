@@ -5,14 +5,40 @@ import { createServerSB } from "@/lib/supabase/server";
 
 type Params = { params: Promise<{ id: string }> };
 
+/** Obtiene la tasa de cambio vigente entre dos monedas (valid_until IS NULL). */
+async function getExchangeRateSnapshot(
+  fromCurrency: string,
+  toCurrency: string,
+): Promise<number | null> {
+  if (fromCurrency === toCurrency) return 1;
+  const { data } = await supabaseAdmin
+    .from("exchange_rates")
+    .select("rate")
+    .eq("from_currency", fromCurrency)
+    .eq("to_currency", toCurrency)
+    .is("valid_until", null)
+    .maybeSingle();
+  return data ? Number(data.rate) : null;
+}
+
+interface PaymentEntry {
+  payment_method: string;
+  amount: number;
+  reference_number?: string | null;
+}
+
 /**
  * POST /api/orders/:id/pay
- * Procesa el cobro de una comanda:
+ * Procesa el cobro de una comanda con uno o varios métodos de pago:
  *   1. Genera invoice + invoice_lines
- *   2. Registra invoice_payment
+ *   2. Registra un invoice_payment por cada entrada en payments[]
  *   3. Marca la comanda como 'paid'
  *
- * Body: { cash_register_id, payment_method, reference_number?, notes? }
+ * Body: {
+ *   cash_register_id: string,
+ *   payments: Array<{ payment_method, amount, reference_number? }>,
+ *   notes?: string,
+ * }
  */
 export async function POST(request: NextRequest, { params }: Params) {
   try {
@@ -83,13 +109,37 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     const body = await request.json();
-    const { cash_register_id, payment_method, reference_number, notes } = body;
+    const {
+      cash_register_id,
+      payments,
+      notes,
+    }: { cash_register_id: string; payments: PaymentEntry[]; notes?: string } =
+      body;
 
-    if (!cash_register_id || !payment_method) {
+    if (!cash_register_id) {
       return NextResponse.json(
-        { error: "Campos requeridos: cash_register_id, payment_method" },
+        { error: "Campo requerido: cash_register_id" },
         { status: 400 },
       );
+    }
+
+    if (!Array.isArray(payments) || payments.length === 0) {
+      return NextResponse.json(
+        { error: "Se requiere al menos un método de pago en payments[]" },
+        { status: 400 },
+      );
+    }
+
+    // Validar cada entrada del array de pagos
+    for (const p of payments) {
+      if (!p.payment_method || !p.amount || Number(p.amount) <= 0) {
+        return NextResponse.json(
+          {
+            error: "Cada pago debe tener payment_method y amount mayor a 0",
+          },
+          { status: 400 },
+        );
+      }
     }
 
     // Verificar que la caja registradora pertenece a la misma sucursal
@@ -117,6 +167,31 @@ export async function POST(request: NextRequest, { params }: Params) {
       );
     }
 
+    // Verificar que el usuario tiene perfil en este tenant (FK invoices.created_by → profiles.id)
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .eq("tenant_id", order.tenant_id)
+      .maybeSingle();
+    const createdById = profile?.id ?? null;
+
+    const total = items.reduce((sum, i) => sum + i.subtotal, 0);
+
+    // Validar que la suma de pagos cubre el total (tolerancia de 1 centavo)
+    const paymentsTotal = payments.reduce(
+      (sum, p) => sum + Number(p.amount),
+      0,
+    );
+    if (Math.abs(paymentsTotal - total) > 0.01) {
+      return NextResponse.json(
+        {
+          error: `La suma de pagos (${paymentsTotal.toFixed(2)}) no coincide con el total (${total.toFixed(2)})`,
+        },
+        { status: 400 },
+      );
+    }
+
     // Generar número de factura único por tenant
     const { count } = await supabaseAdmin
       .from("invoices")
@@ -125,7 +200,13 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     const invoiceNumber = `INV-${String((count ?? 0) + 1).padStart(6, "0")}`;
     const now = new Date().toISOString();
-    const total = items.reduce((sum, i) => sum + i.subtotal, 0);
+
+    // Obtener snapshot de tasa de cambio al momento del cobro
+    const exchangeRate = await getExchangeRateSnapshot(
+      order.currency_code,
+      "USD",
+    );
+    const amountLocal = exchangeRate ? total * exchangeRate : null;
 
     // 1. Crear la factura
     const { data: invoice, error: invoiceError } = await supabaseAdmin
@@ -140,10 +221,12 @@ export async function POST(request: NextRequest, { params }: Params) {
         subtotal: total,
         total,
         currency_iso: order.currency_code,
+        exchange_rate_snapshot: exchangeRate,
+        amount_local: amountLocal,
         status: "paid",
         paid_at: now,
         notes: notes || order.notes || null,
-        created_by: user.id,
+        created_by: createdById,
       })
       .select()
       .single();
@@ -171,7 +254,6 @@ export async function POST(request: NextRequest, { params }: Params) {
       .insert(invoiceLines);
 
     if (linesError) {
-      // Revertir factura si falla la creación de líneas
       await supabaseAdmin.from("invoices").delete().eq("id", invoice.id);
       return NextResponse.json(
         { error: `Error al crear líneas: ${linesError.message}` },
@@ -179,27 +261,46 @@ export async function POST(request: NextRequest, { params }: Params) {
       );
     }
 
-    // 3. Registrar el pago
-    const { error: paymentError } = await supabaseAdmin
-      .from("invoice_payments")
-      .insert({
+    // 3. Obtener la sesión de caja activa para vincular los pagos
+    const { data: activeSession } = await supabaseAdmin
+      .from("cash_register_sessions")
+      .select("id")
+      .eq("branch_id", order.branch_id)
+      .eq("status", "open")
+      .maybeSingle();
+
+    const sessionId = activeSession?.id ?? null;
+
+    // 4. Registrar un invoice_payment por cada método de pago
+    const paymentRows = payments.map((p) => {
+      const amt = Number(p.amount);
+      const amtBase = exchangeRate ? amt * exchangeRate : null;
+      return {
         invoice_id: invoice.id,
         cash_register_id,
-        amount: total,
+        amount: amt,
         currency_iso: order.currency_code,
-        payment_method,
-        reference_number: reference_number || null,
-      });
+        exchange_rate: exchangeRate,
+        amount_in_base_currency: amtBase,
+        payment_method: p.payment_method,
+        reference_number: p.reference_number || null,
+        session_id: sessionId,
+      };
+    });
+
+    const { error: paymentError } = await supabaseAdmin
+      .from("invoice_payments")
+      .insert(paymentRows);
 
     if (paymentError) {
       await supabaseAdmin.from("invoices").delete().eq("id", invoice.id);
       return NextResponse.json(
-        { error: `Error al registrar pago: ${paymentError.message}` },
+        { error: `Error al registrar pagos: ${paymentError.message}` },
         { status: 500 },
       );
     }
 
-    // 4. Marcar la comanda como pagada
+    // 5. Marcar la comanda como pagada
     const { data: updatedOrder, error: updateError } = await supabaseAdmin
       .from("orders")
       .update({ status: "paid" })

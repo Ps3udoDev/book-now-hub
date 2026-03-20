@@ -28,13 +28,13 @@ export type TenantRole = "owner" | "admin" | "manager" | "employee";
 export type TenantStatus = "active" | "suspended" | "trial" | "cancelled";
 export type ModuleStatus = "active" | "beta" | "deprecated" | "coming_soon";
 
-
 export type Currency = Tables["currencies"]["Row"];
 export type ExchangeRate = Tables["exchange_rates"]["Row"];
 export type ExchangeRateLog = Tables["exchange_rate_logs"]["Row"];
 export type UpsertExchangeRateData = Tables["exchange_rates"]["Insert"];
 
-
+export type CashRegisterSession = Tables["cash_register_sessions"]["Row"];
+export type CashRegisterSummary = Tables["cash_register_summaries"]["Row"];
 
 export interface LayoutConfig {
   sidebar: {

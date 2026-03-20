@@ -195,8 +195,11 @@ class OrdersService {
     orderId: string,
     data: {
       cash_register_id: string;
-      payment_method: string;
-      reference_number?: string;
+      payments: Array<{
+        payment_method: string;
+        amount: number;
+        reference_number?: string | null;
+      }>;
       notes?: string;
     },
   ): Promise<{ order: Order; invoice_number: string }> {

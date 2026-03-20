@@ -4,3 +4,4 @@ export { OrderDetailSheet } from "./order-detail-sheet";
 export { OrderItemsEditor } from "./order-items-editor";
 export { OrderStatusBadge } from "./order-status-badge";
 export { PayOrderDialog } from "./pay-order-dialog";
+export { ReceiptDialog } from "./receipt-dialog";

@@ -7,8 +7,10 @@ import {
   ClipboardList,
   Coffee,
   CreditCard,
+  History,
   LayoutDashboard,
   LayoutGrid,
+  Lock,
   LogOut,
   type LucideIcon,
   Package,
@@ -16,6 +18,7 @@ import {
   Settings,
   UserCog,
   Users,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -87,6 +90,21 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
       title: "Caja",
       url: `${basePath}/caja`,
       icon: CreditCard,
+    },
+    {
+      title: "Apertura de caja",
+      url: `${basePath}/caja/apertura`,
+      icon: Wallet,
+    },
+    {
+      title: "Cierre de caja",
+      url: `${basePath}/caja/cierre`,
+      icon: Lock,
+    },
+    {
+      title: "Historial de cierres",
+      url: `${basePath}/caja/cierres`,
+      icon: History,
     },
   ];
 

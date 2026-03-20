@@ -93,6 +93,8 @@ export type Database = {
       appointments: {
         Row: {
           actual_duration: number | null
+          advance_amount: number
+          advance_paid_amount: number
           branch_id: string
           cancellation_reason: string | null
           cancelled_at: string | null
@@ -121,6 +123,8 @@ export type Database = {
         }
         Insert: {
           actual_duration?: number | null
+          advance_amount?: number
+          advance_paid_amount?: number
           branch_id: string
           cancellation_reason?: string | null
           cancelled_at?: string | null
@@ -149,6 +153,8 @@ export type Database = {
         }
         Update: {
           actual_duration?: number | null
+          advance_amount?: number
+          advance_paid_amount?: number
           branch_id?: string
           cancellation_reason?: string | null
           cancelled_at?: string | null
@@ -503,6 +509,139 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_register_sessions: {
+        Row: {
+          branch_id: string
+          cash_register_id: string
+          closed_at: string | null
+          closed_by: string | null
+          closing_amount: number | null
+          created_at: string
+          difference: number | null
+          id: string
+          notes: string | null
+          opened_at: string
+          opened_by: string
+          opening_amount: number
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          branch_id: string
+          cash_register_id: string
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_amount?: number | null
+          created_at?: string
+          difference?: number | null
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opened_by: string
+          opening_amount?: number
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          branch_id?: string
+          cash_register_id?: string
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_amount?: number | null
+          created_at?: string
+          difference?: number | null
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opened_by?: string
+          opening_amount?: number
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_register_sessions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_register_sessions_cash_register_id_fkey"
+            columns: ["cash_register_id"]
+            isOneToOne: false
+            referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_register_sessions_cash_register_id_fkey"
+            columns: ["cash_register_id"]
+            isOneToOne: false
+            referencedRelation: "v_cash_registers_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_register_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_register_summaries: {
+        Row: {
+          area: string
+          created_at: string
+          currency_code: string
+          id: string
+          session_id: string
+          total_amount: number
+          total_card: number
+          total_cash: number
+          total_gateway: number
+          total_mobile_payment: number
+          total_transfer: number
+          transaction_count: number
+        }
+        Insert: {
+          area: string
+          created_at?: string
+          currency_code: string
+          id?: string
+          session_id: string
+          total_amount?: number
+          total_card?: number
+          total_cash?: number
+          total_gateway?: number
+          total_mobile_payment?: number
+          total_transfer?: number
+          transaction_count?: number
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          currency_code?: string
+          id?: string
+          session_id?: string
+          total_amount?: number
+          total_card?: number
+          total_cash?: number
+          total_gateway?: number
+          total_mobile_payment?: number
+          total_transfer?: number
+          transaction_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_register_summaries_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_register_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -1021,6 +1160,7 @@ export type Database = {
           invoice_id: string
           payment_method: string | null
           reference_number: string | null
+          session_id: string | null
         }
         Insert: {
           amount: number
@@ -1033,6 +1173,7 @@ export type Database = {
           invoice_id: string
           payment_method?: string | null
           reference_number?: string | null
+          session_id?: string | null
         }
         Update: {
           amount?: number
@@ -1045,6 +1186,7 @@ export type Database = {
           invoice_id?: string
           payment_method?: string | null
           reference_number?: string | null
+          session_id?: string | null
         }
         Relationships: [
           {
@@ -1066,6 +1208,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_payments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_register_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -1094,6 +1243,7 @@ export type Database = {
           tax_amount: number | null
           tenant_id: string
           total: number
+          type: Database["public"]["Enums"]["invoice_type"]
           updated_at: string | null
         }
         Insert: {
@@ -1119,6 +1269,7 @@ export type Database = {
           tax_amount?: number | null
           tenant_id: string
           total?: number
+          type?: Database["public"]["Enums"]["invoice_type"]
           updated_at?: string | null
         }
         Update: {
@@ -1144,6 +1295,7 @@ export type Database = {
           tax_amount?: number | null
           tenant_id?: string
           total?: number
+          type?: Database["public"]["Enums"]["invoice_type"]
           updated_at?: string | null
         }
         Relationships: [
@@ -1482,6 +1634,57 @@ export type Database = {
           },
           {
             foreignKeyName: "orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_methods_config: {
+        Row: {
+          branch_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string | null
+          payment_method: string
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          payment_method: string
+          sort_order?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          payment_method?: string
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_methods_config_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_methods_config_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2487,6 +2690,7 @@ export type Database = {
         | "paid"
         | "cancelled"
         | "refunded"
+      invoice_type: "advance" | "full" | "partial"
       module_status: "active" | "beta" | "deprecated" | "coming_soon"
       order_item_type: "service" | "product" | "cafeteria"
       order_status: "draft" | "sent" | "paid" | "cancelled"
@@ -2654,6 +2858,7 @@ export const Constants = {
         "cancelled",
         "refunded",
       ],
+      invoice_type: ["advance", "full", "partial"],
       module_status: ["active", "beta", "deprecated", "coming_soon"],
       order_item_type: ["service", "product", "cafeteria"],
       order_status: ["draft", "sent", "paid", "cancelled"],
