@@ -1,6 +1,7 @@
 // src/hooks/supabase/use-cash-sessions.ts
 import useSWR from "swr";
 import {
+  type CashRegisterMovement,
   cashSessionsService,
   type EnrichedSession,
   type SessionWithDetails,
@@ -57,6 +58,22 @@ export function useSessionWithDetails(sessionId: string | null) {
 
   return {
     sessionDetail: data ?? null,
+    isLoading,
+    error: error?.message || null,
+    mutate,
+  };
+}
+
+/** Movimientos (egresos/ingresos) de una sesión en tiempo real. */
+export function useSessionMovements(sessionId: string | null) {
+  const { data, error, isLoading, mutate } = useSWR<CashRegisterMovement[]>(
+    sessionId ? `cash-sessions:movements:${sessionId}` : null,
+    () => (sessionId ? cashSessionsService.getSessionMovements(sessionId) : []),
+    { revalidateOnFocus: false, dedupingInterval: 15000 },
+  );
+
+  return {
+    movements: data ?? [],
     isLoading,
     error: error?.message || null,
     mutate,

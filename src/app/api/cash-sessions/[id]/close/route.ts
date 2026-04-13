@@ -115,13 +115,31 @@ export async function POST(request: NextRequest, { params }: Params) {
       }
     }
 
-    // Calcular diferencia de efectivo (si se proporcionó monto contado)
+    // Obtener movimientos (egresos/ingresos) de la sesión
+    const { data: movements } = await supabaseAdmin
+      .from("cash_register_movements")
+      .select("amount, movement_type")
+      .eq("session_id", sessionId);
+
+    const totalEgresos = (movements ?? [])
+      .filter((m) => m.movement_type === "expense")
+      .reduce((s, m) => s + Number(m.amount), 0);
+
+    const totalIngresos = (movements ?? [])
+      .filter((m) => m.movement_type === "income")
+      .reduce((s, m) => s + Number(m.amount), 0);
+
+    // Efectivo esperado = fondo inicial + ventas en efectivo + ingresos - egresos
     const totalRow = summaryRows.find((r) => r.area === "total");
+    const openingAmount = Number(session.opening_amount ?? 0);
+    const cashFromSales = totalRow?.total_cash ?? 0;
+    const expectedCash =
+      openingAmount + cashFromSales + totalIngresos - totalEgresos;
+
     let difference: number | null = null;
-    if (closingAmount !== null && totalRow) {
-      // Diferencia = efectivo contado - efectivo del sistema
-      difference =
-        Math.round((closingAmount - totalRow.total_cash) * 100) / 100;
+    if (closingAmount !== null) {
+      // Diferencia = efectivo contado - efectivo esperado
+      difference = Math.round((closingAmount - expectedCash) * 100) / 100;
     }
 
     // Cerrar la sesión

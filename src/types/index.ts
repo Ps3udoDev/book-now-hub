@@ -35,6 +35,17 @@ export type UpsertExchangeRateData = Tables["exchange_rates"]["Insert"];
 
 export type CashRegisterSession = Tables["cash_register_sessions"]["Row"];
 export type CashRegisterSummary = Tables["cash_register_summaries"]["Row"];
+export type CashRegisterMovement = Tables["cash_register_movements"]["Row"];
+
+export type CommissionRule = Tables["commission_rules"]["Row"];
+export type Commission = Tables["commissions"]["Row"];
+export type CommissionScope = Database["public"]["Enums"]["commission_scope"];
+export type CommissionType = Database["public"]["Enums"]["commission_type"];
+export type CommissionStatus = Database["public"]["Enums"]["commission_status"];
+export type OrderItemType = Database["public"]["Enums"]["order_item_type"];
+
+export type SpecialistDebt = Tables["specialist_debts"]["Row"];
+export type SpecialistDebtPayment = Tables["specialist_debt_payments"]["Row"];
 
 export interface LayoutConfig {
   sidebar: {

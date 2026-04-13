@@ -34,9 +34,12 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCashRegistersByBranch } from "@/hooks/supabase/use-cash-registers";
 import { type OrderWithItems, ordersService } from "@/lib/services/orders";
 import { ReceiptDialog } from "./receipt-dialog";
+
+type DocumentType = "nota_debito" | "factura";
 
 const PAYMENT_METHODS = [
   { value: "cash", label: "Efectivo", icon: Wallet },
@@ -71,6 +74,9 @@ export function PayOrderDialog({
   const [paid, setPaid] = useState<{
     invoiceNumber: string;
     primaryPaymentMethod: string;
+    documentType: DocumentType;
+    fiscalName: string | null;
+    fiscalDocument: string | null;
   } | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
 
@@ -88,6 +94,12 @@ export function PayOrderDialog({
     { id: 2, payment_method: "", amount: "", reference_number: "" },
   ]);
   const [cashRegisterId, setCashRegisterId] = useState("");
+
+  // Tipo de documento fiscal
+  const [documentType, setDocumentType] = useState<DocumentType>("nota_debito");
+  const [fiscalName, setFiscalName] = useState("");
+  const [fiscalDocument, setFiscalDocument] = useState("");
+  const [fiscalAddress, setFiscalAddress] = useState("");
 
   const { cashRegisters, isLoading: loadingRegisters } =
     useCashRegistersByBranch(order?.branch_id ?? null);
@@ -121,6 +133,10 @@ export function PayOrderDialog({
       { id: 2, payment_method: "", amount: "", reference_number: "" },
     ]);
     setCashRegisterId("");
+    setDocumentType("nota_debito");
+    setFiscalName("");
+    setFiscalDocument("");
+    setFiscalAddress("");
   }
 
   function handleClose() {
@@ -159,6 +175,20 @@ export function PayOrderDialog({
     if (!cashRegisterId) {
       toast.error("Selecciona una caja registradora");
       return;
+    }
+
+    // Validar datos fiscales si es factura
+    if (documentType === "factura") {
+      if (!fiscalName.trim()) {
+        toast.error("El nombre del cliente es requerido para emitir factura");
+        return;
+      }
+      if (!fiscalDocument.trim()) {
+        toast.error(
+          "El RIF/Cédula del cliente es requerido para emitir factura",
+        );
+        return;
+      }
     }
 
     let payments: Array<{
@@ -214,11 +244,22 @@ export function PayOrderDialog({
       const { invoice_number } = await ordersService.payOrder(order.id, {
         cash_register_id: cashRegisterId,
         payments,
+        document_type: documentType,
+        customer_name: documentType === "factura" ? fiscalName.trim() : null,
+        customer_document:
+          documentType === "factura" ? fiscalDocument.trim() : null,
+        customer_address:
+          documentType === "factura" ? fiscalAddress.trim() || null : null,
       });
-      toast.success(`Cobro registrado — Factura ${invoice_number}`);
+      const docLabel =
+        documentType === "factura" ? "Factura" : "Nota de débito";
+      toast.success(`Cobro registrado — ${docLabel} ${invoice_number}`);
       setPaid({
         invoiceNumber: invoice_number,
         primaryPaymentMethod: payments[0].payment_method,
+        documentType,
+        fiscalName: fiscalName.trim() || null,
+        fiscalDocument: fiscalDocument.trim() || null,
       });
     } catch (err) {
       toast.error(
@@ -311,6 +352,72 @@ export function PayOrderDialog({
               </div>
 
               <div className="space-y-4 pt-2">
+                {/* Tipo de documento */}
+                <div className="space-y-1.5">
+                  <Label>Tipo de documento</Label>
+                  <Tabs
+                    value={documentType}
+                    onValueChange={(v) => setDocumentType(v as DocumentType)}
+                  >
+                    <TabsList className="w-full">
+                      <TabsTrigger value="nota_debito" className="flex-1">
+                        Nota de débito
+                      </TabsTrigger>
+                      <TabsTrigger value="factura" className="flex-1">
+                        Factura
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  <p className="text-xs text-muted-foreground">
+                    {documentType === "nota_debito"
+                      ? "Consumidor final — sin datos fiscales"
+                      : "Requiere datos fiscales del cliente"}
+                  </p>
+                </div>
+
+                {/* Datos fiscales (solo para factura) */}
+                {documentType === "factura" && (
+                  <div className="space-y-3 rounded-md border p-3 bg-muted/20">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Datos fiscales del cliente
+                    </p>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">
+                        Nombre / Razón social{" "}
+                        <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        placeholder="Nombre completo o razón social"
+                        value={fiscalName}
+                        onChange={(e) => setFiscalName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">
+                        RIF / Cédula <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        placeholder="Ej: V-12345678 o J-12345678-9"
+                        value={fiscalDocument}
+                        onChange={(e) => setFiscalDocument(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">
+                        Dirección{" "}
+                        <span className="text-muted-foreground font-normal">
+                          (opcional)
+                        </span>
+                      </Label>
+                      <Input
+                        placeholder="Dirección fiscal"
+                        value={fiscalAddress}
+                        onChange={(e) => setFiscalAddress(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Caja registradora */}
                 <div className="space-y-1.5">
                   <Label>Caja registradora</Label>
@@ -605,6 +712,9 @@ export function PayOrderDialog({
           invoiceNumber={paid.invoiceNumber}
           paymentMethod={paid.primaryPaymentMethod}
           paidAt={new Date().toISOString()}
+          documentType={paid.documentType}
+          fiscalName={paid.fiscalName}
+          fiscalDocument={paid.fiscalDocument}
         />
       )}
     </>

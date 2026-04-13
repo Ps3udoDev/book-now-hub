@@ -34,6 +34,7 @@ export interface OrderItem {
   currency_code: string;
   subtotal: number;
   notes: string | null;
+  buyer_type: string;
   created_at: string;
 }
 
@@ -71,6 +72,7 @@ export interface AddItemData {
   unit_price: number;
   currency_code: string;
   notes?: string | null;
+  buyer_type?: "customer" | "specialist";
 }
 
 const ORDER_WITH_RELATIONS = `
@@ -201,6 +203,10 @@ class OrdersService {
         reference_number?: string | null;
       }>;
       notes?: string;
+      document_type?: "nota_debito" | "factura";
+      customer_name?: string | null;
+      customer_document?: string | null;
+      customer_address?: string | null;
     },
   ): Promise<{ order: Order; invoice_number: string }> {
     const res = await fetch(`/api/orders/${orderId}/pay`, {

@@ -113,8 +113,19 @@ export async function POST(request: NextRequest, { params }: Params) {
       cash_register_id,
       payments,
       notes,
-    }: { cash_register_id: string; payments: PaymentEntry[]; notes?: string } =
-      body;
+      document_type,
+      customer_name: bodyCustomerName,
+      customer_document: bodyCustomerDocument,
+      customer_address: bodyCustomerAddress,
+    }: {
+      cash_register_id: string;
+      payments: PaymentEntry[];
+      notes?: string;
+      document_type?: "nota_debito" | "factura";
+      customer_name?: string | null;
+      customer_document?: string | null;
+      customer_address?: string | null;
+    } = body;
 
     if (!cash_register_id) {
       return NextResponse.json(
@@ -208,14 +219,19 @@ export async function POST(request: NextRequest, { params }: Params) {
     );
     const amountLocal = exchangeRate ? total * exchangeRate : null;
 
-    // 1. Crear la factura
+    // 1. Crear la factura/nota de débito
+    const docType = document_type || "nota_debito";
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from("invoices")
       .insert({
         tenant_id: order.tenant_id,
         branch_id: order.branch_id,
         invoice_number: invoiceNumber,
+        document_type: docType,
         customer_id: order.customer_id ?? null,
+        customer_name: bodyCustomerName || null,
+        customer_document: bodyCustomerDocument || null,
+        customer_address: bodyCustomerAddress || null,
         order_id: orderId,
         appointment_id: order.appointment_id ?? null,
         subtotal: total,
@@ -300,7 +316,51 @@ export async function POST(request: NextRequest, { params }: Params) {
       );
     }
 
-    // 5. Marcar la comanda como pagada
+    // 5. Procesar items de tipo producto: descontar stock + registrar deudas
+    const productItems = items.filter(
+      (i: { type: string; item_id: string | null; buyer_type?: string }) =>
+        i.type === "product" && i.item_id,
+    );
+
+    for (const item of productItems) {
+      const buyerType =
+        (item as unknown as { buyer_type?: string }).buyer_type || "customer";
+      const movementType =
+        buyerType === "specialist" ? "specialist_withdrawal" : "exit";
+
+      // Crear movimiento de inventario (descuento de stock)
+      await supabaseAdmin.from("inventory_movements").insert({
+        product_id: item.item_id,
+        branch_id: order.branch_id,
+        movement_type: movementType,
+        quantity: item.quantity,
+        reason:
+          buyerType === "specialist"
+            ? `Compra de especialista — Comanda ${orderId.slice(0, 8)}`
+            : `Venta al cliente — Comanda ${orderId.slice(0, 8)}`,
+        specialist_id: buyerType === "specialist" ? order.specialist_id : null,
+        reference_id: orderId,
+        created_by: user.id,
+      });
+
+      // Si es compra del especialista, crear deuda
+      if (buyerType === "specialist") {
+        const debtAmount = item.subtotal;
+        await supabaseAdmin.from("specialist_debts").insert({
+          tenant_id: order.tenant_id,
+          specialist_id: order.specialist_id,
+          description: item.description,
+          original_amount: debtAmount,
+          remaining_amount: debtAmount,
+          currency_code: order.currency_code,
+          source_type: "product_purchase",
+          source_order_item_id: item.id,
+          created_by: user.id,
+        });
+      }
+    }
+
+    // 6. Marcar la comanda como pagada
     const { data: updatedOrder, error: updateError } = await supabaseAdmin
       .from("orders")
       .update({ status: "paid" })

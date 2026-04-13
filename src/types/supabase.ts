@@ -85,6 +85,13 @@ export type Database = {
             foreignKeyName: "appointment_services_specialist_id_fkey"
             columns: ["specialist_id"]
             isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "appointment_services_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
             referencedRelation: "v_specialist_availability"
             referencedColumns: ["specialist_id"]
           },
@@ -200,6 +207,13 @@ export type Database = {
             foreignKeyName: "appointments_confirmed_by_fkey"
             columns: ["confirmed_by"]
             isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "appointments_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
             referencedRelation: "v_specialist_availability"
             referencedColumns: ["specialist_id"]
           },
@@ -230,6 +244,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
           },
           {
             foreignKeyName: "appointments_specialist_id_fkey"
@@ -446,6 +467,7 @@ export type Database = {
           new_balance: number | null
           previous_balance: number | null
           reference: string | null
+          session_id: string | null
         }
         Insert: {
           amount: number
@@ -460,6 +482,7 @@ export type Database = {
           new_balance?: number | null
           previous_balance?: number | null
           reference?: string | null
+          session_id?: string | null
         }
         Update: {
           amount?: number
@@ -474,6 +497,7 @@ export type Database = {
           new_balance?: number | null
           previous_balance?: number | null
           reference?: string | null
+          session_id?: string | null
         }
         Relationships: [
           {
@@ -509,6 +533,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_register_movements_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_register_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -778,6 +809,230 @@ export type Database = {
           },
         ]
       }
+      commission_rules: {
+        Row: {
+          commission_type: Database["public"]["Enums"]["commission_type"]
+          created_at: string
+          currency_code: string | null
+          id: string
+          is_active: boolean
+          item_type: Database["public"]["Enums"]["order_item_type"] | null
+          notes: string | null
+          scope: Database["public"]["Enums"]["commission_scope"]
+          service_id: string | null
+          specialist_id: string
+          tenant_id: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          commission_type?: Database["public"]["Enums"]["commission_type"]
+          created_at?: string
+          currency_code?: string | null
+          id?: string
+          is_active?: boolean
+          item_type?: Database["public"]["Enums"]["order_item_type"] | null
+          notes?: string | null
+          scope?: Database["public"]["Enums"]["commission_scope"]
+          service_id?: string | null
+          specialist_id: string
+          tenant_id: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          commission_type?: Database["public"]["Enums"]["commission_type"]
+          created_at?: string
+          currency_code?: string | null
+          id?: string
+          is_active?: boolean
+          item_type?: Database["public"]["Enums"]["order_item_type"] | null
+          notes?: string | null
+          scope?: Database["public"]["Enums"]["commission_scope"]
+          service_id?: string | null
+          specialist_id?: string
+          tenant_id?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_rules_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "commission_rules_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_rules_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_rules_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "commission_rules_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "commission_rules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commissions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          base_amount: number
+          commission_amount: number
+          commission_rate: number | null
+          commission_type: Database["public"]["Enums"]["commission_type"]
+          created_at: string
+          currency_code: string
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          order_id: string
+          order_item_id: string
+          paid_at: string | null
+          paid_by: string | null
+          rule_id: string | null
+          specialist_id: string
+          status: Database["public"]["Enums"]["commission_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          base_amount: number
+          commission_amount: number
+          commission_rate?: number | null
+          commission_type: Database["public"]["Enums"]["commission_type"]
+          created_at?: string
+          currency_code: string
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          order_id: string
+          order_item_id: string
+          paid_at?: string | null
+          paid_by?: string | null
+          rule_id?: string | null
+          specialist_id: string
+          status?: Database["public"]["Enums"]["commission_status"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          base_amount?: number
+          commission_amount?: number
+          commission_rate?: number | null
+          commission_type?: Database["public"]["Enums"]["commission_type"]
+          created_at?: string
+          currency_code?: string
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          order_id?: string
+          order_item_id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          rule_id?: string | null
+          specialist_id?: string
+          status?: Database["public"]["Enums"]["commission_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "commissions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "commission_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "commissions_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "commissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       currencies: {
         Row: {
           code: string
@@ -924,6 +1179,13 @@ export type Database = {
             foreignKeyName: "customers_preferred_specialist_id_fkey"
             columns: ["preferred_specialist_id"]
             isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "customers_preferred_specialist_id_fkey"
+            columns: ["preferred_specialist_id"]
+            isOneToOne: false
             referencedRelation: "v_specialist_availability"
             referencedColumns: ["specialist_id"]
           },
@@ -974,6 +1236,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchange_rate_logs_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
           },
           {
             foreignKeyName: "exchange_rate_logs_changed_by_fkey"
@@ -1074,6 +1343,95 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_movements: {
+        Row: {
+          branch_id: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          movement_type: Database["public"]["Enums"]["inventory_movement_type"]
+          product_id: string
+          quantity: number
+          reason: string | null
+          reference_id: string | null
+          specialist_id: string | null
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          movement_type: Database["public"]["Enums"]["inventory_movement_type"]
+          product_id: string
+          quantity: number
+          reason?: string | null
+          reference_id?: string | null
+          specialist_id?: string | null
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          movement_type?: Database["public"]["Enums"]["inventory_movement_type"]
+          product_id?: string
+          quantity?: number
+          reason?: string | null
+          reference_id?: string | null
+          specialist_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_low_stock_alerts"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_summary"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+        ]
+      }
       invoice_lines: {
         Row: {
           created_at: string | null
@@ -1138,6 +1496,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_lines_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
           },
           {
             foreignKeyName: "invoice_lines_specialist_id_fkey"
@@ -1232,6 +1597,7 @@ export type Database = {
           customer_id: string | null
           customer_name: string | null
           discount_amount: number | null
+          document_type: string
           exchange_rate_snapshot: number | null
           id: string
           invoice_number: string
@@ -1258,6 +1624,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           discount_amount?: number | null
+          document_type?: string
           exchange_rate_snapshot?: number | null
           id?: string
           invoice_number: string
@@ -1284,6 +1651,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           discount_amount?: number | null
+          document_type?: string
           exchange_rate_snapshot?: number | null
           id?: string
           invoice_number?: string
@@ -1326,6 +1694,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
           },
           {
             foreignKeyName: "invoices_created_by_fkey"
@@ -1475,6 +1850,7 @@ export type Database = {
       }
       order_items: {
         Row: {
+          buyer_type: string
           created_at: string
           currency_code: string
           description: string
@@ -1488,6 +1864,7 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          buyer_type?: string
           created_at?: string
           currency_code?: string
           description: string
@@ -1501,6 +1878,7 @@ export type Database = {
           unit_price?: number
         }
         Update: {
+          buyer_type?: string
           created_at?: string
           currency_code?: string
           description?: string
@@ -1629,6 +2007,13 @@ export type Database = {
             foreignKeyName: "orders_specialist_id_fkey"
             columns: ["specialist_id"]
             isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "orders_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
             referencedRelation: "v_specialist_availability"
             referencedColumns: ["specialist_id"]
           },
@@ -1685,6 +2070,162 @@ export type Database = {
           },
           {
             foreignKeyName: "payment_methods_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_categories: {
+        Row: {
+          created_at: string | null
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number | null
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_images: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_primary: boolean | null
+          product_id: string
+          sort_order: number | null
+          storage_path: string
+          thumbnail_path: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          product_id: string
+          sort_order?: number | null
+          storage_path: string
+          thumbnail_path?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          product_id?: string
+          sort_order?: number | null
+          storage_path?: string
+          thumbnail_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_low_stock_alerts"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_summary"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          branch_id: string
+          brand: string | null
+          category: string | null
+          created_at: string | null
+          currency_iso: string
+          description: string | null
+          id: string
+          is_active: boolean
+          min_stock_alert: number
+          name: string
+          price: number
+          sku: string | null
+          stock_quantity: number
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id: string
+          brand?: string | null
+          category?: string | null
+          created_at?: string | null
+          currency_iso?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          min_stock_alert?: number
+          name: string
+          price?: number
+          sku?: string | null
+          stock_quantity?: number
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string
+          brand?: string | null
+          category?: string | null
+          created_at?: string | null
+          currency_iso?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          min_stock_alert?: number
+          name?: string
+          price?: number
+          sku?: string | null
+          stock_quantity?: number
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1829,6 +2370,13 @@ export type Database = {
             foreignKeyName: "schedule_exceptions_specialist_id_fkey"
             columns: ["specialist_id"]
             isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "schedule_exceptions_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
             referencedRelation: "v_specialist_availability"
             referencedColumns: ["specialist_id"]
           },
@@ -1965,6 +2513,268 @@ export type Database = {
           },
         ]
       }
+      specialist_consumptions: {
+        Row: {
+          created_at: string
+          currency_code: string
+          date: string
+          deduct_from_commission: boolean
+          description: string
+          id: string
+          notes: string | null
+          quantity: number
+          registered_by: string
+          service_id: string | null
+          specialist_id: string
+          tenant_id: string
+          total_cost: number
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency_code?: string
+          date?: string
+          deduct_from_commission?: boolean
+          description: string
+          id?: string
+          notes?: string | null
+          quantity?: number
+          registered_by: string
+          service_id?: string | null
+          specialist_id: string
+          tenant_id: string
+          total_cost?: number
+          unit_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency_code?: string
+          date?: string
+          deduct_from_commission?: boolean
+          description?: string
+          id?: string
+          notes?: string | null
+          quantity?: number
+          registered_by?: string
+          service_id?: string | null
+          specialist_id?: string
+          tenant_id?: string
+          total_cost?: number
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_consumptions_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "specialist_consumptions_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_consumptions_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_consumptions_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "specialist_consumptions_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "specialist_consumptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialist_debt_payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          created_by: string | null
+          debt_id: string
+          id: string
+          notes: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          created_by?: string | null
+          debt_id: string
+          id?: string
+          notes?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          debt_id?: string
+          id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_debt_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_debt_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "specialist_debt_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "specialist_debt_payments_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialist_debts: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          currency_code: string
+          description: string
+          id: string
+          original_amount: number
+          remaining_amount: number
+          settled_at: string | null
+          source_order_item_id: string | null
+          source_type: string
+          specialist_id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          currency_code?: string
+          description: string
+          id?: string
+          original_amount: number
+          remaining_amount: number
+          settled_at?: string | null
+          source_order_item_id?: string | null
+          source_type?: string
+          specialist_id: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          currency_code?: string
+          description?: string
+          id?: string
+          original_amount?: number
+          remaining_amount?: number
+          settled_at?: string | null
+          source_order_item_id?: string | null
+          source_type?: string
+          specialist_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_debts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_debts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "specialist_debts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "specialist_debts_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "specialist_debts_source_order_item_id_fkey"
+            columns: ["source_order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_debts_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_debts_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "specialist_debts_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "specialist_debts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       specialist_schedules: {
         Row: {
           branch_id: string
@@ -2019,6 +2829,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_schedules_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
           },
           {
             foreignKeyName: "specialist_schedules_specialist_id_fkey"
@@ -2084,6 +2901,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_services_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
           },
           {
             foreignKeyName: "specialist_services_specialist_id_fkey"
@@ -2470,6 +3294,77 @@ export type Database = {
       }
     }
     Views: {
+      commissions_summary: {
+        Row: {
+          commission_count: number | null
+          currency_code: string | null
+          period_month: string | null
+          specialist_id: string | null
+          specialist_name: string | null
+          status: Database["public"]["Enums"]["commission_status"] | null
+          tenant_id: string | null
+          total_base_amount: number | null
+          total_commission_amount: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "commissions_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "commissions_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "commissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialist_net_balance: {
+        Row: {
+          currency_code: string | null
+          gross_commissions: number | null
+          net_payable: number | null
+          pending_commissions_count: number | null
+          specialist_id: string | null
+          specialist_name: string | null
+          tenant_id: string | null
+          total_deductions: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_cash_registers_summary: {
         Row: {
           branch_id: string | null
@@ -2561,11 +3456,86 @@ export type Database = {
             foreignKeyName: "appointments_specialist_id_fkey"
             columns: ["specialist_id"]
             isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "appointments_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
             referencedRelation: "v_specialist_availability"
             referencedColumns: ["specialist_id"]
           },
           {
             foreignKeyName: "appointments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_low_stock_alerts: {
+        Row: {
+          branch_id: string | null
+          calculated_stock: number | null
+          category: string | null
+          is_low_stock: boolean | null
+          min_stock_alert: number | null
+          product_id: string | null
+          product_name: string | null
+          sku: string | null
+          stock_quantity: number | null
+          tenant_id: string | null
+          total_adjustments: number | null
+          total_entries: number | null
+          total_exits: number | null
+          total_specialist_withdrawals: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_product_stock_summary: {
+        Row: {
+          branch_id: string | null
+          calculated_stock: number | null
+          category: string | null
+          is_low_stock: boolean | null
+          min_stock_alert: number | null
+          product_id: string | null
+          product_name: string | null
+          sku: string | null
+          stock_quantity: number | null
+          tenant_id: string | null
+          total_adjustments: number | null
+          total_entries: number | null
+          total_exits: number | null
+          total_specialist_withdrawals: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2605,8 +3575,60 @@ export type Database = {
           },
         ]
       }
+      v_specialist_debt_balance: {
+        Row: {
+          active_debts: number | null
+          currency_code: string | null
+          specialist_id: string | null
+          tenant_id: string | null
+          total_original: number | null
+          total_paid: number | null
+          total_remaining: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_debts_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "specialist_debts_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_debts_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "specialist_debts_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "specialist_debts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      calculate_inventory_stock: {
+        Args: { p_branch_id: string; p_product_id: string }
+        Returns: number
+      }
       check_specialist_availability: {
         Args: {
           p_duration_minutes: number
@@ -2616,6 +3638,10 @@ export type Database = {
         Returns: boolean
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      generate_commissions_for_order: {
+        Args: { p_invoice_id?: string; p_order_id: string }
+        Returns: number
+      }
       get_current_tenant_id: { Args: never; Returns: string }
       get_exchange_rate: {
         Args: {
@@ -2660,6 +3686,34 @@ export type Database = {
         Args: { p_customer_id: string; p_user_id: string }
         Returns: boolean
       }
+      resolve_commission_rule: {
+        Args: {
+          p_item_id: string
+          p_item_type: Database["public"]["Enums"]["order_item_type"]
+          p_specialist_id: string
+        }
+        Returns: {
+          commission_type: Database["public"]["Enums"]["commission_type"]
+          created_at: string
+          currency_code: string | null
+          id: string
+          is_active: boolean
+          item_type: Database["public"]["Enums"]["order_item_type"] | null
+          notes: string | null
+          scope: Database["public"]["Enums"]["commission_scope"]
+          service_id: string | null
+          specialist_id: string
+          tenant_id: string
+          updated_at: string
+          value: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "commission_rules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       user_belongs_to_tenant: {
         Args: { check_tenant_id: string }
         Returns: boolean
@@ -2674,6 +3728,9 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "no_show"
+      commission_scope: "all" | "item_type" | "service"
+      commission_status: "pending" | "approved" | "paid" | "cancelled"
+      commission_type: "percentage" | "fixed"
       day_of_week:
         | "monday"
         | "tuesday"
@@ -2683,6 +3740,11 @@ export type Database = {
         | "saturday"
         | "sunday"
       global_role: "super_admin" | "admin" | "support"
+      inventory_movement_type:
+        | "entry"
+        | "exit"
+        | "adjustment"
+        | "specialist_withdrawal"
       invoice_status:
         | "draft"
         | "pending"
@@ -2840,6 +3902,9 @@ export const Constants = {
         "cancelled",
         "no_show",
       ],
+      commission_scope: ["all", "item_type", "service"],
+      commission_status: ["pending", "approved", "paid", "cancelled"],
+      commission_type: ["percentage", "fixed"],
       day_of_week: [
         "monday",
         "tuesday",
@@ -2850,6 +3915,12 @@ export const Constants = {
         "sunday",
       ],
       global_role: ["super_admin", "admin", "support"],
+      inventory_movement_type: [
+        "entry",
+        "exit",
+        "adjustment",
+        "specialist_withdrawal",
+      ],
       invoice_status: [
         "draft",
         "pending",

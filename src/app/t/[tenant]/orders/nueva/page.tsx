@@ -22,7 +22,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useActiveBranches } from "@/hooks/supabase/use-branches";
-import { type Order, ordersService } from "@/lib/services/orders";
+import {
+  type Order,
+  type OrderItem,
+  ordersService,
+} from "@/lib/services/orders";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
 const formSchema = z.object({
@@ -48,8 +52,14 @@ export default function NuevaComandaPage() {
   );
 
   const [order, setOrder] = useState<Order | null>(null);
+  const [items, setItems] = useState<OrderItem[]>([]);
   const [creating, setCreating] = useState(false);
   const [sending, setSending] = useState(false);
+
+  async function refreshItems(orderId: string) {
+    const updated = await ordersService.getOrderById(orderId);
+    setItems(updated?.items ?? []);
+  }
 
   const {
     register,
@@ -201,9 +211,10 @@ export default function NuevaComandaPage() {
             <OrderItemsEditor
               orderId={order.id}
               currencyCode={selectedCurrency}
-              items={[]}
-              onItemAdded={() => {}}
-              onItemRemoved={() => {}}
+              items={items}
+              tenantId={tenant?.id}
+              onItemAdded={() => refreshItems(order.id)}
+              onItemRemoved={() => refreshItems(order.id)}
             />
           </CardContent>
         </Card>

@@ -28,6 +28,9 @@ interface ReceiptDialogProps {
   invoiceNumber: string;
   paymentMethod: string;
   paidAt?: string;
+  documentType?: "nota_debito" | "factura";
+  fiscalName?: string | null;
+  fiscalDocument?: string | null;
 }
 
 export function ReceiptDialog({
@@ -37,10 +40,17 @@ export function ReceiptDialog({
   invoiceNumber,
   paymentMethod,
   paidAt,
+  documentType = "nota_debito",
+  fiscalName,
+  fiscalDocument,
 }: ReceiptDialogProps) {
-  const customerName = order.customer
-    ? `${order.customer.first_name} ${order.customer.last_name}`
-    : "Consumidor Final";
+  const customerName =
+    fiscalName ||
+    (order.customer
+      ? `${order.customer.first_name} ${order.customer.last_name}`
+      : "Consumidor Final");
+
+  const docLabel = documentType === "factura" ? "FACTURA" : "NOTA DE DÉBITO";
 
   const date = new Date(paidAt ?? Date.now()).toLocaleString("es-VE", {
     day: "2-digit",
@@ -57,6 +67,8 @@ export function ReceiptDialog({
       invoiceNumber,
       date,
       customerName,
+      customerDocument: fiscalDocument || null,
+      documentLabel: docLabel,
       items: order.items,
       total: order.total,
       currency: order.currency_code,
@@ -88,13 +100,11 @@ export function ReceiptDialog({
 
         {/* Vista previa del comprobante */}
         <div className="rounded-lg border bg-muted/20 p-4 font-mono text-xs space-y-2">
-          <div className="text-center font-bold text-sm">
-            COMPROBANTE DE PAGO
-          </div>
+          <div className="text-center font-bold text-sm">{docLabel}</div>
           <Separator />
 
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Factura</span>
+            <span className="text-muted-foreground">N°</span>
             <span className="font-semibold">{invoiceNumber}</span>
           </div>
           <div className="flex justify-between">
@@ -107,6 +117,12 @@ export function ReceiptDialog({
               {customerName}
             </span>
           </div>
+          {fiscalDocument && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">RIF/Cédula</span>
+              <span>{fiscalDocument}</span>
+            </div>
+          )}
 
           <Separator />
 
@@ -169,6 +185,8 @@ interface ReceiptData {
   invoiceNumber: string;
   date: string;
   customerName: string;
+  customerDocument?: string | null;
+  documentLabel: string;
   items: {
     description: string;
     quantity: number;
@@ -195,7 +213,7 @@ function buildReceiptHtml(data: ReceiptData): string {
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>Comprobante ${data.invoiceNumber}</title>
+  <title>${escapeHtml(data.documentLabel)} ${data.invoiceNumber}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -222,11 +240,12 @@ function buildReceiptHtml(data: ReceiptData): string {
   </style>
 </head>
 <body>
-  <div class="center bold" style="font-size:14px;margin-bottom:4px">COMPROBANTE DE PAGO</div>
+  <div class="center bold" style="font-size:14px;margin-bottom:4px">${escapeHtml(data.documentLabel)}</div>
   <div class="divider"></div>
-  <div class="row"><span class="muted">Factura</span><span class="bold">${escapeHtml(data.invoiceNumber)}</span></div>
+  <div class="row"><span class="muted">N°</span><span class="bold">${escapeHtml(data.invoiceNumber)}</span></div>
   <div class="row"><span class="muted">Fecha</span><span>${escapeHtml(data.date)}</span></div>
   <div class="row"><span class="muted">Cliente</span><span>${escapeHtml(data.customerName)}</span></div>
+  ${data.customerDocument ? `<div class="row"><span class="muted">RIF/Cédula</span><span>${escapeHtml(data.customerDocument)}</span></div>` : ""}
   <div class="divider"></div>
   <table>
     <tbody>${itemsHtml}</tbody>

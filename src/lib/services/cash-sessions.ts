@@ -1,8 +1,12 @@
 // src/lib/services/cash-sessions.ts
 import { createBrowserSB } from "@/lib/supabase/client";
-import type { CashRegisterSession, CashRegisterSummary } from "@/types";
+import type {
+  CashRegisterMovement,
+  CashRegisterSession,
+  CashRegisterSummary,
+} from "@/types";
 
-export type { CashRegisterSession, CashRegisterSummary };
+export type { CashRegisterMovement, CashRegisterSession, CashRegisterSummary };
 export type CashSessionStatus = "open" | "closed";
 
 export interface OpenSessionData {
@@ -15,6 +19,13 @@ export interface OpenSessionData {
 export interface CloseSessionData {
   closing_amount?: number | null;
   notes?: string | null;
+}
+
+export interface CashMovementData {
+  movement_type: "expense" | "income";
+  amount: number;
+  description: string;
+  reference?: string | null;
 }
 
 export interface SummaryRow {
@@ -49,6 +60,7 @@ export interface SessionWithDetails extends CashRegisterSession {
   opened_by_name: string;
   closed_by_name: string | null;
   summaries: CashRegisterSummary[];
+  movements: CashRegisterMovement[];
 }
 
 class CashSessionsService {
@@ -177,6 +189,13 @@ class CashSessionsService {
       .eq("session_id", sessionId)
       .order("area");
 
+    // Movimientos (egresos/ingresos) de la sesión
+    const { data: movements } = await this.supabase
+      .from("cash_register_movements")
+      .select("*")
+      .eq("session_id", sessionId)
+      .order("created_at");
+
     // Nombres de operadores
     const userIds = [session.opened_by, session.closed_by].filter(
       Boolean,
@@ -208,6 +227,7 @@ class CashSessionsService {
         ? (profileMap.get(session.closed_by) ?? session.closed_by)
         : null,
       summaries: (summaries as CashRegisterSummary[]) ?? [],
+      movements: (movements as CashRegisterMovement[]) ?? [],
     } as SessionWithDetails;
   }
 
@@ -232,6 +252,36 @@ class CashSessionsService {
     if (!res.ok)
       throw new Error(json.error || "Error al obtener resumen de sesión");
     return json as { session: CashRegisterSession; summary: SummaryRow[] };
+  }
+
+  /** Obtiene los movimientos (egresos/ingresos) de una sesión. */
+  async getSessionMovements(
+    sessionId: string,
+  ): Promise<CashRegisterMovement[]> {
+    const { data, error } = await this.supabase
+      .from("cash_register_movements")
+      .select("*")
+      .eq("session_id", sessionId)
+      .order("created_at");
+
+    if (error)
+      throw new Error(`Error al obtener movimientos: ${error.message}`);
+    return (data as CashRegisterMovement[]) ?? [];
+  }
+
+  /** Registra un egreso o ingreso en la sesión activa. */
+  async createSessionMovement(
+    sessionId: string,
+    data: CashMovementData,
+  ): Promise<CashRegisterMovement> {
+    const res = await fetch(`/api/cash-sessions/${sessionId}/movements`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Error al registrar movimiento");
+    return json.movement as CashRegisterMovement;
   }
 
   /** Cierra una sesión de caja y guarda el resumen. */

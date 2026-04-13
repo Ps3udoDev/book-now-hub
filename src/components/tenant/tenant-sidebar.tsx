@@ -14,6 +14,7 @@ import {
   LogOut,
   type LucideIcon,
   Package,
+  PercentCircle,
   Scissors,
   Settings,
   UserCog,
@@ -79,6 +80,8 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
     icon: moduleIcons[module.slug] || Scissors,
   }));
 
+  const isAdminOrOwner = ["owner", "admin"].includes(tenantUser?.role ?? "");
+
   // Items de operación (siempre visibles)
   const operationItems = [
     {
@@ -106,6 +109,25 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
       url: `${basePath}/caja/cierres`,
       icon: History,
     },
+    {
+      title: "Comisiones",
+      url: `${basePath}/comisiones`,
+      icon: PercentCircle,
+    },
+    {
+      title: "Mis comisiones",
+      url: `${basePath}/mis-comisiones`,
+      icon: PercentCircle,
+    },
+    ...(isAdminOrOwner
+      ? [
+          {
+            title: "Liquidación",
+            url: `${basePath}/settings/comisiones/liquidacion`,
+            icon: Wallet,
+          },
+        ]
+      : []),
   ];
 
   // Items de configuración (siempre al final)

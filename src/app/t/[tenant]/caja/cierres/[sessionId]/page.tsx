@@ -282,6 +282,36 @@ export default function SessionReportPage({
         </CardContent>
       </Card>
 
+      {/* Movimientos de caja */}
+      {sessionDetail.movements.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Movimientos de caja</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 text-sm">
+            {sessionDetail.movements.map((m) => (
+              <div
+                key={m.id}
+                className="flex items-center justify-between py-1"
+              >
+                <span className="text-muted-foreground">{m.description}</span>
+                <span
+                  className={`font-medium tabular-nums ${
+                    m.movement_type === "expense"
+                      ? "text-destructive"
+                      : "text-green-600"
+                  }`}
+                >
+                  {m.movement_type === "expense" ? "-" : "+"}
+                  {sessionDetail.register_currency}{" "}
+                  {Number(m.amount).toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Conciliación */}
       {(sessionDetail.closing_amount !== null ||
         sessionDetail.difference !== null) && (
@@ -292,6 +322,62 @@ export default function SessionReportPage({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
+            {/* Desglose del efectivo esperado */}
+            {(() => {
+              const totalSummary = sessionDetail.summaries.find(
+                (r) => r.area === "total",
+              );
+              const cashSales = totalSummary?.total_cash ?? 0;
+              const egresos = sessionDetail.movements
+                .filter((m) => m.movement_type === "expense")
+                .reduce((s, m) => s + Number(m.amount), 0);
+              const ingresos = sessionDetail.movements
+                .filter((m) => m.movement_type === "income")
+                .reduce((s, m) => s + Number(m.amount), 0);
+              const opening = Number(sessionDetail.opening_amount ?? 0);
+              return (
+                <div className="rounded-md border bg-muted/20 px-3 py-2 space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Fondo inicial</span>
+                    <span className="tabular-nums">
+                      +{sessionDetail.register_currency} {fmt(opening)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">
+                      Efectivo de ventas
+                    </span>
+                    <span className="tabular-nums">
+                      +{sessionDetail.register_currency} {fmt(cashSales)}
+                    </span>
+                  </div>
+                  {ingresos > 0 && (
+                    <div className="flex justify-between text-green-700">
+                      <span>Ingresos manuales</span>
+                      <span className="tabular-nums">
+                        +{sessionDetail.register_currency} {fmt(ingresos)}
+                      </span>
+                    </div>
+                  )}
+                  {egresos > 0 && (
+                    <div className="flex justify-between text-destructive">
+                      <span>Egresos</span>
+                      <span className="tabular-nums">
+                        -{sessionDetail.register_currency} {fmt(egresos)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="border-t pt-1 flex justify-between font-semibold">
+                    <span>Efectivo esperado</span>
+                    <span className="tabular-nums">
+                      {sessionDetail.register_currency}{" "}
+                      {fmt(opening + cashSales + ingresos - egresos)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
             {sessionDetail.closing_amount !== null && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Efectivo contado</span>
@@ -420,12 +506,52 @@ function buildReportHtml(s: SessionWithDetails, tenantName: string): string {
       <table><thead><tr>${headers}</tr></thead><tbody>${bodyRows}</tbody></table>`;
   }
 
-  const conciliation =
-    s.closing_amount !== null
+  const egresos = s.movements
+    .filter((m) => m.movement_type === "expense")
+    .reduce((acc, m) => acc + Number(m.amount), 0);
+  const ingresos = s.movements
+    .filter((m) => m.movement_type === "income")
+    .reduce((acc, m) => acc + Number(m.amount), 0);
+  const openingAmt = Number(s.opening_amount ?? 0);
+  const totalSummaryRow = s.summaries.find((r) => r.area === "total");
+  const cashSales = totalSummaryRow?.total_cash ?? 0;
+  const expectedCash = openingAmt + cashSales + ingresos - egresos;
+
+  const movementsSection =
+    s.movements.length > 0
       ? `
+    <h2>Movimientos de caja</h2>
+    <table>
+      <thead><tr><th>Descripción</th><th>Tipo</th><th class="right">Monto</th></tr></thead>
+      <tbody>
+        ${s.movements
+          .map(
+            (m) => `<tr>
+          <td>${escHtml(m.description ?? "")}</td>
+          <td>${m.movement_type === "expense" ? "Egreso" : "Ingreso"}</td>
+          <td class="right ${m.movement_type === "expense" ? "diff-warn" : "diff-ok"}">
+            ${m.movement_type === "expense" ? "-" : "+"}${s.register_currency} ${fmt(Number(m.amount))}
+          </td>
+        </tr>`,
+          )
+          .join("")}
+      </tbody>
+    </table>`
+      : "";
+
+  const conciliation = `
     <div class="section">
       <h3>Conciliación de efectivo</h3>
-      <div class="row"><span>Efectivo contado</span><span>${s.register_currency} ${fmt(Number(s.closing_amount))}</span></div>
+      <div class="row"><span>Fondo inicial</span><span>+${s.register_currency} ${fmt(openingAmt)}</span></div>
+      <div class="row"><span>Efectivo de ventas</span><span>+${s.register_currency} ${fmt(cashSales)}</span></div>
+      ${ingresos > 0 ? `<div class="row diff-ok"><span>Ingresos manuales</span><span>+${s.register_currency} ${fmt(ingresos)}</span></div>` : ""}
+      ${egresos > 0 ? `<div class="row diff-warn"><span>Egresos</span><span>-${s.register_currency} ${fmt(egresos)}</span></div>` : ""}
+      <div class="row bold" style="border-top:1px solid #ccc;padding-top:4px;margin-top:4px"><span>Efectivo esperado</span><span>${s.register_currency} ${fmt(expectedCash)}</span></div>
+      ${
+        s.closing_amount !== null
+          ? `<div class="row"><span>Efectivo contado</span><span>${s.register_currency} ${fmt(Number(s.closing_amount))}</span></div>`
+          : ""
+      }
       ${
         s.difference !== null
           ? `<div class="row bold ${Math.abs(s.difference) > 0.01 ? "diff-warn" : "diff-ok"}">
@@ -434,8 +560,7 @@ function buildReportHtml(s: SessionWithDetails, tenantName: string): string {
         </div>`
           : ""
       }
-    </div>`
-      : "";
+    </div>`;
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -484,6 +609,8 @@ function buildReportHtml(s: SessionWithDetails, tenantName: string): string {
 
   <h2>Resumen de cobros</h2>
   ${s.summaries.length === 0 ? "<p>Sin cobros registrados.</p>" : currencies.map(summaryTable).join("")}
+
+  ${movementsSection}
 
   ${conciliation}
 

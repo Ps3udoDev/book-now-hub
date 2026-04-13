@@ -65,6 +65,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       unit_price,
       currency_code,
       notes,
+      buyer_type,
     } = body;
 
     if (
@@ -104,6 +105,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
         unit_price,
         currency_code,
         notes: notes || null,
+        buyer_type: buyer_type || "customer",
       })
       .select()
       .single();

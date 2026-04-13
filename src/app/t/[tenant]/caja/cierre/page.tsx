@@ -10,9 +10,10 @@ import {
   DollarSign,
   Landmark,
   Loader2,
+  MinusCircle,
+  PlusCircle,
   Smartphone,
   Wallet,
-  XCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -55,9 +56,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useActiveBranches } from "@/hooks/supabase/use-branches";
 import {
   useActiveSession,
+  useSessionMovements,
   useSessionSummary,
 } from "@/hooks/supabase/use-cash-sessions";
-import type { SummaryRow } from "@/lib/services/cash-sessions";
+import type {
+  CashMovementData,
+  SummaryRow,
+} from "@/lib/services/cash-sessions";
 import { cashSessionsService } from "@/lib/services/cash-sessions";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
@@ -127,7 +132,6 @@ function SummaryTable({
 
   return (
     <div className="space-y-2">
-      {/* Filas por área */}
       {areaRows.map((row) => (
         <Collapsible
           key={row.area}
@@ -179,7 +183,6 @@ function SummaryTable({
         </Collapsible>
       ))}
 
-      {/* Fila total */}
       {totalRow && (
         <>
           <Separator />
@@ -231,7 +234,14 @@ export default function CierreCajaPage() {
   const [notes, setNotes] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [closing, setClosing] = useState(false);
-  const [closed, setClosed] = useState(false);
+  const [closedSessionId, setClosedSessionId] = useState<string | null>(null);
+
+  // Estado del formulario de egreso/ingreso
+  const [movementFormOpen, setMovementFormOpen] = useState(false);
+  const [movType, setMovType] = useState<"expense" | "income">("expense");
+  const [movAmount, setMovAmount] = useState("");
+  const [movDescription, setMovDescription] = useState("");
+  const [savingMov, setSavingMov] = useState(false);
 
   const {
     activeSession,
@@ -245,14 +255,19 @@ export default function CierreCajaPage() {
     mutate: mutateSummary,
   } = useSessionSummary(activeSession?.id ?? null);
 
-  // Refrescar resumen cada 30 s mientras la sesión está abierta
+  const { movements, mutate: mutateMovements } = useSessionMovements(
+    activeSession?.id ?? null,
+  );
+
+  // Refrescar resumen cada 30 s
   useEffect(() => {
     if (!activeSession) return;
     const id = setInterval(() => {
       mutateSummary();
+      mutateMovements();
     }, 30000);
     return () => clearInterval(id);
-  }, [activeSession, mutateSummary]);
+  }, [activeSession, mutateSummary, mutateMovements]);
 
   // Pre-seleccionar primera sucursal
   useEffect(() => {
@@ -264,27 +279,56 @@ export default function CierreCajaPage() {
   // Monedas presentes en el resumen
   const currencies = [...new Set(summary.map((r) => r.currency_code))].sort();
 
-  // Efectivo del sistema (del total row, primera moneda)
-  const totalRow = summary.find((r) => r.area === "total");
-  const systemCash = totalRow?.total_cash ?? 0;
   const closingAmountNum = Number(closingAmount) || null;
-  const difference =
-    closingAmountNum !== null
-      ? Math.round((closingAmountNum - systemCash) * 100) / 100
-      : null;
+
+  async function handleSaveMovement() {
+    if (!activeSession) return;
+    if (!movAmount || Number(movAmount) <= 0) {
+      toast.error("Ingresa un monto mayor a 0");
+      return;
+    }
+    if (!movDescription.trim()) {
+      toast.error("La descripción es obligatoria");
+      return;
+    }
+    setSavingMov(true);
+    try {
+      const data: CashMovementData = {
+        movement_type: movType,
+        amount: Number(movAmount),
+        description: movDescription.trim(),
+      };
+      await cashSessionsService.createSessionMovement(activeSession.id, data);
+      await Promise.all([mutateSummary(), mutateMovements()]);
+      setMovAmount("");
+      setMovDescription("");
+      setMovementFormOpen(false);
+      toast.success(
+        movType === "expense" ? "Egreso registrado" : "Ingreso registrado",
+      );
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Error al registrar movimiento",
+      );
+    } finally {
+      setSavingMov(false);
+    }
+  }
 
   async function handleClose() {
     if (!activeSession) return;
     setClosing(true);
     try {
-      await cashSessionsService.closeSession(activeSession.id, {
+      const result = await cashSessionsService.closeSession(activeSession.id, {
         closing_amount: closingAmountNum,
         notes: notes || null,
       });
       await mutateSession();
-      setClosed(true);
       setConfirmOpen(false);
       toast.success("Caja cerrada exitosamente");
+      // Redirigir al reporte de cierre donde se muestra la auditoría completa
+      const sid = result?.session?.id ?? activeSession.id;
+      setClosedSessionId(sid);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Error al cerrar la caja",
@@ -296,8 +340,7 @@ export default function CierreCajaPage() {
 
   const slug = tenant?.slug ?? "";
 
-  // ── Estado: caja ya cerrada en esta sesión ──
-  if (closed) {
+  if (closedSessionId) {
     return (
       <div className="container max-w-lg py-10">
         <Card>
@@ -307,11 +350,21 @@ export default function CierreCajaPage() {
               Caja cerrada
             </CardTitle>
             <CardDescription>
-              El cierre se registró correctamente.
+              El cierre se registró correctamente. Revisa el reporte completo
+              con la auditoría de efectivo.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-2">
             <Button
+              className="w-full"
+              onClick={() =>
+                router.push(`/t/${slug}/caja/cierres/${closedSessionId}`)
+              }
+            >
+              Ver reporte de cierre
+            </Button>
+            <Button
+              variant="outline"
               className="w-full"
               onClick={() => router.push(`/t/${slug}/caja`)}
             >
@@ -370,7 +423,6 @@ export default function CierreCajaPage() {
         </Alert>
       )}
 
-      {/* Resumen de la sesión activa */}
       {activeSession && (
         <>
           {/* Info de la sesión */}
@@ -437,24 +489,164 @@ export default function CierreCajaPage() {
             </CardContent>
           </Card>
 
-          {/* Conciliación de efectivo */}
+          {/* Movimientos de caja (egresos/ingresos) */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">
-                Conciliación de efectivo
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">
+                    Movimientos de caja
+                  </CardTitle>
+                  <CardDescription>
+                    Egresos e ingresos manuales durante la sesión.
+                  </CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => setMovementFormOpen((v) => !v)}
+                >
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  Registrar egreso
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Formulario de movimiento */}
+              {movementFormOpen && (
+                <div className="rounded-md border bg-muted/20 p-3 space-y-3">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMovType("expense")}
+                      className={`flex-1 flex items-center justify-center gap-1.5 rounded-md border py-1.5 text-sm font-medium transition-colors ${
+                        movType === "expense"
+                          ? "border-destructive bg-destructive/10 text-destructive"
+                          : "hover:bg-muted"
+                      }`}
+                    >
+                      <MinusCircle className="h-3.5 w-3.5" />
+                      Egreso
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMovType("income")}
+                      className={`flex-1 flex items-center justify-center gap-1.5 rounded-md border py-1.5 text-sm font-medium transition-colors ${
+                        movType === "income"
+                          ? "border-green-600 bg-green-50 text-green-700"
+                          : "hover:bg-muted"
+                      }`}
+                    >
+                      <PlusCircle className="h-3.5 w-3.5" />
+                      Ingreso
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Monto</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={movAmount}
+                        onChange={(e) => setMovAmount(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Descripción</Label>
+                      <Input
+                        placeholder="Ej: Compra de papel"
+                        value={movDescription}
+                        onChange={(e) => setMovDescription(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setMovementFormOpen(false);
+                        setMovAmount("");
+                        setMovDescription("");
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSaveMovement}
+                      disabled={savingMov}
+                      className="gap-1.5"
+                    >
+                      {savingMov && (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      )}
+                      Guardar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de movimientos */}
+              {movements.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Sin movimientos registrados.
+                </p>
+              ) : (
+                <div className="space-y-1">
+                  {movements.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex items-center justify-between text-sm py-1"
+                    >
+                      <div className="flex items-center gap-2">
+                        {m.movement_type === "expense" ? (
+                          <MinusCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                        ) : (
+                          <PlusCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                        )}
+                        <span className="text-muted-foreground">
+                          {m.description}
+                        </span>
+                      </div>
+                      <span
+                        className={`font-medium tabular-nums ${
+                          m.movement_type === "expense"
+                            ? "text-destructive"
+                            : "text-green-600"
+                        }`}
+                      >
+                        {m.movement_type === "expense" ? "-" : "+"}
+                        {Number(m.amount).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                  <Separator className="mt-1" />
+                  <div className="flex justify-between text-sm font-medium pt-1">
+                    <span className="text-muted-foreground">Total egresos</span>
+                    <span className="text-destructive tabular-nums">
+                      -{totalEgresos.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Conteo de efectivo (sin mostrar el monto esperado por auditoría) */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Conteo de efectivo</CardTitle>
               <CardDescription>
-                Ingresa el efectivo físico contado en caja.
+                Cuenta el efectivo físico en caja e ingresa el monto total. El
+                resultado de la conciliación se mostrará en el reporte de
+                cierre.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Efectivo en sistema
-                </span>
-                <span className="font-semibold">{fmt(systemCash)}</span>
-              </div>
-
               <div className="space-y-1.5">
                 <Label>Efectivo contado</Label>
                 <div className="relative">
@@ -470,34 +662,6 @@ export default function CierreCajaPage() {
                   />
                 </div>
               </div>
-
-              {difference !== null && (
-                <div
-                  className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium ${
-                    difference === 0
-                      ? "bg-green-50 text-green-700"
-                      : difference > 0
-                        ? "bg-blue-50 text-blue-700"
-                        : "bg-destructive/10 text-destructive"
-                  }`}
-                >
-                  <span className="flex items-center gap-1.5">
-                    {difference === 0 ? (
-                      <CheckCircle className="h-4 w-4" />
-                    ) : (
-                      <XCircle className="h-4 w-4" />
-                    )}
-                    {difference === 0
-                      ? "Cuadre perfecto"
-                      : difference > 0
-                        ? "Sobrante"
-                        : "Faltante"}
-                  </span>
-                  <span>
-                    {difference !== 0 && `${fmt(Math.abs(difference))}`}
-                  </span>
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -534,13 +698,8 @@ export default function CierreCajaPage() {
             <DialogTitle>¿Confirmar cierre de caja?</DialogTitle>
             <DialogDescription>
               Esta acción cerrará la sesión activa. No podrás registrar cobros
-              hasta abrir una nueva sesión.
-              {difference !== null && difference !== 0 && (
-                <span className="block mt-2 font-medium text-destructive">
-                  ⚠ Hay una diferencia de {fmt(Math.abs(difference))} en
-                  efectivo ({difference > 0 ? "sobrante" : "faltante"}).
-                </span>
-              )}
+              hasta abrir una nueva sesión. El resultado de la conciliación se
+              mostrará en el reporte de cierre.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
