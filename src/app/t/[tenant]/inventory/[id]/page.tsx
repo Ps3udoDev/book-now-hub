@@ -150,6 +150,20 @@ export default function InventoryProductDetailPage() {
     );
   }
 
+  const productFormData: Partial<ProductFormValues> = {
+    branch_id: product.branch_id,
+    name: product.name,
+    description: product.description ?? "",
+    sku: product.sku ?? "",
+    category: product.category ?? "",
+    brand: product.brand ?? "",
+    price: product.price,
+    currency_iso: product.currency_iso,
+    stock_quantity: product.stock_quantity,
+    min_stock_alert: product.min_stock_alert,
+    is_active: product.is_active,
+  };
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
@@ -172,7 +186,7 @@ export default function InventoryProductDetailPage() {
         <CardContent>
           <ProductForm
             branches={branches}
-            product={product}
+            product={productFormData}
             loading={saving}
             onSubmit={handleSubmit}
             onCancel={() => router.push(`/t/${tenantSlug}/inventory`)}

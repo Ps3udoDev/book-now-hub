@@ -1,4 +1,3 @@
-// src/app/api/appointments/[id]/advance/route.ts
 import { type NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createServerSB } from "@/lib/supabase/server";
@@ -34,7 +33,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   try {
     const { id: appointmentId } = await params;
 
-    // Autenticación
+    // Autenticacion
     const supabase = await createServerSB();
     const {
       data: { user },
@@ -110,7 +109,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     if (!cashRegister.is_active) {
       return NextResponse.json(
-        { error: "La caja registradora está inactiva" },
+        { error: "La caja registradora esta inactiva" },
         { status: 400 },
       );
     }
@@ -122,7 +121,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     );
     const amountInBase = exchangeRate ? amountNum * exchangeRate : null;
 
-    // Generar número de factura único por tenant
+    // Generar numero de factura unico por tenant
     const { count } = await supabaseAdmin
       .from("invoices")
       .select("id", { count: "exact", head: true })
@@ -145,11 +144,10 @@ export async function POST(request: NextRequest, { params }: Params) {
         currency_iso: cashRegister.currency_iso,
         exchange_rate_snapshot: exchangeRate,
         amount_local: amountInBase,
-        // @ts-expect-error — columna type añadida en fase2-tarea3-cobros.sql
         type: "advance",
         status: "paid",
         paid_at: now,
-        notes: `Anticipo — cita ${appointmentId}`,
+        notes: `Anticipo - cita ${appointmentId}`,
         created_by: user.id,
       })
       .select()
@@ -162,7 +160,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       );
     }
 
-    // 2. Crear línea de factura (el anticipo como ítem de servicio)
+    // 2. Crear linea de factura (el anticipo como item de servicio)
     const service = (appointment as any).service as {
       id: string;
       name: string;
@@ -175,7 +173,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         invoice_id: invoice.id,
         line_type: "service",
         description: service?.name
-          ? `Anticipo — ${service.name}`
+          ? `Anticipo - ${service.name}`
           : "Anticipo de pago",
         quantity: 1,
         unit_price: amountNum,
@@ -184,10 +182,10 @@ export async function POST(request: NextRequest, { params }: Params) {
       });
 
     if (lineError) {
-      // Revertir factura si falla la línea
+      // Revertir factura si falla la linea
       await supabaseAdmin.from("invoices").delete().eq("id", invoice.id);
       return NextResponse.json(
-        { error: `Error al crear línea de factura: ${lineError.message}` },
+        { error: `Error al crear linea de factura: ${lineError.message}` },
         { status: 500 },
       );
     }
@@ -214,13 +212,13 @@ export async function POST(request: NextRequest, { params }: Params) {
       );
     }
 
-    // El trigger sync_appointment_advance actualiza advance_paid_amount automáticamente.
-    // También actualizamos advance_amount si aún no estaba seteado.
+    // El trigger sync_appointment_advance actualiza advance_paid_amount automaticamente.
+    // Tambien actualizamos advance_amount si aun no estaba seteado.
     await supabaseAdmin
       .from("appointments")
       .update({ advance_amount: amountNum })
       .eq("id", appointmentId)
-      .eq("advance_amount", 0); // solo si todavía es 0
+      .eq("advance_amount", 0); // solo si todavia es 0
 
     return NextResponse.json({
       invoice,

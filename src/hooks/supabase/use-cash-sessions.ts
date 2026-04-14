@@ -13,7 +13,7 @@ import type { CashRegisterSession } from "@/types";
 export function useActiveSession(branchId: string | null) {
   const { data, error, isLoading, mutate } = useSWR<CashRegisterSession | null>(
     branchId ? `cash-sessions:active:${branchId}` : null,
-    () => (branchId ? cashSessionsService.getActiveSession(branchId) : null),
+    () => cashSessionsService.getActiveSession(branchId!),
     { revalidateOnFocus: false, dedupingInterval: 15000 },
   );
 
@@ -34,8 +34,7 @@ export function useClosedSessions(
   const filterKey = filters ? `${filters.from ?? ""}:${filters.to ?? ""}` : "";
   const { data, error, isLoading, mutate } = useSWR<EnrichedSession[]>(
     branchId ? `cash-sessions:closed:${branchId}:${filterKey}` : null,
-    () =>
-      branchId ? cashSessionsService.getClosedSessions(branchId, filters) : [],
+    () => cashSessionsService.getClosedSessions(branchId!, filters),
     { revalidateOnFocus: false, dedupingInterval: 30000 },
   );
 
@@ -51,8 +50,7 @@ export function useClosedSessions(
 export function useSessionWithDetails(sessionId: string | null) {
   const { data, error, isLoading, mutate } = useSWR<SessionWithDetails | null>(
     sessionId ? `cash-sessions:detail:${sessionId}` : null,
-    () =>
-      sessionId ? cashSessionsService.getSessionWithDetails(sessionId) : null,
+    () => cashSessionsService.getSessionWithDetails(sessionId!),
     { revalidateOnFocus: false, dedupingInterval: 60000 },
   );
 
@@ -68,7 +66,7 @@ export function useSessionWithDetails(sessionId: string | null) {
 export function useSessionMovements(sessionId: string | null) {
   const { data, error, isLoading, mutate } = useSWR<CashRegisterMovement[]>(
     sessionId ? `cash-sessions:movements:${sessionId}` : null,
-    () => (sessionId ? cashSessionsService.getSessionMovements(sessionId) : []),
+    () => cashSessionsService.getSessionMovements(sessionId!),
     { revalidateOnFocus: false, dedupingInterval: 15000 },
   );
 
@@ -87,7 +85,7 @@ export function useSessionSummary(sessionId: string | null) {
     summary: SummaryRow[];
   }>(
     sessionId ? `cash-sessions:summary:${sessionId}` : null,
-    () => (sessionId ? cashSessionsService.getSessionSummary(sessionId) : null),
+    () => cashSessionsService.getSessionSummary(sessionId!),
     { revalidateOnFocus: false, refreshInterval: 30000 },
   );
 

@@ -280,6 +280,9 @@ export default function CierreCajaPage() {
   const currencies = [...new Set(summary.map((r) => r.currency_code))].sort();
 
   const closingAmountNum = Number(closingAmount) || null;
+  const totalEgresos = movements
+    .filter((m) => m.movement_type === "expense")
+    .reduce((sum, m) => sum + Number(m.amount), 0);
 
   async function handleSaveMovement() {
     if (!activeSession) return;

@@ -303,9 +303,11 @@ export default function MisComisionesPage() {
                 <div>
                   <p className="font-medium">{debt.description}</p>
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(debt.created_at), "dd MMM yyyy", {
-                      locale: es,
-                    })}
+                    {debt.created_at
+                      ? format(new Date(debt.created_at), "dd MMM yyyy", {
+                          locale: es,
+                        })
+                      : "Sin fecha"}
                     {" · "}
                     Original: ${Number(debt.original_amount).toFixed(2)}
                   </p>

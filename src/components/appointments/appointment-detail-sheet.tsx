@@ -82,27 +82,30 @@ export function AppointmentDetailSheet({
   const statusActions = getStatusActions(appointment.status || "confirmed");
 
   async function handleStatusChange(action: string) {
+    if (!appointment?.id) return;
+    const appointmentId = appointment.id;
+
     setLoading(action);
     try {
       switch (action) {
         case "confirm":
-          await appointmentsService.confirmAppointment(appointment?.id);
+          await appointmentsService.confirmAppointment(appointmentId);
           toast.success("Cita confirmada");
           break;
         case "start":
-          await appointmentsService.startAppointment(appointment?.id);
+          await appointmentsService.startAppointment(appointmentId);
           toast.success("Cita iniciada");
           break;
         case "complete":
-          await appointmentsService.completeAppointment(appointment?.id);
+          await appointmentsService.completeAppointment(appointmentId);
           toast.success("Cita completada");
           break;
         case "cancel":
-          await appointmentsService.cancelAppointment(appointment?.id);
+          await appointmentsService.cancelAppointment(appointmentId);
           toast.success("Cita cancelada");
           break;
         case "no_show":
-          await appointmentsService.markNoShow(appointment?.id);
+          await appointmentsService.markNoShow(appointmentId);
           toast.success("Marcada como inasistencia");
           break;
       }

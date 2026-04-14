@@ -18,10 +18,7 @@ export function useConsumptions(
 
   const { data, error, isLoading, mutate } = useSWR<ConsumptionWithService[]>(
     key,
-    () =>
-      tenantId && specialistId
-        ? consumptionsService.getBySpecialist(tenantId, specialistId, options)
-        : [],
+    () => consumptionsService.getBySpecialist(tenantId!, specialistId!, options),
     { revalidateOnFocus: false, dedupingInterval: 15000 },
   );
 
@@ -43,10 +40,7 @@ export function useMonthStats(
     tenantId && specialistId
       ? `month-stats:${specialistId}:${year}-${month}`
       : null,
-    () =>
-      tenantId && specialistId
-        ? consumptionsService.getMonthStats(tenantId, specialistId, year, month)
-        : null,
+    () => consumptionsService.getMonthStats(tenantId!, specialistId!, year, month),
     { revalidateOnFocus: false, dedupingInterval: 30000 },
   );
 

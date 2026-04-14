@@ -105,6 +105,7 @@ export function PayOrderDialog({
     useCashRegistersByBranch(order?.branch_id ?? null);
 
   if (!order) return null;
+  const orderId = order.id;
 
   const items = order.items || [];
   const total = items.reduce((sum, i) => sum + i.subtotal, 0);
@@ -241,7 +242,7 @@ export function PayOrderDialog({
 
     setPaying(true);
     try {
-      const { invoice_number } = await ordersService.payOrder(order.id, {
+      const { invoice_number } = await ordersService.payOrder(orderId, {
         cash_register_id: cashRegisterId,
         payments,
         document_type: documentType,

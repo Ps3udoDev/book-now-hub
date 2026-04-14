@@ -27,6 +27,22 @@ interface PaymentEntry {
   reference_number?: string | null;
 }
 
+type OrderItem = {
+  id: string;
+  type: string;
+  item_id: string | null;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  buyer_type?: string;
+};
+
+type ProductOrderItem = OrderItem & {
+  type: "product";
+  item_id: string;
+};
+
 /**
  * POST /api/orders/:id/pay
  * Procesa el cobro de una comanda con uno o varios métodos de pago:
@@ -71,19 +87,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       );
     }
 
-    const items = (
-      order as unknown as {
-        items: {
-          id: string;
-          type: string;
-          item_id: string | null;
-          description: string;
-          quantity: number;
-          unit_price: number;
-          subtotal: number;
-        }[];
-      }
-    ).items;
+    const items = (order as unknown as { items: OrderItem[] }).items;
 
     if (!items || items.length === 0) {
       return NextResponse.json(
@@ -318,8 +322,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     // 5. Procesar items de tipo producto: descontar stock + registrar deudas
     const productItems = items.filter(
-      (i: { type: string; item_id: string | null; buyer_type?: string }) =>
-        i.type === "product" && i.item_id,
+      (i): i is ProductOrderItem => i.type === "product" && i.item_id !== null,
     );
 
     for (const item of productItems) {

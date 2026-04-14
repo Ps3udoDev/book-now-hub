@@ -8,7 +8,7 @@ import { ArrowLeft, Loader2, MinusCircle, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +88,7 @@ export default function ConsumosPage() {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ConsumptionForm>({
-    resolver: zodResolver(consumptionSchema),
+    resolver: zodResolver(consumptionSchema) as Resolver<ConsumptionForm>,
     defaultValues: {
       currency_code: "USD",
       deduct_from_commission: true,

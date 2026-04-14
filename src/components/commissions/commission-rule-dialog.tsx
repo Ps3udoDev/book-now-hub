@@ -4,7 +4,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -96,7 +96,7 @@ export function CommissionRuleDialog({
     reset,
     formState: { errors, isSubmitting },
   } = useForm<RuleForm>({
-    resolver: zodResolver(ruleSchema),
+    resolver: zodResolver(ruleSchema) as Resolver<RuleForm>,
     defaultValues: {
       scope: "all",
       commission_type: "percentage",
