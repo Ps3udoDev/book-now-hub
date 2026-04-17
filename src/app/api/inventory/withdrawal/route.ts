@@ -2,9 +2,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createServerSB } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
+  getInventoryUserContext,
   getProductInventoryContext,
   inventoryErrorResponse,
-  requireInventoryAdmin,
 } from "../_utils";
 
 export async function POST(request: NextRequest) {
@@ -52,8 +52,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const access = await requireInventoryAdmin(product.tenant_id, user.id);
-    if (access instanceof NextResponse) return access;
+    const userContext = await getInventoryUserContext(product.tenant_id, user.id);
+    if (!userContext) {
+      return NextResponse.json(
+        { error: "No tienes permisos para gestionar inventario" },
+        { status: 403 },
+      );
+    }
+
+    const { membership, profile } = userContext;
+    const isAdmin = ["owner", "admin", "manager"].includes(membership.role);
+
+    if (!isAdmin) {
+      if (!profile?.is_specialist || !profile.is_active) {
+        return NextResponse.json(
+          { error: "Solo especialistas activos pueden solicitar productos" },
+          { status: 403 },
+        );
+      }
+
+      if (body.specialist_id !== user.id) {
+        return NextResponse.json(
+          { error: "Solo puedes registrar retiros para tu propio usuario" },
+          { status: 403 },
+        );
+      }
+
+      if (profile.branch_id && body.branch_id !== profile.branch_id) {
+        return NextResponse.json(
+          { error: "No puedes retirar productos de otra sucursal" },
+          { status: 403 },
+        );
+      }
+    }
 
     const admin = supabaseAdmin as any;
     const { data, error } = await admin

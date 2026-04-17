@@ -106,8 +106,10 @@ export async function middleware(request: NextRequest) {
     }
 
     // Rutas públicas del tenant (login, register)
-    const tenantPublicPaths = ["/login", "/register", "/forgot-password"];
-    const isPublicTenantPath = tenantPublicPaths.includes(subPath);
+    const tenantPublicPaths = ["/login", "/register", "/forgot-password", "/productos"];
+    const isPublicTenantPath = tenantPublicPaths.some(
+      (publicPath) => subPath === publicPath || subPath.startsWith(`${publicPath}/`)
+    );
 
     if (isPublicTenantPath) {
       // IMPORTANTE: NO redirigir aunque haya sesión

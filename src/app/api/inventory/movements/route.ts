@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerSB } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getTenantUserRole } from "../_utils";
+import { getInventoryUserContext } from "../_utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,13 +30,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const membership = await getTenantUserRole(tenantId, user.id);
-    if (!membership) {
+    const userContext = await getInventoryUserContext(tenantId, user.id);
+    if (!userContext) {
       return NextResponse.json(
         { error: "Sin permisos en este tenant" },
         { status: 403 },
       );
     }
+
+    const { membership, profile } = userContext;
+    const isAdmin = ["owner", "admin", "manager"].includes(membership.role);
 
     const admin = supabaseAdmin as any;
     let query = admin
@@ -52,6 +55,19 @@ export async function GET(request: NextRequest) {
     if (specialistId) query = query.eq("specialist_id", specialistId);
     if (dateFrom) query = query.gte("created_at", dateFrom);
     if (dateTo) query = query.lte("created_at", dateTo);
+
+    if (!isAdmin) {
+      if (!profile?.is_specialist) {
+        return NextResponse.json(
+          { error: "Solo especialistas pueden ver sus retiros" },
+          { status: 403 },
+        );
+      }
+
+      query = query
+        .eq("movement_type", "specialist_withdrawal")
+        .eq("specialist_id", user.id);
+    }
 
     const { data, error } = await query;
 

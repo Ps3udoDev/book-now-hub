@@ -11,6 +11,11 @@ export type Theme = Tables["themes"]["Row"];
 export type Tenant = Tables["tenants"]["Row"];
 export type TenantModule = Tables["tenant_modules"]["Row"];
 export type TenantUser = Tables["tenant_users"]["Row"];
+export type TenantEcommerceSettings = Tables["tenant_ecommerce_settings"]["Row"];
+export type EcommerceStorefront =
+  Database["public"]["Views"]["v_ecommerce_storefront_public"]["Row"];
+export type EcommercePublicProduct =
+  Database["public"]["Views"]["v_ecommerce_products_public"]["Row"];
 
 export type Service = Tables["services"]["Row"];
 export type ServiceVariant = Tables["service_variants"]["Row"];

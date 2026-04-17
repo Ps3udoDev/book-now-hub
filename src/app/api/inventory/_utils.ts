@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 const INVENTORY_ADMIN_ROLES = ["owner", "admin", "manager"];
+const INVENTORY_MEMBER_ROLES = [...INVENTORY_ADMIN_ROLES, "employee"];
 
 export async function getProductInventoryContext(productId: string) {
   const admin = supabaseAdmin as any;
@@ -43,12 +44,57 @@ export async function getTenantUserRole(tenantId: string, userId: string) {
   return data as { role: string; is_active: boolean } | null;
 }
 
+export async function getInventoryUserContext(tenantId: string, userId: string) {
+  const membership = await getTenantUserRole(tenantId, userId);
+
+  if (!membership || !INVENTORY_MEMBER_ROLES.includes(membership.role)) {
+    return null;
+  }
+
+  const admin = supabaseAdmin as any;
+  const { data: profile, error } = await admin
+    .from("profiles")
+    .select("id, tenant_id, branch_id, full_name, is_specialist, is_active")
+    .eq("id", userId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return {
+    membership,
+    profile: (profile as {
+      id: string;
+      tenant_id: string;
+      branch_id: string | null;
+      full_name: string;
+      is_specialist: boolean | null;
+      is_active: boolean | null;
+    } | null),
+  };
+}
+
 export async function requireInventoryAdmin(tenantId: string, userId: string) {
   const membership = await getTenantUserRole(tenantId, userId);
 
   if (!membership || !INVENTORY_ADMIN_ROLES.includes(membership.role)) {
     return NextResponse.json(
       { error: "No tienes permisos para gestionar inventario" },
+      { status: 403 },
+    );
+  }
+
+  return membership;
+}
+
+export async function requireInventoryMember(tenantId: string, userId: string) {
+  const membership = await getTenantUserRole(tenantId, userId);
+
+  if (!membership || !INVENTORY_MEMBER_ROLES.includes(membership.role)) {
+    return NextResponse.json(
+      { error: "No tienes permisos para acceder al inventario" },
       { status: 403 },
     );
   }

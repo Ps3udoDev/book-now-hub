@@ -36,12 +36,15 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
   const [redirectTimeout, setRedirectTimeout] = useState(false);
 
   // Páginas públicas
-  const publicPages = [
+  const publicPagePrefixes = [
     `/t/${tenantSlug}/login`,
     `/t/${tenantSlug}/register`,
     `/t/${tenantSlug}/forgot-password`,
+    `/t/${tenantSlug}/productos`,
   ];
-  const isPublicPage = publicPages.includes(pathname);
+  const isPublicPage = publicPagePrefixes.some(
+    (publicPath) => pathname === publicPath || pathname.startsWith(`${publicPath}/`),
+  );
 
   // 1. Hook de verificación de acceso
   useEffect(() => {
@@ -203,6 +206,7 @@ function generateBreadcrumbs(pathname: string, tenantSlug: string) {
     customers: "Clientes",
     specialists: "Especialistas",
     inventory: "Inventario",
+    ecommerce: "Ecommerce",
     pos: "Punto de Venta",
     reports: "Reportes",
     settings: "Configuración",

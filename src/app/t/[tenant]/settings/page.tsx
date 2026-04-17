@@ -6,6 +6,7 @@ import {
   Building2,
   ChevronRight,
   Coins,
+  ShoppingBag,
   Palette,
   User,
 } from "lucide-react";
@@ -41,6 +42,13 @@ const settingsSections = [
     description: "Configura tasas de cambio para VES, COP y USD",
     href: "monedas",
     icon: Coins,
+    available: true,
+  },
+  {
+    title: "Ecommerce",
+    description: "Configura la tienda publica, templates y contacto por WhatsApp",
+    href: "ecommerce",
+    icon: ShoppingBag,
     available: true,
   },
   {

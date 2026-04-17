@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Loader2, Package, Plus, Search } from "lucide-react";
+import { ArrowRight, Loader2, Package, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/inventory";
 import { Button } from "@/components/ui/button";
@@ -125,12 +125,20 @@ export default function InventoryPage() {
             {products.length} productos registrados
           </p>
         </div>
-        <Button asChild>
-          <Link href={`/t/${tenantSlug}/inventory/new`}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo producto
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <Link href={`/t/${tenantSlug}/inventory/movements`}>
+              Ver movimientos
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href={`/t/${tenantSlug}/inventory/new`}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nuevo producto
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center">
