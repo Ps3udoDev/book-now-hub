@@ -9,6 +9,12 @@ export type Module = Tables["modules"]["Row"];
 export type Template = Tables["templates"]["Row"];
 export type Theme = Tables["themes"]["Row"];
 export type Tenant = Tables["tenants"]["Row"];
+export type PublicTenant =
+  Database["public"]["Views"]["v_tenants_public"]["Row"] & {
+    id: string;
+    slug: string;
+    name: string;
+  };
 export type TenantModule = Tables["tenant_modules"]["Row"];
 export type TenantUser = Tables["tenant_users"]["Row"];
 export type TenantEcommerceSettings =

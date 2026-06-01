@@ -1,16 +1,12 @@
 // src/providers/tenant-provider.tsx
 "use client";
 
-import {
-  createContext,
-  useContext,
-  type ReactNode,
-} from "react";
+import { createContext, type ReactNode, useContext } from "react";
 import { useTenantData } from "@/hooks/supabase/use-tenant";
-import type { Tenant, Module } from "@/types";
+import type { Module, PublicTenant } from "@/types";
 
 interface TenantContextValue {
-  tenant: Tenant | null;
+  tenant: PublicTenant | null;
   modules: Module[];
   loading: boolean;
   error: string | null;
@@ -25,7 +21,8 @@ interface TenantProviderProps {
 }
 
 export function TenantProvider({ tenantSlug, children }: TenantProviderProps) {
-  const { tenant, modules, isLoading, error, mutate } = useTenantData(tenantSlug);
+  const { tenant, modules, isLoading, error, mutate } =
+    useTenantData(tenantSlug);
 
   const refetch = async () => {
     await mutate();

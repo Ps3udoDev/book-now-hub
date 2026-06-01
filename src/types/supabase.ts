@@ -281,6 +281,13 @@ export type Database = {
             referencedColumns: ["tenant_id"]
           },
           {
+            foreignKeyName: "appointments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "appointments_workstation_id_fkey"
             columns: ["workstation_id"]
             isOneToOne: false
@@ -367,6 +374,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "branches_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -605,6 +619,13 @@ export type Database = {
             referencedColumns: ["tenant_id"]
           },
           {
+            foreignKeyName: "cafe_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cafe_orders_workstation_id_fkey"
             columns: ["workstation_id"]
             isOneToOne: false
@@ -721,6 +742,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "cash_register_closures_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -900,6 +928,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "cash_register_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       cash_register_summaries: {
@@ -1014,6 +1049,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "cash_registers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       cash_transfers: {
@@ -1084,6 +1126,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "cash_transfers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "cash_transfers_to_register_id_fkey"
@@ -1196,6 +1245,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "commission_rules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1337,6 +1393,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "commissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       currencies: {
@@ -1425,6 +1488,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "customer_favorites_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1581,6 +1651,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "customers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       exchange_rate_logs: {
@@ -1650,6 +1727,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "exchange_rate_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       exchange_rates: {
@@ -1703,6 +1787,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "exchange_rates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2150,6 +2241,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       menu_categories: {
@@ -2207,6 +2305,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "menu_categories_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2330,6 +2435,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "menu_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       modules: {
@@ -2452,6 +2564,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2645,6 +2764,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       payment_methods_config: {
@@ -2703,6 +2829,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "payment_methods_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       product_categories: {
@@ -2744,6 +2877,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "product_categories_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2880,6 +3020,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -2967,6 +3114,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3097,6 +3251,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "service_variants_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       services: {
@@ -3180,6 +3341,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "services_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3284,6 +3452,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "specialist_consumptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3457,6 +3632,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "specialist_debts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       specialist_schedules: {
@@ -3542,6 +3724,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "specialist_schedules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       specialist_services: {
@@ -3620,6 +3809,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "specialist_services_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3731,6 +3927,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "tenant_client_app_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3855,6 +4058,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "tenant_ecommerce_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       tenant_modules: {
@@ -3923,6 +4133,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "tenant_modules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       tenant_users: {
@@ -3988,6 +4205,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "tenant_users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4237,6 +4461,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "workstations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -4296,6 +4527,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "commissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       specialist_net_balance: {
@@ -4323,6 +4561,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4421,6 +4666,13 @@ export type Database = {
             referencedColumns: ["tenant_id"]
           },
           {
+            foreignKeyName: "cafe_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cafe_orders_workstation_id_fkey"
             columns: ["workstation_id"]
             isOneToOne: false
@@ -4469,6 +4721,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "cash_registers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4546,6 +4805,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "customers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4635,6 +4901,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "appointments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       v_ecommerce_categories_public: {
@@ -4657,6 +4930,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4697,6 +4977,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4774,6 +5061,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       v_product_stock_summary: {
@@ -4815,6 +5109,13 @@ export type Database = {
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
           },
+          {
+            foreignKeyName: "products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       v_specialist_availability: {
@@ -4853,6 +5154,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4908,6 +5216,72 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "specialist_debts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_tenants_public: {
+        Row: {
+          client_app_enabled: boolean | null
+          country_code: string | null
+          currency_code: string | null
+          custom_layout: Json | null
+          custom_theme: Json | null
+          favicon_url: string | null
+          id: string | null
+          locale: string | null
+          logo_url: string | null
+          name: string | null
+          slug: string | null
+          status: Database["public"]["Enums"]["tenant_status"] | null
+          theme_id: string | null
+          timezone: string | null
+        }
+        Insert: {
+          client_app_enabled?: boolean | null
+          country_code?: string | null
+          currency_code?: string | null
+          custom_layout?: Json | null
+          custom_theme?: Json | null
+          favicon_url?: string | null
+          id?: string | null
+          locale?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          status?: Database["public"]["Enums"]["tenant_status"] | null
+          theme_id?: string | null
+          timezone?: string | null
+        }
+        Update: {
+          client_app_enabled?: boolean | null
+          country_code?: string | null
+          currency_code?: string | null
+          custom_layout?: Json | null
+          custom_theme?: Json | null
+          favicon_url?: string | null
+          id?: string | null
+          locale?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          status?: Database["public"]["Enums"]["tenant_status"] | null
+          theme_id?: string | null
+          timezone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenants_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "themes"
+            referencedColumns: ["id"]
           },
         ]
       }
