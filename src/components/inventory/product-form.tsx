@@ -1,8 +1,8 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
-import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -99,7 +99,9 @@ export function ProductForm({
             placeholder="Ej. Shampoo hidratante"
             {...register("name", { required: "El nombre es requerido" })}
           />
-          {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+          {errors.name && (
+            <p className="text-sm text-destructive">{errors.name.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -117,7 +119,9 @@ export function ProductForm({
             ))}
           </select>
           {errors.branch_id && (
-            <p className="text-sm text-destructive">{errors.branch_id.message}</p>
+            <p className="text-sm text-destructive">
+              {errors.branch_id.message}
+            </p>
           )}
         </div>
 
@@ -128,7 +132,11 @@ export function ProductForm({
 
         <div className="space-y-2">
           <Label htmlFor="category">Categoría</Label>
-          <Input id="category" placeholder="Ej. Shampoos" {...register("category")} />
+          <Input
+            id="category"
+            placeholder="Ej. Shampoos"
+            {...register("category")}
+          />
         </div>
 
         <div className="space-y-2">
@@ -149,23 +157,51 @@ export function ProductForm({
               min: { value: 0, message: "El precio debe ser positivo" },
             })}
           />
-          {errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>}
+          {errors.price && (
+            <p className="text-sm text-destructive">{errors.price.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="currency_iso">Moneda</Label>
-          <Input id="currency_iso" placeholder="USD" {...register("currency_iso")} />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="stock_quantity">Stock inicial</Label>
           <Input
-            id="stock_quantity"
-            type="number"
-            min="0"
-            {...register("stock_quantity", { valueAsNumber: true })}
+            id="currency_iso"
+            placeholder="USD"
+            {...register("currency_iso")}
           />
         </div>
+
+        {product?.name ? (
+          <div className="space-y-2">
+            <Label htmlFor="stock_quantity">Stock actual</Label>
+            <Input
+              id="stock_quantity"
+              type="number"
+              value={product?.stock_quantity ?? 0}
+              readOnly
+              disabled
+              className="bg-muted/40"
+            />
+            <p className="text-xs text-muted-foreground">
+              El stock se ajusta desde <strong>Inventario → Ajustes</strong>, no
+              directamente aquí.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="stock_quantity">Stock inicial</Label>
+            <Input
+              id="stock_quantity"
+              type="number"
+              min="0"
+              {...register("stock_quantity", { valueAsNumber: true })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Se registrará como movimiento de entrada &quot;Stock
+              inicial&quot;.
+            </p>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="min_stock_alert">Alerta mínima</Label>

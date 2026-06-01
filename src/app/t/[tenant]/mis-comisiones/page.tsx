@@ -15,6 +15,7 @@ import { es } from "date-fns/locale";
 import {
   ChevronLeft,
   ChevronRight,
+  Coffee,
   Loader2,
   MinusCircle,
   PercentCircle,
@@ -40,11 +41,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCafeOrders } from "@/hooks/supabase/use-cafe-orders";
 import { useMyCommissions } from "@/hooks/supabase/use-commissions";
 import { useConsumptions } from "@/hooks/supabase/use-consumptions";
 import { useOutstandingDebts } from "@/hooks/supabase/use-debts";
 import { commissionsService } from "@/lib/services/commissions";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import {
+  getCafeOrderStatusClassName,
+  getCafeOrderStatusLabel,
+} from "@/lib/utils/cafeteria";
 import type { CommissionStatus } from "@/types";
 
 const STATUS_OPTIONS: { value: CommissionStatus | "all"; label: string }[] = [
@@ -79,6 +85,16 @@ export default function MisComisionesPage() {
     year,
     month,
   });
+  const { orders: cafeOrders, isLoading: cafeOrdersLoading } = useCafeOrders(
+    {
+      tenant_id: tenantId ?? undefined,
+      specialist_id: specialistId ?? undefined,
+      order_type: "specialist",
+      from: firstDay,
+      to: lastDay,
+    },
+    Boolean(tenantId && specialistId),
+  );
   const { consumptions } = useConsumptions(tenantId, specialistId, {
     from: firstDay,
     to: lastDay,
@@ -493,6 +509,79 @@ export default function MisComisionesPage() {
           <p className="text-2xl font-bold text-emerald-600">
             ${monthNet.toFixed(2)}
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Coffee className="h-4 w-4 text-amber-700" />
+            Historial de cafetería
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {cafeOrdersLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : cafeOrders.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground py-8">
+              Sin pedidos de cafetería en este período
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Pedido</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Cargo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cafeOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell>
+                      <p className="font-medium">#{order.order_number}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {order.items
+                          .map((item) => `${item.quantity}x ${item.description}`)
+                          .join(" · ")}
+                      </p>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {format(new Date(order.created_at), "dd MMM yyyy HH:mm", {
+                        locale: es,
+                      })}
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      ${Number(order.total).toFixed(2)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={getCafeOrderStatusClassName(order.status)}
+                      >
+                        {getCafeOrderStatusLabel(order.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {order.charge_to_commissions ? (
+                        <Badge variant="secondary">
+                          {order.specialist_consumption_id
+                            ? "Descontado"
+                            : "A comisiones"}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Caja</Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

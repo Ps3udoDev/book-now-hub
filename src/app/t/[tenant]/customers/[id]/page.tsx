@@ -1,20 +1,21 @@
 // src/app/t/[tenant]/customers/[id]/page.tsx
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   ArrowLeft,
-  Loader2,
   Calendar,
   Clock,
-  Phone,
+  Loader2,
   Mail,
   MessageSquare,
+  Phone,
 } from "lucide-react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { FaInstagram } from "react-icons/fa";
 import { toast } from "sonner";
-
+import { CustomerForm, LinkAccountDialog } from "@/components/customers";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,14 +24,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CustomerForm, LinkAccountDialog } from "@/components/customers";
 import { useCustomer } from "@/hooks/supabase/use-customers";
 import {
   customersService,
   type UpdateCustomerData,
 } from "@/lib/services/customers";
+import { storageService } from "@/lib/services/storage";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 export default function CustomerDetailPage() {
   const params = useParams();
@@ -39,17 +40,38 @@ export default function CustomerDetailPage() {
   const customerId = params.id as string;
 
   const { customer, isLoading, error, mutate } = useCustomer(customerId);
+  const { tenant } = useAuthStore();
 
   const handleSubmit = async (
-    data: UpdateCustomerData & { tags: string[] }
+    data: UpdateCustomerData & {
+      tags: string[];
+      avatarFile?: File | null;
+      avatar_url?: string | null;
+    },
   ) => {
     try {
-      await customersService.updateCustomer(customerId, data);
+      // Subir nuevo avatar si se seleccionó uno
+      let newAvatarUrl: string | null | undefined = data.avatar_url;
+      if (data.avatarFile && tenant?.id) {
+        const path = storageService.buildPath(
+          "customers",
+          tenant.id,
+          data.avatarFile.name,
+        );
+        newAvatarUrl = await storageService.uploadImage(data.avatarFile, path);
+      }
+
+      const { avatarFile: _af, ...rest } = data;
+
+      await customersService.updateCustomer(customerId, {
+        ...rest,
+        avatar_url: newAvatarUrl ?? null,
+      });
       toast.success("Cliente actualizado");
       mutate();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Error al actualizar"
+        error instanceof Error ? error.message : "Error al actualizar",
       );
       throw error;
     }
@@ -110,9 +132,7 @@ export default function CustomerDetailPage() {
                 {tag}
               </Badge>
             ))}
-            {!customer.is_active && (
-              <Badge variant="outline">Inactivo</Badge>
-            )}
+            {!customer.is_active && <Badge variant="outline">Inactivo</Badge>}
           </div>
         </div>
 
@@ -152,9 +172,7 @@ export default function CustomerDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle>Editar información</CardTitle>
-              <CardDescription>
-                Actualiza los datos del cliente
-              </CardDescription>
+              <CardDescription>Actualiza los datos del cliente</CardDescription>
             </CardHeader>
             <CardContent>
               <CustomerForm
@@ -178,9 +196,7 @@ export default function CustomerDetailPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">0</p>
-                <p className="text-xs text-muted-foreground">
-                  Próximamente
-                </p>
+                <p className="text-xs text-muted-foreground">Próximamente</p>
               </CardContent>
             </Card>
             <Card>
@@ -204,9 +220,7 @@ export default function CustomerDetailPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">$0</p>
-                <p className="text-xs text-muted-foreground">
-                  Próximamente
-                </p>
+                <p className="text-xs text-muted-foreground">Próximamente</p>
               </CardContent>
             </Card>
           </div>
@@ -224,8 +238,8 @@ export default function CustomerDetailPage() {
                 <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p className="font-medium">Sin historial de citas</p>
                 <p className="text-sm mt-1">
-                  El historial se mostrará aquí cuando el módulo de
-                  agendamiento esté activo
+                  El historial se mostrará aquí cuando el módulo de agendamiento
+                  esté activo
                 </p>
               </div>
             </CardContent>
@@ -259,27 +273,27 @@ export default function CustomerDetailPage() {
                   Registrado el{" "}
                   {customer.created_at
                     ? new Date(customer.created_at).toLocaleDateString("es", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })
-                    : "Fecha no disponible"
-                  }
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
+                    : "Fecha no disponible"}
                 </span>
               </div>
-              {customer.updated_at && customer.updated_at !== customer.created_at && (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  <span>
-                    Última actualización{" "}
-                    {new Date(customer.updated_at).toLocaleDateString("es", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </span>
-                </div>
-              )}
+              {customer.updated_at &&
+                customer.updated_at !== customer.created_at && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      Última actualización{" "}
+                      {new Date(customer.updated_at).toLocaleDateString("es", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                )}
             </CardContent>
           </Card>
         </TabsContent>

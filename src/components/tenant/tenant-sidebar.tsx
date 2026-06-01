@@ -36,6 +36,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { useActiveBranches } from "@/hooks/supabase/use-branches";
+import { useCafeteriaQrWorkstations } from "@/hooks/supabase/use-cafeteria-qr";
 import { useTenant } from "@/providers/tenant-provider";
 
 const moduleIcons: Record<string, LucideIcon> = {
@@ -61,6 +63,7 @@ const implementedModuleSlugs = new Set([
   "workstations",
   "inventory",
   "ecommerce",
+  "cafeteria",
 ]);
 
 type SidebarItem = {
@@ -78,12 +81,18 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
   const pathname = usePathname();
   const { tenant, tenantUser } = useAuthStore();
   const { modules } = useTenant();
+  const { branches } = useActiveBranches(tenant?.id ?? null);
 
   const tenantSlug = tenant?.slug || "";
   const basePath = `/t/${tenantSlug}`;
   const isAdminOrOwner = ["owner", "admin"].includes(tenantUser?.role ?? "");
   const canManageInventory = ["owner", "admin", "manager"].includes(
     tenantUser?.role ?? "",
+  );
+  const currentBranchId = branches[0]?.id ?? null;
+  const { workstations: cafeteriaStations } = useCafeteriaQrWorkstations(
+    tenant?.id ?? null,
+    currentBranchId,
   );
 
   const fixedItems: SidebarItem[] = [
@@ -151,6 +160,18 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
       icon: Package,
       available: true,
     },
+    {
+      title: "Menú cafetería",
+      url: `${basePath}/cafeteria/menu`,
+      icon: Coffee,
+      available: true,
+    },
+    {
+      title: "Cocina cafetería",
+      url: `${basePath}/cafeteria/cocina`,
+      icon: Coffee,
+      available: true,
+    },
     ...(canManageInventory
       ? [
           {
@@ -180,7 +201,22 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
       icon: Settings,
       available: true,
     },
+    {
+      title: "Settings cafetería",
+      url: `${basePath}/settings/cafeteria`,
+      icon: Coffee,
+      available: true,
+    },
   ];
+
+  const cafeteriaStationItems: SidebarItem[] = cafeteriaStations
+    .filter((station) => station.cafeteria_qr_enabled && station.cafeteria_qr_slug)
+    .map((station) => ({
+      title: station.name,
+      url: `${basePath}/cafeteria/estaciones/${station.id}`,
+      icon: Coffee,
+      available: true,
+    }));
 
   const isActive = (url: string) =>
     pathname === url || pathname.startsWith(`${url}/`);
@@ -269,6 +305,15 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
             <SidebarMenu>{operationItems.map(renderSidebarItem)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {cafeteriaStationItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Cafetería QR</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>{cafeteriaStationItems.map(renderSidebarItem)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel>Sistema</SidebarGroupLabel>

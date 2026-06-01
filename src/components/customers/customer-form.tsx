@@ -1,18 +1,16 @@
 // src/components/customers/customer-form.tsx
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, X, Plus } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import type { Customer } from "@/types";
 
 // Códigos de país comunes para Venezuela
@@ -80,7 +80,13 @@ type CustomerFormData = z.infer<typeof customerSchema>;
 
 interface CustomerFormProps {
   customer?: Customer | null;
-  onSubmit: (data: CustomerFormData & { tags: string[] }) => Promise<void>;
+  onSubmit: (
+    data: CustomerFormData & {
+      tags: string[];
+      avatarFile?: File | null;
+      avatar_url?: string | null;
+    },
+  ) => Promise<void>;
   onCancel?: () => void;
   isLoading?: boolean;
 }
@@ -94,6 +100,11 @@ export function CustomerForm({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>(customer?.tags || []);
   const [newTag, setNewTag] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(
+    customer?.avatar_url || null,
+  );
+  const [avatarRemoved, setAvatarRemoved] = useState(false);
 
   const {
     register,
@@ -113,7 +124,12 @@ export function CustomerForm({
       document_type: customer?.document_type || "",
       document_number: customer?.document_number || "",
       birth_date: customer?.birth_date || "",
-      gender: customer?.gender as "male" | "female" | "other" | null | undefined,
+      gender: customer?.gender as
+        | "male"
+        | "female"
+        | "other"
+        | null
+        | undefined,
       address: customer?.address || "",
       city: customer?.city || "",
       notes: customer?.notes || "",
@@ -129,10 +145,15 @@ export function CustomerForm({
   const handleFormSubmit = async (data: CustomerFormData) => {
     try {
       setSubmitError(null);
-      await onSubmit({ ...data, tags });
+      await onSubmit({
+        ...data,
+        tags,
+        avatarFile,
+        avatar_url: avatarRemoved ? null : currentAvatarUrl,
+      });
     } catch (error) {
       setSubmitError(
-        error instanceof Error ? error.message : "Error al guardar"
+        error instanceof Error ? error.message : "Error al guardar",
       );
     }
   };
@@ -156,6 +177,27 @@ export function CustomerForm({
       {/* Información personal */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Información personal</h3>
+
+        <div className="space-y-2">
+          <Label>Foto de perfil</Label>
+          <ImageUpload
+            variant="circle"
+            currentImageUrl={currentAvatarUrl}
+            fallbackText={
+              (customer?.first_name?.charAt(0) || "") +
+              (customer?.last_name?.charAt(0) || "")
+            }
+            onImageChange={(file) => {
+              setAvatarFile(file);
+              if (file) setAvatarRemoved(false);
+            }}
+            onRemove={() => {
+              setCurrentAvatarUrl(null);
+              setAvatarRemoved(true);
+            }}
+            disabled={loading}
+          />
+        </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
@@ -195,10 +237,7 @@ export function CustomerForm({
             <Select
               value={gender || ""}
               onValueChange={(value) =>
-                setValue(
-                  "gender",
-                  value as "male" | "female" | "other" | null
-                )
+                setValue("gender", value as "male" | "female" | "other" | null)
               }
               disabled={loading}
             >
@@ -352,9 +391,7 @@ export function CustomerForm({
             </Badge>
           ))}
           {tags.length === 0 && (
-            <span className="text-sm text-muted-foreground">
-              Sin etiquetas
-            </span>
+            <span className="text-sm text-muted-foreground">Sin etiquetas</span>
           )}
         </div>
 

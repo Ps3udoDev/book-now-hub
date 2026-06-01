@@ -1,24 +1,23 @@
 // src/components/customers/customer-card.tsx
 "use client";
 
-import Link from "next/link";
 import {
-  Phone,
+  Calendar,
   Instagram,
-  
+  MapPin,
   MoreHorizontal,
   Pencil,
+  Phone,
   Trash2,
   User,
-  UserX,
   UserCheck,
-  Calendar,
-  MapPin,
+  UserX,
 } from "lucide-react";
+import Link from "next/link";
 import { FaInstagram } from "react-icons/fa";
-
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -33,7 +32,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Customer } from "@/types";
 
 interface CustomerCardProps {
@@ -89,7 +87,7 @@ export function CustomerCard({
     const birth = new Date(customer.birth_date);
     birth.setFullYear(today.getFullYear());
     const diffDays = Math.ceil(
-      (birth.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      (birth.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
     );
     return diffDays >= 0 && diffDays <= 7;
   };
@@ -104,6 +102,9 @@ export function CustomerCard({
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12">
+              {customer.avatar_url ? (
+                <AvatarImage src={customer.avatar_url} alt={fullName} />
+              ) : null}
               <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                 {getInitials()}
               </AvatarFallback>
@@ -197,7 +198,7 @@ export function CustomerCard({
               <a
                 href={`https://wa.me/${customer.phone_country_code?.replace(
                   "+",
-                  ""
+                  "",
                 )}${customer.phone}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -282,6 +283,9 @@ export function CustomerSelectItem({
       }`}
     >
       <Avatar className="h-10 w-10">
+        {customer.avatar_url ? (
+          <AvatarImage src={customer.avatar_url} alt={fullName} />
+        ) : null}
         <AvatarFallback className="bg-primary/10 text-primary text-sm">
           {getInitials()}
         </AvatarFallback>

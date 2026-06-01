@@ -27,6 +27,15 @@ export interface UpdateWorkstationData {
     floor?: number;
     compatible_services?: string[] | null;
     is_active?: boolean;
+    cafeteria_qr_enabled?: boolean;
+    cafeteria_qr_slug?: string | null;
+    cafeteria_qr_last_generated_at?: string | null;
+    cafeteria_qr_updated_by?: string | null;
+}
+
+export interface CafeteriaQrWorkstation extends Workstation {
+    current_specialist_id?: string | null;
+    current_specialist_name?: string | null;
 }
 
 // Tipos de estación predefinidos
@@ -98,6 +107,27 @@ class WorkstationsService {
         }
 
         return workstation;
+    }
+
+    async updateCafeteriaQr(
+        workstationId: string,
+        data: {
+            enabled: boolean;
+            slug?: string | null;
+        }
+    ): Promise<CafeteriaQrWorkstation> {
+        const res = await fetch(`/api/cafeteria/settings/workstations/${workstationId}/qr`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+        });
+
+        const json = await res.json();
+        if (!res.ok) {
+            throw new Error(json.error || "No se pudo actualizar el QR de cafetería");
+        }
+
+        return json.workstation as CafeteriaQrWorkstation;
     }
 
     /**
@@ -203,6 +233,25 @@ class WorkstationsService {
         }
 
         return data || [];
+    }
+
+    async getCafeteriaQrWorkstations(
+        tenantId: string,
+        branchId?: string | null,
+    ): Promise<CafeteriaQrWorkstation[]> {
+        const params = new URLSearchParams({ tenant_id: tenantId });
+        if (branchId) {
+            params.set("branch_id", branchId);
+        }
+
+        const res = await fetch(`/api/cafeteria/settings/workstations?${params.toString()}`);
+        const json = await res.json();
+
+        if (!res.ok) {
+            throw new Error(json.error || "No se pudieron obtener las estaciones de cafetería");
+        }
+
+        return (json.workstations || []) as CafeteriaQrWorkstation[];
     }
 
     /**

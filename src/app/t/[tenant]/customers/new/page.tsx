@@ -1,19 +1,19 @@
 // src/app/t/[tenant]/customers/new/page.tsx
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-
+import { CustomerForm } from "@/components/customers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CustomerForm } from "@/components/customers";
-import { useAuthStore } from "@/lib/stores/auth-store";
 import {
-  customersService,
   type CreateCustomerData,
+  customersService,
 } from "@/lib/services/customers";
+import { storageService } from "@/lib/services/storage";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 export default function NewCustomerPage() {
   const params = useParams();
@@ -22,7 +22,11 @@ export default function NewCustomerPage() {
   const { tenant } = useAuthStore();
 
   const handleSubmit = async (
-    data: Omit<CreateCustomerData, "tenant_id"> & { tags: string[] }
+    data: Omit<CreateCustomerData, "tenant_id"> & {
+      tags: string[];
+      avatarFile?: File | null;
+      avatar_url?: string | null;
+    },
   ) => {
     if (!tenant?.id) {
       toast.error("Error: No se pudo identificar el tenant");
@@ -30,16 +34,30 @@ export default function NewCustomerPage() {
     }
 
     try {
+      // Subir avatar si se seleccionó uno
+      let avatar_url: string | null | undefined;
+      if (data.avatarFile) {
+        const path = storageService.buildPath(
+          "customers",
+          tenant.id,
+          data.avatarFile.name,
+        );
+        avatar_url = await storageService.uploadImage(data.avatarFile, path);
+      }
+
+      const { avatarFile: _af, avatar_url: _au, ...rest } = data;
+
       await customersService.createCustomer({
-        ...data,
+        ...rest,
         tenant_id: tenant.id,
+        ...(avatar_url && { avatar_url }),
       });
 
       toast.success("Cliente creado exitosamente");
       router.push(`/t/${tenantSlug}/customers`);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Error al crear el cliente"
+        error instanceof Error ? error.message : "Error al crear el cliente",
       );
       throw error;
     }

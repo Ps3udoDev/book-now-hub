@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createServerSB } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSB } from "@/lib/supabase/server";
 import { requireProductWriteAccess, requireTenantAccess } from "./_utils";
 
 interface CreateProductBody {
@@ -74,7 +74,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const productIds = (products || []).map((product: { id: string }) => product.id);
+    const productIds = (products || []).map(
+      (product: { id: string }) => product.id,
+    );
     const adminImages = supabaseAdmin as any;
     const adminStock = supabaseAdmin as any;
 
@@ -128,7 +130,9 @@ export async function GET(request: NextRequest) {
         sort_order: number | null;
       }>;
       const primaryImage =
-        productImages.find((image) => image.is_primary) || productImages[0] || null;
+        productImages.find((image) => image.is_primary) ||
+        productImages[0] ||
+        null;
       const stockSummary = stockByProduct.get(product.id) || null;
 
       return {
@@ -169,7 +173,12 @@ export async function POST(request: NextRequest) {
 
     const body = (await request.json()) as CreateProductBody;
 
-    if (!body.tenant_id || !body.branch_id || !body.name || body.price === undefined) {
+    if (
+      !body.tenant_id ||
+      !body.branch_id ||
+      !body.name ||
+      body.price === undefined
+    ) {
       return NextResponse.json(
         { error: "Campos requeridos: tenant_id, branch_id, name, price" },
         { status: 400 },
@@ -197,6 +206,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Stock inicial: se registra como movimiento "entry" para que
+    // v_product_stock_summary.calculated_stock lo refleje. Si guardamos
+    // stock_quantity directamente, el trigger trg_inventory_movements_sync_stock
+    // lo sobreescribirá con 0 en el primer movimiento posterior.
+    const initialStock = Math.max(0, Math.floor(body.stock_quantity ?? 0));
+
     const { data: product, error } = await admin
       .from("products")
       .insert({
@@ -209,7 +224,7 @@ export async function POST(request: NextRequest) {
         brand: body.brand?.trim() || null,
         price: body.price,
         currency_iso: body.currency_iso || "USD",
-        stock_quantity: body.stock_quantity ?? 0,
+        stock_quantity: 0,
         min_stock_alert: body.min_stock_alert ?? 0,
         is_active: body.is_active ?? true,
       })
@@ -218,6 +233,41 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Registrar el movimiento de entrada para el stock inicial
+    if (initialStock > 0) {
+      const { error: movementError } = await admin
+        .from("inventory_movements")
+        .insert({
+          product_id: product.id,
+          branch_id: product.branch_id,
+          movement_type: "entry",
+          quantity: initialStock,
+          reason: "Stock inicial",
+          created_by: user.id,
+        });
+
+      if (movementError) {
+        // Revertir el producto creado para mantener consistencia
+        await admin.from("products").delete().eq("id", product.id);
+        return NextResponse.json(
+          {
+            error: `Producto creado pero falló el stock inicial: ${movementError.message}`,
+          },
+          { status: 500 },
+        );
+      }
+
+      // Releer el producto para devolver el stock_quantity sincronizado
+      const { data: refreshed } = await admin
+        .from("products")
+        .select("*")
+        .eq("id", product.id)
+        .single();
+      if (refreshed) {
+        return NextResponse.json({ product: refreshed }, { status: 201 });
+      }
     }
 
     return NextResponse.json({ product }, { status: 201 });

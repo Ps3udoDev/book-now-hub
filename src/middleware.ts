@@ -1,9 +1,12 @@
 // src/middleware.ts
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 // Landing pública
 const PUBLIC_ROUTES = ["/"];
+
+// Rutas auth de Supabase (callback OAuth, email confirm, password reset)
+const AUTH_PUBLIC_PREFIXES = ["/auth/callback", "/auth/confirm"];
 
 // Rutas de ADMIN (root console) - sin /t/
 const ADMIN_ROUTES = [
@@ -23,6 +26,7 @@ const RESERVED_SLUGS = [
   "admin",
   "api",
   "auth",
+  "c",
   "login",
   "register",
   "t",
@@ -37,7 +41,7 @@ const RESERVED_SLUGS = [
 function isAdminRoute(pathname: string): boolean {
   if (pathname === "/") return false;
   return ADMIN_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
 }
 
@@ -45,8 +49,17 @@ function isTenantRoute(pathname: string): boolean {
   return pathname.startsWith("/t/");
 }
 
+function isClientRoute(pathname: string): boolean {
+  return pathname.startsWith("/c/");
+}
+
 function extractTenantSlug(pathname: string): string | null {
   const match = pathname.match(/^\/t\/([^/]+)/);
+  return match ? match[1] : null;
+}
+
+function extractClientTenantSlug(pathname: string): string | null {
+  const match = pathname.match(/^\/c\/([^/]+)/);
   return match ? match[1] : null;
 }
 
@@ -55,11 +68,21 @@ function getTenantSubPath(pathname: string): string {
   return match?.[1] || "/";
 }
 
+function getClientSubPath(pathname: string): string {
+  const match = pathname.match(/^\/c\/[^/]+(\/.*)?$/);
+  return match?.[1] || "/";
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 1. Rutas públicas - pasar directo
   if (PUBLIC_ROUTES.includes(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Auth callbacks de Supabase no requieren sesion previa
+  if (AUTH_PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return NextResponse.next();
   }
 
@@ -73,16 +96,16 @@ export async function middleware(request: NextRequest) {
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value);
+          });
           response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
         },
       },
-    }
+    },
   );
 
   const {
@@ -106,9 +129,15 @@ export async function middleware(request: NextRequest) {
     }
 
     // Rutas públicas del tenant (login, register)
-    const tenantPublicPaths = ["/login", "/register", "/forgot-password", "/productos"];
+    const tenantPublicPaths = [
+      "/login",
+      "/register",
+      "/forgot-password",
+      "/productos",
+    ];
     const isPublicTenantPath = tenantPublicPaths.some(
-      (publicPath) => subPath === publicPath || subPath.startsWith(`${publicPath}/`)
+      (publicPath) =>
+        subPath === publicPath || subPath.startsWith(`${publicPath}/`),
     );
 
     if (isPublicTenantPath) {
@@ -122,13 +151,59 @@ export async function middleware(request: NextRequest) {
     // Rutas privadas del tenant - requieren auth
     if (!user) {
       return NextResponse.redirect(
-        new URL(`/t/${tenantSlug}/login`, request.url)
+        new URL(`/t/${tenantSlug}/login`, request.url),
       );
     }
 
     // Usuario autenticado - pasar el slug en headers
     // La verificación de pertenencia al tenant se hace en el layout
     response.headers.set("x-tenant-slug", tenantSlug);
+    return response;
+  }
+
+  // ============================================
+  // 2.5 RUTAS DE CLIENTE FINAL (/c/[tenant]/...)
+  // ============================================
+  if (isClientRoute(pathname)) {
+    const tenantSlug = extractClientTenantSlug(pathname);
+    const subPath = getClientSubPath(pathname);
+
+    if (!tenantSlug) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    if (RESERVED_SLUGS.includes(tenantSlug.toLowerCase())) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    // Rutas publicas del cliente final
+    const clientPublicPaths = [
+      "/login",
+      "/register",
+      "/forgot-password",
+      "/reset-password",
+      "/verify-email",
+    ];
+    const isPublicClientPath = clientPublicPaths.some(
+      (publicPath) =>
+        subPath === publicPath || subPath.startsWith(`${publicPath}/`),
+    );
+
+    if (isPublicClientPath) {
+      response.headers.set("x-tenant-slug", tenantSlug);
+      response.headers.set("x-client-app", "1");
+      return response;
+    }
+
+    // Rutas privadas del cliente final - requieren auth
+    if (!user) {
+      return NextResponse.redirect(
+        new URL(`/c/${tenantSlug}/login`, request.url),
+      );
+    }
+
+    response.headers.set("x-tenant-slug", tenantSlug);
+    response.headers.set("x-client-app", "1");
     return response;
   }
 

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createServerSB } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { createServerSB } from "@/lib/supabase/server";
 import {
   getProductWithTenant,
   requireProductWriteAccess,
@@ -67,7 +67,10 @@ export async function GET(
     ]);
 
     if (productError) {
-      return NextResponse.json({ error: productError.message }, { status: 500 });
+      return NextResponse.json(
+        { error: productError.message },
+        { status: 500 },
+      );
     }
     if (imagesError) {
       return NextResponse.json({ error: imagesError.message }, { status: 500 });
@@ -117,7 +120,10 @@ export async function PUT(
       );
     }
 
-    const access = await requireProductWriteAccess(productBase.tenant_id, user.id);
+    const access = await requireProductWriteAccess(
+      productBase.tenant_id,
+      user.id,
+    );
     if (access instanceof NextResponse) return access;
 
     const admin = supabaseAdmin as any;
@@ -139,16 +145,31 @@ export async function PUT(
       }
     }
 
+    // stock_quantity se controla exclusivamente desde inventory_movements;
+    // aceptarlo aquí dejaría el valor inconsistente con calculated_stock.
+    const { stock_quantity: _ignored, ...safeBody } =
+      body as UpdateProductBody & {
+        stock_quantity?: number;
+      };
+
     const { data: product, error } = await admin
       .from("products")
       .update({
-        ...body,
-        sku: body.sku === undefined ? undefined : body.sku?.trim() || null,
+        ...safeBody,
+        sku:
+          safeBody.sku === undefined ? undefined : safeBody.sku?.trim() || null,
         description:
-          body.description === undefined ? undefined : body.description?.trim() || null,
+          safeBody.description === undefined
+            ? undefined
+            : safeBody.description?.trim() || null,
         category:
-          body.category === undefined ? undefined : body.category?.trim() || null,
-        brand: body.brand === undefined ? undefined : body.brand?.trim() || null,
+          safeBody.category === undefined
+            ? undefined
+            : safeBody.category?.trim() || null,
+        brand:
+          safeBody.brand === undefined
+            ? undefined
+            : safeBody.brand?.trim() || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
@@ -193,7 +214,10 @@ export async function DELETE(
       );
     }
 
-    const access = await requireProductWriteAccess(productBase.tenant_id, user.id);
+    const access = await requireProductWriteAccess(
+      productBase.tenant_id,
+      user.id,
+    );
     if (access instanceof NextResponse) return access;
 
     const admin = supabaseAdmin as any;

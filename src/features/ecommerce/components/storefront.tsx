@@ -3,16 +3,20 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  Menu,
   Minus,
+  Monitor,
   Package,
   Plus,
   Search,
   ShoppingBag,
+  Smartphone,
   Store,
   X,
 } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -744,48 +748,101 @@ function StorefrontHeader({
   onSectionChange?: (section: StorefrontSectionKey) => void;
 }) {
   const template = getEcommerceTemplate(storefront.template_slug);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-  if (template.layout === "neo") {
-    return (
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-black/40 backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4 md:px-8">
-          <div
-            className="text-2xl font-black tracking-tight text-[color:var(--ecommerce-primary)]"
-            style={{ fontFamily: template.fontDisplay }}
-          >
+  const mobileNavigation = (
+    <Sheet open={isMobileNavOpen} onOpenChange={setIsMobileNavOpen}>
+      <SheetContent side="left" className="w-[300px] sm:w-[360px]">
+        <SheetHeader className="space-y-2">
+          <SheetTitle style={{ fontFamily: template.fontDisplay }}>
             {storefront.store_name}
-          </div>
-          <nav className="hidden items-center gap-8 md:flex">
-            {navigation.map((item, index) => {
-              const sectionKey = getNavigationSectionKey(item);
-              const isActive = sectionKey ? activeSection === sectionKey : index === 0;
+          </SheetTitle>
+        </SheetHeader>
+        <div className="mt-8 flex flex-col gap-2">
+          {navigation.map((item, index) => {
+            const sectionKey = getNavigationSectionKey(item);
+            const isActive = sectionKey ? activeSection === sectionKey : index === 0;
 
-              return (
+            return (
               <button
                 type="button"
                 key={item}
-                onClick={() => sectionKey && onSectionChange?.(sectionKey)}
+                onClick={() => {
+                  if (sectionKey) {
+                    onSectionChange?.(sectionKey);
+                  }
+                  setIsMobileNavOpen(false);
+                }}
                 className={cn(
-                  "text-sm font-medium transition-colors",
-                  isActive ? "border-b-2 border-[color:var(--ecommerce-primary)] pb-1 text-white" : "text-slate-400",
+                  "flex items-center justify-between rounded-xl px-4 py-3 text-left text-sm transition-colors",
+                  isActive
+                    ? "bg-foreground text-background"
+                    : "bg-muted/50 text-foreground hover:bg-muted",
                   !sectionKey && "cursor-default",
                 )}
               >
-                {item}
+                <span>{item}</span>
+                {isActive ? <ArrowRight className="h-4 w-4" /> : null}
               </button>
-            )})}
-          </nav>
-          {onOpenCart ? (
-            <Button variant="ghost" className="gap-3 rounded-full px-4 text-white" onClick={onOpenCart}>
-              <ShoppingBag className="h-4 w-4" />
-              <span className="hidden sm:inline">Cart</span>
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">
-                {cartCount || 0}
-              </span>
-            </Button>
-          ) : null}
+            );
+          })}
         </div>
-      </header>
+      </SheetContent>
+    </Sheet>
+  );
+
+  if (template.layout === "neo") {
+    return (
+      <>
+        <header className="sticky top-0 z-40 border-b border-white/10 bg-black/40 backdrop-blur-2xl">
+          <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4 md:px-8">
+            <button
+              type="button"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white md:hidden"
+              onClick={() => setIsMobileNavOpen(true)}
+              aria-label="Abrir menu"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
+            <div
+              className="text-2xl font-black tracking-tight text-[color:var(--ecommerce-primary)]"
+              style={{ fontFamily: template.fontDisplay }}
+            >
+              {storefront.store_name}
+            </div>
+            <nav className="hidden items-center gap-8 md:flex">
+              {navigation.map((item, index) => {
+                const sectionKey = getNavigationSectionKey(item);
+                const isActive = sectionKey ? activeSection === sectionKey : index === 0;
+
+                return (
+                <button
+                  type="button"
+                  key={item}
+                  onClick={() => sectionKey && onSectionChange?.(sectionKey)}
+                  className={cn(
+                    "text-sm font-medium transition-colors",
+                    isActive ? "border-b-2 border-[color:var(--ecommerce-primary)] pb-1 text-white" : "text-slate-400",
+                    !sectionKey && "cursor-default",
+                  )}
+                >
+                  {item}
+                </button>
+              )})}
+            </nav>
+            {onOpenCart ? (
+              <Button variant="ghost" className="gap-3 rounded-full px-3 text-white md:px-4" onClick={onOpenCart}>
+                <ShoppingBag className="h-4 w-4" />
+                <span className="hidden sm:inline">Cart</span>
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">
+                  {cartCount || 0}
+                </span>
+              </Button>
+            ) : null}
+          </div>
+        </header>
+        {mobileNavigation}
+      </>
     );
   }
 
@@ -848,80 +905,102 @@ function StorefrontHeader({
 
   if (template.layout === "luxury") {
     return (
-      <header className="sticky top-0 z-40 border-b border-black/10 bg-[#f8f5ef]/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1920px] items-center justify-between px-6 py-6 md:px-12">
-          <div className="flex items-center gap-10">
-            <div
-              className="text-2xl uppercase tracking-[0.2em]"
-              style={{ fontFamily: template.fontDisplay }}
-            >
-              {storefront.store_name}
-            </div>
-            <nav className="hidden items-center gap-7 md:flex">
-              {navigation.map((item, index) => {
-                const sectionKey = getNavigationSectionKey(item);
-                const isActive = sectionKey ? activeSection === sectionKey : index === 0;
+      <>
+        <header className="sticky top-0 z-40 border-b border-black/10 bg-[#f8f5ef]/90 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-[1920px] items-center justify-between px-4 py-5 md:px-12 md:py-6">
+            <div className="flex items-center gap-4 md:gap-10">
+              <button
+                type="button"
+                className="inline-flex h-10 w-10 items-center justify-center border border-black/10 md:hidden"
+                onClick={() => setIsMobileNavOpen(true)}
+                aria-label="Abrir menu"
+              >
+                <Menu className="h-4 w-4" />
+              </button>
+              <div
+                className="text-lg uppercase tracking-[0.2em] md:text-2xl"
+                style={{ fontFamily: template.fontDisplay }}
+              >
+                {storefront.store_name}
+              </div>
+              <nav className="hidden items-center gap-7 md:flex">
+                {navigation.map((item, index) => {
+                  const sectionKey = getNavigationSectionKey(item);
+                  const isActive = sectionKey ? activeSection === sectionKey : index === 0;
 
-                return (
-                <button
-                  type="button"
-                  key={item}
-                  onClick={() => sectionKey && onSectionChange?.(sectionKey)}
-                  className={cn(
-                    "text-2xl tracking-tight transition-colors",
-                    isActive ? "border-b border-black pb-1 text-black" : "text-stone-500",
-                    !sectionKey && "cursor-default",
-                  )}
-                  style={{ fontFamily: template.fontDisplay }}
-                >
-                  {item}
-                </button>
-              )})}
-            </nav>
+                  return (
+                  <button
+                    type="button"
+                    key={item}
+                    onClick={() => sectionKey && onSectionChange?.(sectionKey)}
+                    className={cn(
+                      "text-2xl tracking-tight transition-colors",
+                      isActive ? "border-b border-black pb-1 text-black" : "text-stone-500",
+                      !sectionKey && "cursor-default",
+                    )}
+                    style={{ fontFamily: template.fontDisplay }}
+                  >
+                    {item}
+                  </button>
+                )})}
+              </nav>
+            </div>
+            {onOpenCart ? (
+              <Button variant="ghost" className="gap-3 rounded-none" onClick={onOpenCart}>
+                <ShoppingBag className="h-4 w-4" />
+                <span className="text-xs uppercase tracking-[0.22em]">{cartCount || 0}</span>
+              </Button>
+            ) : null}
           </div>
-          {onOpenCart ? (
-            <Button variant="ghost" className="gap-3 rounded-none" onClick={onOpenCart}>
-              <ShoppingBag className="h-4 w-4" />
-              <span className="text-xs uppercase tracking-[0.22em]">{cartCount || 0}</span>
-            </Button>
-          ) : null}
-        </div>
-      </header>
+        </header>
+        {mobileNavigation}
+      </>
     );
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-stone-200/60 bg-white/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-4">
-        <div className="text-xl font-bold uppercase tracking-tight">{storefront.store_name}</div>
-        <nav className="hidden items-center gap-8 md:flex">
-          {navigation.map((item, index) => {
-            const sectionKey = getNavigationSectionKey(item);
-            const isActive = sectionKey ? activeSection === sectionKey : index === 0;
+    <>
+      <header className="sticky top-0 z-40 border-b border-stone-200/60 bg-white/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-4 md:px-6">
+          <button
+            type="button"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 md:hidden"
+            onClick={() => setIsMobileNavOpen(true)}
+            aria-label="Abrir menu"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+          <div className="text-xl font-bold uppercase tracking-tight">{storefront.store_name}</div>
+          <nav className="hidden items-center gap-8 md:flex">
+            {navigation.map((item, index) => {
+              const sectionKey = getNavigationSectionKey(item);
+              const isActive = sectionKey ? activeSection === sectionKey : index === 0;
 
-            return (
-            <button
-              type="button"
-              key={item}
-              onClick={() => sectionKey && onSectionChange?.(sectionKey)}
-              className={cn(
-                "transition-colors",
-                isActive ? "border-b-2 border-black pb-1 font-semibold text-black" : "text-stone-500",
-                !sectionKey && "cursor-default",
-              )}
-            >
-              {item}
-            </button>
-          )})}
-        </nav>
-        {onOpenCart ? (
-          <Button variant="ghost" className="gap-3 rounded-full" onClick={onOpenCart}>
-            <ShoppingBag className="h-4 w-4" />
-            <span className="rounded-full bg-black/10 px-2 py-0.5 text-[10px]">{cartCount || 0}</span>
-          </Button>
-        ) : null}
-      </div>
-    </header>
+              return (
+              <button
+                type="button"
+                key={item}
+                onClick={() => sectionKey && onSectionChange?.(sectionKey)}
+                className={cn(
+                  "transition-colors",
+                  isActive ? "border-b-2 border-black pb-1 font-semibold text-black" : "text-stone-500",
+                  !sectionKey && "cursor-default",
+                )}
+              >
+                {item}
+              </button>
+            )})}
+          </nav>
+          {onOpenCart ? (
+            <Button variant="ghost" className="gap-3 rounded-full" onClick={onOpenCart}>
+              <ShoppingBag className="h-4 w-4" />
+              <span className="rounded-full bg-black/10 px-2 py-0.5 text-[10px]">{cartCount || 0}</span>
+            </Button>
+          ) : null}
+        </div>
+      </header>
+      {mobileNavigation}
+    </>
   );
 }
 
@@ -1711,24 +1790,155 @@ export function EcommerceStorefrontPreview({
   storefront: PublicEcommerceStorefront;
   products: PublicEcommerceProduct[];
 }) {
+  const [viewport, setViewport] = useState<"desktop" | "mobile">("desktop");
+  const [iframeNode, setIframeNode] = useState<HTMLIFrameElement | null>(null);
+  const [mountNode, setMountNode] = useState<HTMLDivElement | null>(null);
   const previewProducts = useMemo(() => products.slice(0, 4), [products]);
+  const isMobileViewport = viewport === "mobile";
+  const iframeMarkup = useMemo(
+    () => `<!DOCTYPE html>
+      <html lang="es">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <style>
+            html, body {
+              margin: 0;
+              min-height: 100%;
+              background: transparent;
+            }
+
+            body {
+              overflow-y: auto;
+            }
+
+            #ecommerce-preview-root {
+              min-height: 100%;
+            }
+          </style>
+        </head>
+        <body>
+          <div id="ecommerce-preview-root"></div>
+        </body>
+      </html>`,
+    [],
+  );
+
+  const syncIframeDocument = useCallback((node: HTMLIFrameElement | null) => {
+    if (!node) return;
+
+    const doc = node.contentDocument;
+
+    if (!doc) return;
+
+    const root = doc.getElementById("ecommerce-preview-root");
+
+    if (!root) return;
+
+    const sourceNodes = Array.from(
+      document.head.querySelectorAll('style, link[rel="stylesheet"]'),
+    );
+
+    for (const clonedNode of Array.from(doc.head.querySelectorAll("[data-preview-clone]"))) {
+      clonedNode.remove();
+    }
+
+    for (const sourceNode of sourceNodes) {
+      const clone = sourceNode.cloneNode(true);
+
+      if (clone instanceof HTMLElement) {
+        clone.setAttribute("data-preview-clone", "true");
+      }
+
+      doc.head.appendChild(clone);
+    }
+
+    setMountNode(root as HTMLDivElement);
+  }, []);
+
+  useEffect(() => {
+    syncIframeDocument(iframeNode);
+
+    return () => {
+      setMountNode(null);
+    };
+  }, [iframeNode, syncIframeDocument]);
 
   return (
-    <div className="overflow-hidden rounded-[28px] border shadow-sm">
-      <div className="max-h-[860px] overflow-hidden">
-        <EcommerceCatalogView
-          tenantSlug={storefront.tenant_slug}
-          storefront={storefront}
-          products={previewProducts}
-          categories={[]}
-          search=""
-          onSearchChange={() => {}}
-          selectedCategory="all"
-          onCategoryChange={() => {}}
-          cartCount={2}
-          onOpenCart={() => {}}
-          onAddToCart={() => {}}
-        />
+    <div className="overflow-hidden rounded-[28px] border bg-muted/20 shadow-sm">
+      <div className="flex items-center justify-end border-b bg-background/80 px-4 py-3 backdrop-blur-sm sm:px-5">
+        <div className="inline-flex items-center gap-1 rounded-full border bg-background p-1 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setViewport("desktop")}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition-all duration-300",
+              viewport === "desktop"
+                ? "bg-foreground text-background shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            aria-pressed={viewport === "desktop"}
+          >
+            <Monitor className="h-4 w-4" />
+            Desktop
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewport("mobile")}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition-all duration-300",
+              viewport === "mobile"
+                ? "bg-foreground text-background shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            aria-pressed={viewport === "mobile"}
+          >
+            <Smartphone className="h-4 w-4" />
+            Mobile
+          </button>
+        </div>
+      </div>
+
+      <div className="overflow-hidden p-3 sm:p-4">
+        <div
+          className={cn(
+            "mx-auto overflow-hidden border bg-background shadow-[0_18px_50px_rgba(15,23,42,0.10)] transition-[max-width,border-radius,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+            isMobileViewport
+              ? "max-w-[390px] rounded-[2rem]"
+              : "max-w-full rounded-[1.75rem]",
+          )}
+        >
+          <iframe
+            ref={setIframeNode}
+            title="Preview storefront ecommerce"
+            srcDoc={iframeMarkup}
+            onLoad={(event) =>
+              syncIframeDocument(event.currentTarget as HTMLIFrameElement)
+            }
+            className={cn(
+              "block w-full border-0 bg-transparent transition-[height] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              isMobileViewport ? "h-[780px]" : "h-[860px]",
+            )}
+          />
+          {mountNode
+            ? createPortal(
+                <EcommerceCatalogView
+                  tenantSlug={storefront.tenant_slug}
+                  storefront={storefront}
+                  products={previewProducts}
+                  categories={[]}
+                  search=""
+                  onSearchChange={() => {}}
+                  selectedCategory="all"
+                  onCategoryChange={() => {}}
+                  cartCount={2}
+                  onOpenCart={() => {}}
+                  onAddToCart={() => {}}
+                />,
+                mountNode,
+              )
+            : null}
+        </div>
       </div>
     </div>
   );

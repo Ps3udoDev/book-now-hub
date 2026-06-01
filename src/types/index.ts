@@ -11,7 +11,10 @@ export type Theme = Tables["themes"]["Row"];
 export type Tenant = Tables["tenants"]["Row"];
 export type TenantModule = Tables["tenant_modules"]["Row"];
 export type TenantUser = Tables["tenant_users"]["Row"];
-export type TenantEcommerceSettings = Tables["tenant_ecommerce_settings"]["Row"];
+export type TenantEcommerceSettings =
+  Tables["tenant_ecommerce_settings"]["Row"];
+export type TenantClientAppSettings =
+  Tables["tenant_client_app_settings"]["Row"];
 export type EcommerceStorefront =
   Database["public"]["Views"]["v_ecommerce_storefront_public"]["Row"];
 export type EcommercePublicProduct =
@@ -19,8 +22,45 @@ export type EcommercePublicProduct =
 
 export type Service = Tables["services"]["Row"];
 export type ServiceVariant = Tables["service_variants"]["Row"];
+export type ServiceCategory = Database["public"]["Enums"]["service_category"];
 
 export type Customer = Tables["customers"]["Row"];
+export type CustomerFavorite = Tables["customer_favorites"]["Row"];
+export type FavoriteEntityType =
+  Database["public"]["Enums"]["favorite_entity_type"];
+export type CustomerDashboard =
+  Database["public"]["Views"]["v_customer_dashboard"]["Row"];
+
+export interface CustomerDashboardNextAppointment {
+  id: string;
+  scheduled_at: string;
+  duration_minutes: number;
+  status: string;
+  specialist_id: string | null;
+  specialist_name: string | null;
+  service_id: string;
+  service_name: string;
+  estimated_price: number | null;
+  currency_code: string | null;
+  branch_id: string;
+  branch_name: string;
+}
+
+export interface CustomerDashboardPastAppointment {
+  id: string;
+  scheduled_at: string;
+  service_name: string;
+  specialist_name: string | null;
+  price: number | null;
+  currency_code: string | null;
+  status: string;
+}
+
+export interface CustomerDashboardTopService {
+  service_id: string;
+  service_name: string;
+  count: number;
+}
 
 export type Profile = Tables["profiles"]["Row"];
 export type Branch = Tables["branches"]["Row"];
@@ -51,6 +91,14 @@ export type OrderItemType = Database["public"]["Enums"]["order_item_type"];
 
 export type SpecialistDebt = Tables["specialist_debts"]["Row"];
 export type SpecialistDebtPayment = Tables["specialist_debt_payments"]["Row"];
+
+export type CafeOrderType = Database["public"]["Enums"]["cafe_order_type"];
+export type CafeOrderStatus = Database["public"]["Enums"]["cafe_order_status"];
+export type MenuCategory = Tables["menu_categories"]["Row"];
+export type MenuItem = Tables["menu_items"]["Row"];
+export type MenuItemImage = Tables["menu_item_images"]["Row"];
+export type CafeOrder = Tables["cafe_orders"]["Row"];
+export type CafeOrderItem = Tables["cafe_order_items"]["Row"];
 
 export interface LayoutConfig {
   sidebar: {

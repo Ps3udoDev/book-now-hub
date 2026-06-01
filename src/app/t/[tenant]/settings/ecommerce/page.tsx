@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ExternalLink,
@@ -11,22 +9,41 @@ import {
   ShoppingBag,
   Sparkles,
 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { EcommerceTourButton } from "@/features/ecommerce/components/ecommerce-tour";
+import { EcommerceStorefrontPreview } from "@/features/ecommerce/components/storefront";
+import { ecommerceTemplates } from "@/features/ecommerce/templates";
 import { useTenantEcommerceSettings } from "@/hooks/supabase/use-ecommerce";
-import { ecommerceService, type PublicEcommerceProduct, type PublicEcommerceStorefront } from "@/lib/services/ecommerce";
+import {
+  ecommerceService,
+  type PublicEcommerceProduct,
+  type PublicEcommerceStorefront,
+} from "@/lib/services/ecommerce";
 import { storageService } from "@/lib/services/storage";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { ecommerceTemplates } from "@/features/ecommerce/templates";
-import { EcommerceStorefrontPreview } from "@/features/ecommerce/components/storefront";
 
 type EcommerceEditorialSection = {
   enabled: boolean;
@@ -91,46 +108,46 @@ const DEFAULT_CUSTOM_SECTIONS: EcommerceCustomSections = {
     enabled: true,
     eyebrow: "Discovery",
     title: "Explora la curaduria de la tienda",
-    body:
-      "Una seleccion pensada para que el catalogo se sienta mas editorial, aspiracional y util para convertir.",
+    body: "Una seleccion pensada para que el catalogo se sienta mas editorial, aspiracional y util para convertir.",
     image_url: "",
     cta_label: "Explorar seleccion",
   },
   story: {
     enabled: true,
     title: "La vision detras de la marca",
-    body:
-      "Cuenta quien esta detras del proyecto, que busca transmitir y por que esta tienda existe.",
+    body: "Cuenta quien esta detras del proyecto, que busca transmitir y por que esta tienda existe.",
     image_url: "",
     owner_name: "Nombre del fundador",
     owner_role: "Founder / Director",
-    owner_quote: "Nuestra vision es que cada producto se sienta como una recomendacion personal.",
+    owner_quote:
+      "Nuestra vision es que cada producto se sienta como una recomendacion personal.",
   },
   journal: {
     enabled: true,
     eyebrow: "Journal",
     title: "Notas, rituales y recomendaciones",
-    body:
-      "Un bloque para compartir tips, rutinas, novedades o contenido de marca dentro del storefront.",
+    body: "Un bloque para compartir tips, rutinas, novedades o contenido de marca dentro del storefront.",
     image_url: "",
     cta_label: "Leer mas",
   },
 };
 
-function normalizeCustomSections(
-  raw: unknown,
-): EcommerceCustomSections {
-  const current = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+function normalizeCustomSections(raw: unknown): EcommerceCustomSections {
+  const current =
+    raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
 
-  const discovery = current.discovery && typeof current.discovery === "object"
-    ? (current.discovery as Record<string, unknown>)
-    : {};
-  const story = current.story && typeof current.story === "object"
-    ? (current.story as Record<string, unknown>)
-    : {};
-  const journal = current.journal && typeof current.journal === "object"
-    ? (current.journal as Record<string, unknown>)
-    : {};
+  const discovery =
+    current.discovery && typeof current.discovery === "object"
+      ? (current.discovery as Record<string, unknown>)
+      : {};
+  const story =
+    current.story && typeof current.story === "object"
+      ? (current.story as Record<string, unknown>)
+      : {};
+  const journal =
+    current.journal && typeof current.journal === "object"
+      ? (current.journal as Record<string, unknown>)
+      : {};
 
   return {
     discovery: {
@@ -204,8 +221,7 @@ function normalizeCustomSections(
         typeof journal.body === "string"
           ? journal.body
           : DEFAULT_CUSTOM_SECTIONS.journal.body,
-      image_url:
-        typeof journal.image_url === "string" ? journal.image_url : "",
+      image_url: typeof journal.image_url === "string" ? journal.image_url : "",
       cta_label:
         typeof journal.cta_label === "string"
           ? journal.cta_label
@@ -222,7 +238,8 @@ const DEFAULT_FORM: EcommerceFormState = {
   brand_name: "",
   logo_url: "",
   hero_title: "Descubre tu proximo favorito",
-  hero_subtitle: "Catalogo publico de productos de belleza disponible en todas las sucursales.",
+  hero_subtitle:
+    "Catalogo publico de productos de belleza disponible en todas las sucursales.",
   hero_image_url: "",
   announcement_bar: "",
   whatsapp_number: "",
@@ -348,38 +365,179 @@ function buildTemplateMockProducts(
               text: "#301f18",
             };
 
-  const templatesMap: Record<string, Array<[string, string, string, string, number]>> = {
+  const templatesMap: Record<
+    string,
+    Array<[string, string, string, string, number]>
+  > = {
     "beauty-editorial": [
-      ["Bruma restauradora", "Glow ligero para acabado editorial", "Skincare", "Studio Ritual", 26],
-      ["Gloss treatment", "Nutricion capilar con brillo seda", "Capilar", "Velvet Hair", 29],
-      ["Lip oil nude", "Color suave con reparacion intensiva", "Makeup", "Soft Tone", 18],
-      ["Body soufflé", "Textura cremosa con aroma limpio", "Bodycare", "Maison Care", 34],
-      ["Kit manicure clean", "Set premium para rutina de salon", "Nails", "Gloss Atelier", 42],
-      ["Mist botanica", "Refresco facial para cabina y retail", "Skincare", "Pure Edit", 22],
+      [
+        "Bruma restauradora",
+        "Glow ligero para acabado editorial",
+        "Skincare",
+        "Studio Ritual",
+        26,
+      ],
+      [
+        "Gloss treatment",
+        "Nutricion capilar con brillo seda",
+        "Capilar",
+        "Velvet Hair",
+        29,
+      ],
+      [
+        "Lip oil nude",
+        "Color suave con reparacion intensiva",
+        "Makeup",
+        "Soft Tone",
+        18,
+      ],
+      [
+        "Body soufflé",
+        "Textura cremosa con aroma limpio",
+        "Bodycare",
+        "Maison Care",
+        34,
+      ],
+      [
+        "Kit manicure clean",
+        "Set premium para rutina de salon",
+        "Nails",
+        "Gloss Atelier",
+        42,
+      ],
+      [
+        "Mist botanica",
+        "Refresco facial para cabina y retail",
+        "Skincare",
+        "Pure Edit",
+        22,
+      ],
     ],
     "neo-urban": [
-      ["Night repair gel", "Recovery formula engineered for glow", "Skincare", "Neon Lab", 38],
-      ["Pulse matte kit", "Set de acabado preciso y larga duracion", "Makeup", "Vector", 44],
-      ["Carbon comb", "Accessorio minimal para styling premium", "Tools", "Mono Tech", 27],
-      ["Shift serum", "Hydration module for fast routines", "Skincare", "Circuit Care", 31],
-      ["Echo spray", "Texture boost for after-hours styling", "Capilar", "Afterdark", 24],
+      [
+        "Night repair gel",
+        "Recovery formula engineered for glow",
+        "Skincare",
+        "Neon Lab",
+        38,
+      ],
+      [
+        "Pulse matte kit",
+        "Set de acabado preciso y larga duracion",
+        "Makeup",
+        "Vector",
+        44,
+      ],
+      [
+        "Carbon comb",
+        "Accessorio minimal para styling premium",
+        "Tools",
+        "Mono Tech",
+        27,
+      ],
+      [
+        "Shift serum",
+        "Hydration module for fast routines",
+        "Skincare",
+        "Circuit Care",
+        31,
+      ],
+      [
+        "Echo spray",
+        "Texture boost for after-hours styling",
+        "Capilar",
+        "Afterdark",
+        24,
+      ],
       ["Flux blades", "Precision trim essentials", "Barber", "Zero Line", 56],
     ],
     "pure-organic": [
-      ["Crema calendula", "Calma y nutricion de origen botanico", "Skincare", "Herbal Room", 24],
-      ["Aceite de jojoba", "Balance suave para rituales diarios", "Capilar", "Campo Studio", 21],
-      ["Soap stone bar", "Limpieza gentil con aroma terroso", "Bodycare", "Tierra Sana", 16],
-      ["Clay mask", "Purificacion mineral de textura cremosa", "Skincare", "Garden Lab", 28],
-      ["Linen pouch set", "Accesorios para retail consciente", "Lifestyle", "Origen", 19],
-      ["Botanic balm", "Tratamiento multiuso de bolsillo", "Wellness", "Bosque", 18],
+      [
+        "Crema calendula",
+        "Calma y nutricion de origen botanico",
+        "Skincare",
+        "Herbal Room",
+        24,
+      ],
+      [
+        "Aceite de jojoba",
+        "Balance suave para rituales diarios",
+        "Capilar",
+        "Campo Studio",
+        21,
+      ],
+      [
+        "Soap stone bar",
+        "Limpieza gentil con aroma terroso",
+        "Bodycare",
+        "Tierra Sana",
+        16,
+      ],
+      [
+        "Clay mask",
+        "Purificacion mineral de textura cremosa",
+        "Skincare",
+        "Garden Lab",
+        28,
+      ],
+      [
+        "Linen pouch set",
+        "Accesorios para retail consciente",
+        "Lifestyle",
+        "Origen",
+        19,
+      ],
+      [
+        "Botanic balm",
+        "Tratamiento multiuso de bolsillo",
+        "Wellness",
+        "Bosque",
+        18,
+      ],
     ],
     "silent-luxury": [
-      ["Kyoto comb", "Pieza sobria para tocador contemporaneo", "Objects", "Archive Form", 48],
-      ["Velvet serum", "Tratamiento facial de textura silenciosa", "Skincare", "Still House", 52],
-      ["Stone vessel kit", "Set de presentacion para retail premium", "Objects", "Atelier No. 3", 67],
-      ["Cashmere mask", "Cuidado nocturno con gesto minimal", "Skincare", "Quiet Lab", 46],
-      ["Satin finish oil", "Acabado pulido para cabello y cuerpo", "Bodycare", "Form Ritual", 41],
-      ["Edition towel", "Textil para cabina y venta curada", "Textiles", "Studio Loom", 58],
+      [
+        "Kyoto comb",
+        "Pieza sobria para tocador contemporaneo",
+        "Objects",
+        "Archive Form",
+        48,
+      ],
+      [
+        "Velvet serum",
+        "Tratamiento facial de textura silenciosa",
+        "Skincare",
+        "Still House",
+        52,
+      ],
+      [
+        "Stone vessel kit",
+        "Set de presentacion para retail premium",
+        "Objects",
+        "Atelier No. 3",
+        67,
+      ],
+      [
+        "Cashmere mask",
+        "Cuidado nocturno con gesto minimal",
+        "Skincare",
+        "Quiet Lab",
+        46,
+      ],
+      [
+        "Satin finish oil",
+        "Acabado pulido para cabello y cuerpo",
+        "Bodycare",
+        "Form Ritual",
+        41,
+      ],
+      [
+        "Edition towel",
+        "Textil para cabina y venta curada",
+        "Textiles",
+        "Studio Loom",
+        58,
+      ],
     ],
   };
 
@@ -389,7 +547,9 @@ function buildTemplateMockProducts(
       tenant_id: "",
       tenant_slug: tenantSlug,
       branch_id: `branch-${(index % 3) + 1}`,
-      branch_name: ["Sucursal Principal", "Cabina Norte", "Beauty Bar"][index % 3],
+      branch_name: ["Sucursal Principal", "Cabina Norte", "Beauty Bar"][
+        index % 3
+      ],
       name,
       description,
       sku: `PREV-${index + 1}`,
@@ -419,12 +579,16 @@ export default function EcommerceSettingsPage() {
   const { settings, isLoading, mutate } = useTenantEcommerceSettings(tenantId);
 
   const [form, setForm] = useState<EcommerceFormState>(DEFAULT_FORM);
-  const [previewProducts, setPreviewProducts] = useState<PublicEcommerceProduct[]>([]);
-  const [sectionImageFiles, setSectionImageFiles] = useState<SectionImageFiles>({
-    discovery: null,
-    story: null,
-    journal: null,
-  });
+  const [previewProducts, setPreviewProducts] = useState<
+    PublicEcommerceProduct[]
+  >([]);
+  const [sectionImageFiles, setSectionImageFiles] = useState<SectionImageFiles>(
+    {
+      discovery: null,
+      story: null,
+      journal: null,
+    },
+  );
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -440,13 +604,16 @@ export default function EcommerceSettingsPage() {
       hero_image_url: settings.hero_image_url || "",
       announcement_bar: settings.announcement_bar || "",
       whatsapp_number: settings.whatsapp_number || "",
-      whatsapp_message_template: settings.whatsapp_message_template || DEFAULT_FORM.whatsapp_message_template,
+      whatsapp_message_template:
+        settings.whatsapp_message_template ||
+        DEFAULT_FORM.whatsapp_message_template,
       seo_title: settings.seo_title || "",
       seo_description: settings.seo_description || "",
       primary_color: settings.primary_color || DEFAULT_FORM.primary_color,
       secondary_color: settings.secondary_color || DEFAULT_FORM.secondary_color,
       accent_color: settings.accent_color || DEFAULT_FORM.accent_color,
-      background_color: settings.background_color || DEFAULT_FORM.background_color,
+      background_color:
+        settings.background_color || DEFAULT_FORM.background_color,
       surface_color: settings.surface_color || DEFAULT_FORM.surface_color,
       text_color: settings.text_color || DEFAULT_FORM.text_color,
       button_radius: settings.button_radius || DEFAULT_FORM.button_radius,
@@ -459,7 +626,10 @@ export default function EcommerceSettingsPage() {
 
     const loadPreviewProducts = async () => {
       try {
-        const data = await ecommerceService.getPreviewProductsForTenant(tenantId, 6);
+        const data = await ecommerceService.getPreviewProductsForTenant(
+          tenantId,
+          6,
+        );
         setPreviewProducts(data);
       } catch {
         setPreviewProducts([]);
@@ -470,8 +640,7 @@ export default function EcommerceSettingsPage() {
   }, [tenantId]);
 
   const previewStorefront = useMemo(
-    () =>
-      buildPreviewStorefront(tenantSlug, tenant?.name || "Mi tienda", form),
+    () => buildPreviewStorefront(tenantSlug, tenant?.name || "Mi tienda", form),
     [form, tenant?.name, tenantSlug],
   );
 
@@ -493,7 +662,9 @@ export default function EcommerceSettingsPage() {
       filledProducts.push(item);
     }
 
-    return filledProducts.length > 0 ? filledProducts.slice(0, 6) : curatedPreviewProducts;
+    return filledProducts.length > 0
+      ? filledProducts.slice(0, 6)
+      : curatedPreviewProducts;
   }, [curatedPreviewProducts, previewProducts]);
 
   const selectedTemplate = ecommerceTemplates.find(
@@ -533,7 +704,9 @@ export default function EcommerceSettingsPage() {
     setSaving(true);
     try {
       const nextSections = structuredClone(form.custom_sections);
-      const sectionKeys = Object.keys(sectionImageFiles) as Array<keyof EcommerceCustomSections>;
+      const sectionKeys = Object.keys(sectionImageFiles) as Array<
+        keyof EcommerceCustomSections
+      >;
 
       for (const sectionKey of sectionKeys) {
         const file = sectionImageFiles[sectionKey];
@@ -578,7 +751,9 @@ export default function EcommerceSettingsPage() {
       toast.success("Configuracion ecommerce guardada");
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "No se pudo guardar la configuracion";
+        error instanceof Error
+          ? error.message
+          : "No se pudo guardar la configuracion";
       toast.error(message);
     } finally {
       setSaving(false);
@@ -595,7 +770,10 @@ export default function EcommerceSettingsPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div
+        className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
+        data-tour="ecommerce-header"
+      >
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -613,13 +791,18 @@ export default function EcommerceSettingsPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" asChild>
+          <EcommerceTourButton />
+          <Button variant="outline" asChild data-tour="ecommerce-view-store">
             <a href={publicLink} target="_blank" rel="noreferrer">
               <ExternalLink className="mr-2 h-4 w-4" />
               Ver tienda
             </a>
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            data-tour="ecommerce-save"
+          >
             {saving ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -632,11 +815,12 @@ export default function EcommerceSettingsPage() {
 
       <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
         <div className="space-y-6">
-          <Card>
+          <Card data-tour="ecommerce-status">
             <CardHeader>
               <CardTitle className="text-base">Estado</CardTitle>
               <CardDescription>
-                Controla si el ecommerce esta activo para el tenant y si el storefront es publico.
+                Controla si el ecommerce esta activo para el tenant y si el
+                storefront es publico.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -649,7 +833,9 @@ export default function EcommerceSettingsPage() {
                 </div>
                 <Switch
                   checked={form.is_enabled}
-                  onCheckedChange={(checked) => updateField("is_enabled", checked)}
+                  onCheckedChange={(checked) =>
+                    updateField("is_enabled", checked)
+                  }
                 />
               </div>
 
@@ -662,7 +848,9 @@ export default function EcommerceSettingsPage() {
                 </div>
                 <Switch
                   checked={form.is_public}
-                  onCheckedChange={(checked) => updateField("is_public", checked)}
+                  onCheckedChange={(checked) =>
+                    updateField("is_public", checked)
+                  }
                 />
               </div>
 
@@ -670,22 +858,21 @@ export default function EcommerceSettingsPage() {
 
               <div className="space-y-2">
                 <Label>Ruta publica</Label>
-                <Input
-                  value={form.public_path}
-                  readOnly
-                />
+                <Input value={form.public_path} readOnly />
                 <p className="text-xs text-muted-foreground">
-                  La primera version usa una ruta fija. Link actual: {publicLink}
+                  La primera version usa una ruta fija. Link actual:{" "}
+                  {publicLink}
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-tour="ecommerce-template">
             <CardHeader>
               <CardTitle className="text-base">Template y orden</CardTitle>
               <CardDescription>
-                Selecciona el template visual y el criterio de orden del catalogo.
+                Selecciona el template visual y el criterio de orden del
+                catalogo.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -737,8 +924,12 @@ export default function EcommerceSettingsPage() {
                   <SelectContent>
                     <SelectItem value="name_asc">Nombre A-Z</SelectItem>
                     <SelectItem value="name_desc">Nombre Z-A</SelectItem>
-                    <SelectItem value="price_asc">Precio menor a mayor</SelectItem>
-                    <SelectItem value="price_desc">Precio mayor a menor</SelectItem>
+                    <SelectItem value="price_asc">
+                      Precio menor a mayor
+                    </SelectItem>
+                    <SelectItem value="price_desc">
+                      Precio mayor a menor
+                    </SelectItem>
                     <SelectItem value="newest">Mas recientes</SelectItem>
                   </SelectContent>
                 </Select>
@@ -746,7 +937,7 @@ export default function EcommerceSettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-tour="ecommerce-branding">
             <CardHeader>
               <CardTitle className="text-base">Branding</CardTitle>
               <CardDescription>
@@ -758,7 +949,9 @@ export default function EcommerceSettingsPage() {
                 <Label>Nombre de tienda</Label>
                 <Input
                   value={form.brand_name}
-                  onChange={(event) => updateField("brand_name", event.target.value)}
+                  onChange={(event) =>
+                    updateField("brand_name", event.target.value)
+                  }
                   placeholder={tenant?.name || "Mi tienda"}
                 />
               </div>
@@ -767,7 +960,9 @@ export default function EcommerceSettingsPage() {
                 <Label>URL logo</Label>
                 <Input
                   value={form.logo_url}
-                  onChange={(event) => updateField("logo_url", event.target.value)}
+                  onChange={(event) =>
+                    updateField("logo_url", event.target.value)
+                  }
                   placeholder="https://..."
                 />
               </div>
@@ -776,7 +971,9 @@ export default function EcommerceSettingsPage() {
                 <Label>Hero title</Label>
                 <Input
                   value={form.hero_title}
-                  onChange={(event) => updateField("hero_title", event.target.value)}
+                  onChange={(event) =>
+                    updateField("hero_title", event.target.value)
+                  }
                 />
               </div>
 
@@ -815,7 +1012,7 @@ export default function EcommerceSettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-tour="ecommerce-whatsapp-seo">
             <CardHeader>
               <CardTitle className="text-base">WhatsApp y SEO</CardTitle>
               <CardDescription>
@@ -844,7 +1041,8 @@ export default function EcommerceSettingsPage() {
                   rows={4}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Variables disponibles: <code>{"{{items}}"}</code> y <code>{"{{total}}"}</code>
+                  Variables disponibles: <code>{"{{items}}"}</code> y{" "}
+                  <code>{"{{total}}"}</code>
                 </p>
               </div>
 
@@ -852,7 +1050,9 @@ export default function EcommerceSettingsPage() {
                 <Label>SEO title</Label>
                 <Input
                   value={form.seo_title}
-                  onChange={(event) => updateField("seo_title", event.target.value)}
+                  onChange={(event) =>
+                    updateField("seo_title", event.target.value)
+                  }
                 />
               </div>
 
@@ -869,16 +1069,18 @@ export default function EcommerceSettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-tour="ecommerce-sections">
             <CardHeader>
               <CardTitle className="text-base">Tabs editoriales</CardTitle>
               <CardDescription>
-                Configura el contenido de `Discovery`, `Story` y `Journal` para el storefront.
+                Configura el contenido de `Discovery`, `Story` y `Journal` para
+                el storefront.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="rounded-xl border bg-muted/25 p-4 text-sm text-muted-foreground">
-                Los uploads de estas secciones se guardan en el bucket `images` con esta ruta:
+                Los uploads de estas secciones se guardan en el bucket `images`
+                con esta ruta:
                 <code className="ml-1">
                   {`{tenant_id}/ecommerce/sections/{section}/{uuid}.{ext}`}
                 </code>
@@ -889,7 +1091,8 @@ export default function EcommerceSettingsPage() {
                   <div>
                     <Label>Discovery</Label>
                     <p className="text-sm text-muted-foreground">
-                      Bloque para destacar universo de marca, curaduria o categorias hero.
+                      Bloque para destacar universo de marca, curaduria o
+                      categorias hero.
                     </p>
                   </div>
                   <Switch
@@ -925,7 +1128,11 @@ export default function EcommerceSettingsPage() {
                   <Input
                     value={form.custom_sections.discovery.eyebrow}
                     onChange={(event) =>
-                      updateSectionField("discovery", "eyebrow", event.target.value)
+                      updateSectionField(
+                        "discovery",
+                        "eyebrow",
+                        event.target.value,
+                      )
                     }
                   />
                 </div>
@@ -934,7 +1141,11 @@ export default function EcommerceSettingsPage() {
                   <Input
                     value={form.custom_sections.discovery.title}
                     onChange={(event) =>
-                      updateSectionField("discovery", "title", event.target.value)
+                      updateSectionField(
+                        "discovery",
+                        "title",
+                        event.target.value,
+                      )
                     }
                   />
                 </div>
@@ -944,7 +1155,11 @@ export default function EcommerceSettingsPage() {
                     rows={4}
                     value={form.custom_sections.discovery.body}
                     onChange={(event) =>
-                      updateSectionField("discovery", "body", event.target.value)
+                      updateSectionField(
+                        "discovery",
+                        "body",
+                        event.target.value,
+                      )
                     }
                   />
                 </div>
@@ -953,7 +1168,11 @@ export default function EcommerceSettingsPage() {
                   <Input
                     value={form.custom_sections.discovery.cta_label}
                     onChange={(event) =>
-                      updateSectionField("discovery", "cta_label", event.target.value)
+                      updateSectionField(
+                        "discovery",
+                        "cta_label",
+                        event.target.value,
+                      )
                     }
                   />
                 </div>
@@ -964,7 +1183,8 @@ export default function EcommerceSettingsPage() {
                   <div>
                     <Label>Story</Label>
                     <p className="text-sm text-muted-foreground">
-                      Presenta al dueño, la vision de la marca y el tono del ecommerce.
+                      Presenta al dueño, la vision de la marca y el tono del
+                      ecommerce.
                     </p>
                   </div>
                   <Switch
@@ -1001,7 +1221,11 @@ export default function EcommerceSettingsPage() {
                     <Input
                       value={form.custom_sections.story.owner_name}
                       onChange={(event) =>
-                        updateSectionField("story", "owner_name", event.target.value)
+                        updateSectionField(
+                          "story",
+                          "owner_name",
+                          event.target.value,
+                        )
                       }
                     />
                   </div>
@@ -1010,7 +1234,11 @@ export default function EcommerceSettingsPage() {
                     <Input
                       value={form.custom_sections.story.owner_role}
                       onChange={(event) =>
-                        updateSectionField("story", "owner_role", event.target.value)
+                        updateSectionField(
+                          "story",
+                          "owner_role",
+                          event.target.value,
+                        )
                       }
                     />
                   </div>
@@ -1040,7 +1268,11 @@ export default function EcommerceSettingsPage() {
                     rows={3}
                     value={form.custom_sections.story.owner_quote}
                     onChange={(event) =>
-                      updateSectionField("story", "owner_quote", event.target.value)
+                      updateSectionField(
+                        "story",
+                        "owner_quote",
+                        event.target.value,
+                      )
                     }
                   />
                 </div>
@@ -1051,7 +1283,8 @@ export default function EcommerceSettingsPage() {
                   <div>
                     <Label>Journal</Label>
                     <p className="text-sm text-muted-foreground">
-                      Seccion para notas, rutinas, recomendaciones o storytelling complementario.
+                      Seccion para notas, rutinas, recomendaciones o
+                      storytelling complementario.
                     </p>
                   </div>
                   <Switch
@@ -1087,7 +1320,11 @@ export default function EcommerceSettingsPage() {
                   <Input
                     value={form.custom_sections.journal.eyebrow}
                     onChange={(event) =>
-                      updateSectionField("journal", "eyebrow", event.target.value)
+                      updateSectionField(
+                        "journal",
+                        "eyebrow",
+                        event.target.value,
+                      )
                     }
                   />
                 </div>
@@ -1115,7 +1352,11 @@ export default function EcommerceSettingsPage() {
                   <Input
                     value={form.custom_sections.journal.cta_label}
                     onChange={(event) =>
-                      updateSectionField("journal", "cta_label", event.target.value)
+                      updateSectionField(
+                        "journal",
+                        "cta_label",
+                        event.target.value,
+                      )
                     }
                   />
                 </div>
@@ -1188,7 +1429,10 @@ export default function EcommerceSettingsPage() {
                 ["show_branch_badge", "Mostrar sucursal del producto"],
                 ["show_whatsapp_button", "Mostrar CTA WhatsApp"],
               ].map(([key, label]) => (
-                <div key={key} className="flex items-center justify-between gap-4">
+                <div
+                  key={key}
+                  className="flex items-center justify-between gap-4"
+                >
                   <div className="flex items-center gap-2">
                     <ShoppingBag className="h-4 w-4 text-muted-foreground" />
                     <Label>{label}</Label>
@@ -1196,7 +1440,10 @@ export default function EcommerceSettingsPage() {
                   <Switch
                     checked={Boolean(form[key as keyof EcommerceFormState])}
                     onCheckedChange={(checked) =>
-                      updateField(key as keyof EcommerceFormState, checked as never)
+                      updateField(
+                        key as keyof EcommerceFormState,
+                        checked as never,
+                      )
                     }
                   />
                 </div>
@@ -1205,11 +1452,12 @@ export default function EcommerceSettingsPage() {
           </Card>
         </div>
 
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden" data-tour="ecommerce-preview">
           <CardHeader>
             <CardTitle className="text-base">Preview</CardTitle>
             <CardDescription>
-              Vista previa del storefront usando el template actual, productos del tenant y relleno visual curado.
+              Vista previa del storefront usando el template actual, productos
+              del tenant y relleno visual curado.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
@@ -1240,7 +1488,8 @@ export default function EcommerceSettingsPage() {
                   Escena activa
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {effectivePreviewProducts.length} productos, branding editable y estructura real del storefront publico.
+                  {effectivePreviewProducts.length} productos, branding editable
+                  y estructura real del storefront publico.
                 </p>
               </div>
             </div>

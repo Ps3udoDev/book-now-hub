@@ -10,10 +10,14 @@ import {
   Plus,
   Printer,
   Smartphone,
+  User as UserIcon,
   Wallet,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { CustomerPickerDialog } from "@/components/customers/customer-picker-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,6 +41,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCashRegistersByBranch } from "@/hooks/supabase/use-cash-registers";
 import { type OrderWithItems, ordersService } from "@/lib/services/orders";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import type { Customer } from "@/types";
 import { ReceiptDialog } from "./receipt-dialog";
 
 type DocumentType = "nota_debito" | "factura";
@@ -101,6 +107,13 @@ export function PayOrderDialog({
   const [fiscalDocument, setFiscalDocument] = useState("");
   const [fiscalAddress, setFiscalAddress] = useState("");
 
+  // Cliente seleccionado (usado para mostrar avatar + prefilled fiscal data)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null,
+  );
+  const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
+  const { tenant } = useAuthStore();
+
   const { cashRegisters, isLoading: loadingRegisters } =
     useCashRegistersByBranch(order?.branch_id ?? null);
 
@@ -135,6 +148,30 @@ export function PayOrderDialog({
     ]);
     setCashRegisterId("");
     setDocumentType("nota_debito");
+    setFiscalName("");
+    setFiscalDocument("");
+    setFiscalAddress("");
+    setSelectedCustomer(null);
+  }
+
+  // Seleccionar un cliente y prellenar los datos fiscales de la factura
+  function handleSelectCustomer(customer: Customer) {
+    setSelectedCustomer(customer);
+    const fullName =
+      `${customer.first_name ?? ""} ${customer.last_name ?? ""}`.trim();
+    if (fullName) setFiscalName(fullName);
+    if (customer.document_type && customer.document_number) {
+      setFiscalDocument(
+        `${customer.document_type}-${customer.document_number}`,
+      );
+    } else if (customer.document_number) {
+      setFiscalDocument(customer.document_number);
+    }
+    if (customer.address) setFiscalAddress(customer.address);
+  }
+
+  function clearSelectedCustomer() {
+    setSelectedCustomer(null);
     setFiscalName("");
     setFiscalDocument("");
     setFiscalAddress("");
@@ -379,9 +416,62 @@ export function PayOrderDialog({
                 {/* Datos fiscales (solo para factura) */}
                 {documentType === "factura" && (
                   <div className="space-y-3 rounded-md border p-3 bg-muted/20">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Datos fiscales del cliente
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Datos fiscales del cliente
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 h-7 text-xs"
+                        onClick={() => setCustomerPickerOpen(true)}
+                      >
+                        <UserIcon className="h-3.5 w-3.5" />
+                        {selectedCustomer
+                          ? "Cambiar cliente"
+                          : "Seleccionar cliente"}
+                      </Button>
+                    </div>
+
+                    {/* Cliente seleccionado (tarjeta de avatar) */}
+                    {selectedCustomer && (
+                      <div className="flex items-center gap-3 rounded-md border border-primary/30 bg-primary/5 p-2.5">
+                        <Avatar className="h-10 w-10 shrink-0">
+                          {selectedCustomer.avatar_url ? (
+                            <AvatarImage
+                              src={selectedCustomer.avatar_url}
+                              alt={`${selectedCustomer.first_name} ${selectedCustomer.last_name}`}
+                            />
+                          ) : null}
+                          <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                            {(selectedCustomer.first_name?.charAt(0) ?? "") +
+                              (selectedCustomer.last_name?.charAt(0) ?? "")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {selectedCustomer.first_name}{" "}
+                            {selectedCustomer.last_name}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {selectedCustomer.document_number ||
+                              selectedCustomer.email ||
+                              selectedCustomer.phone ||
+                              "Sin contacto"}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={clearSelectedCustomer}
+                          className="text-muted-foreground hover:text-destructive"
+                          aria-label="Quitar cliente"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+
                     <div className="space-y-1.5">
                       <Label className="text-xs">
                         Nombre / Razón social{" "}
@@ -718,6 +808,15 @@ export function PayOrderDialog({
           fiscalDocument={paid.fiscalDocument}
         />
       )}
+
+      {/* Selector de cliente */}
+      <CustomerPickerDialog
+        tenantId={tenant?.id ?? null}
+        open={customerPickerOpen}
+        onOpenChange={setCustomerPickerOpen}
+        onSelect={handleSelectCustomer}
+        selectedId={selectedCustomer?.id ?? null}
+      />
     </>
   );
 }

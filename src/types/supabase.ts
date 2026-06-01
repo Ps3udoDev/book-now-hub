@@ -225,6 +225,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_dashboard"
+            referencedColumns: ["customer_id"]
+          },
+          {
             foreignKeyName: "appointments_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -360,6 +367,249 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
             referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
+      cafe_order_items: {
+        Row: {
+          cafe_order_id: string
+          created_at: string
+          description: string
+          id: string
+          menu_item_id: string | null
+          notes: string | null
+          quantity: number
+          subtotal: number
+          unit_price: number
+        }
+        Insert: {
+          cafe_order_id: string
+          created_at?: string
+          description: string
+          id?: string
+          menu_item_id?: string | null
+          notes?: string | null
+          quantity?: number
+          subtotal?: number
+          unit_price?: number
+        }
+        Update: {
+          cafe_order_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          menu_item_id?: string | null
+          notes?: string | null
+          quantity?: number
+          subtotal?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cafe_order_items_cafe_order_id_fkey"
+            columns: ["cafe_order_id"]
+            isOneToOne: false
+            referencedRelation: "cafe_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_order_items_cafe_order_id_fkey"
+            columns: ["cafe_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_cafe_orders_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_order_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cafe_orders: {
+        Row: {
+          billed_at: string | null
+          branch_id: string
+          cancelled_at: string | null
+          cash_session_id: string | null
+          charge_to_commissions: boolean
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          currency_iso: string
+          delivered_at: string | null
+          estimated_ready_at: string | null
+          id: string
+          notes: string | null
+          order_id: string | null
+          order_number: number
+          order_type: Database["public"]["Enums"]["cafe_order_type"]
+          placed_by_email: string | null
+          placed_by_name: string | null
+          preparing_at: string | null
+          ready_at: string | null
+          source: string
+          specialist_consumption_id: string | null
+          specialist_id: string | null
+          status: Database["public"]["Enums"]["cafe_order_status"]
+          tenant_id: string
+          total: number
+          updated_at: string
+          workstation_id: string | null
+        }
+        Insert: {
+          billed_at?: string | null
+          branch_id: string
+          cancelled_at?: string | null
+          cash_session_id?: string | null
+          charge_to_commissions?: boolean
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency_iso?: string
+          delivered_at?: string | null
+          estimated_ready_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          order_number?: number
+          order_type?: Database["public"]["Enums"]["cafe_order_type"]
+          placed_by_email?: string | null
+          placed_by_name?: string | null
+          preparing_at?: string | null
+          ready_at?: string | null
+          source?: string
+          specialist_consumption_id?: string | null
+          specialist_id?: string | null
+          status?: Database["public"]["Enums"]["cafe_order_status"]
+          tenant_id: string
+          total?: number
+          updated_at?: string
+          workstation_id?: string | null
+        }
+        Update: {
+          billed_at?: string | null
+          branch_id?: string
+          cancelled_at?: string | null
+          cash_session_id?: string | null
+          charge_to_commissions?: boolean
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency_iso?: string
+          delivered_at?: string | null
+          estimated_ready_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          order_number?: number
+          order_type?: Database["public"]["Enums"]["cafe_order_type"]
+          placed_by_email?: string | null
+          placed_by_name?: string | null
+          preparing_at?: string | null
+          ready_at?: string | null
+          source?: string
+          specialist_consumption_id?: string | null
+          specialist_id?: string | null
+          status?: Database["public"]["Enums"]["cafe_order_status"]
+          tenant_id?: string
+          total?: number
+          updated_at?: string
+          workstation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cafe_orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_cash_session_id_fkey"
+            columns: ["cash_session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_register_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_dashboard"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_currency_iso_fkey"
+            columns: ["currency_iso"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "cafe_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_specialist_consumption_id_fkey"
+            columns: ["specialist_consumption_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_consumptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_ecommerce_storefront_public"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_workstation_id_fkey"
+            columns: ["workstation_id"]
+            isOneToOne: false
+            referencedRelation: "workstations"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1122,10 +1372,67 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_favorites: {
+        Row: {
+          created_at: string | null
+          customer_id: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["favorite_entity_type"]
+          id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["favorite_entity_type"]
+          id?: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["favorite_entity_type"]
+          id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_favorites_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_favorites_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_dashboard"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "customer_favorites_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_favorites_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_ecommerce_storefront_public"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           accepts_marketing: boolean | null
           address: string | null
+          avatar_url: string | null
           birth_date: string | null
           city: string | null
           created_at: string | null
@@ -1146,6 +1453,8 @@ export type Database = {
           phone_country_code: string | null
           phone_secondary: string | null
           preferred_branch_id: string | null
+          preferred_currency: string | null
+          preferred_language: string | null
           preferred_specialist_id: string | null
           tags: string[] | null
           tenant_id: string
@@ -1157,6 +1466,7 @@ export type Database = {
         Insert: {
           accepts_marketing?: boolean | null
           address?: string | null
+          avatar_url?: string | null
           birth_date?: string | null
           city?: string | null
           created_at?: string | null
@@ -1177,6 +1487,8 @@ export type Database = {
           phone_country_code?: string | null
           phone_secondary?: string | null
           preferred_branch_id?: string | null
+          preferred_currency?: string | null
+          preferred_language?: string | null
           preferred_specialist_id?: string | null
           tags?: string[] | null
           tenant_id: string
@@ -1188,6 +1500,7 @@ export type Database = {
         Update: {
           accepts_marketing?: boolean | null
           address?: string | null
+          avatar_url?: string | null
           birth_date?: string | null
           city?: string | null
           created_at?: string | null
@@ -1208,6 +1521,8 @@ export type Database = {
           phone_country_code?: string | null
           phone_secondary?: string | null
           preferred_branch_id?: string | null
+          preferred_currency?: string | null
+          preferred_language?: string | null
           preferred_specialist_id?: string | null
           tags?: string[] | null
           tenant_id?: string
@@ -1223,6 +1538,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_preferred_currency_fkey"
+            columns: ["preferred_currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "customers_preferred_specialist_id_fkey"
@@ -1801,6 +2123,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_dashboard"
+            referencedColumns: ["customer_id"]
+          },
+          {
             foreignKeyName: "invoices_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
@@ -1816,6 +2145,186 @@ export type Database = {
           },
           {
             foreignKeyName: "invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_ecommerce_storefront_public"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
+      menu_categories: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_categories_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_categories_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_categories_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_ecommerce_storefront_public"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
+      menu_item_images: {
+        Row: {
+          created_at: string
+          id: string
+          is_primary: boolean
+          menu_item_id: string
+          sort_order: number
+          storage_path: string
+          thumbnail_path: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          menu_item_id: string
+          sort_order?: number
+          storage_path: string
+          thumbnail_path?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          menu_item_id?: string
+          sort_order?: number
+          storage_path?: string
+          thumbnail_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_item_images_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_items: {
+        Row: {
+          branch_id: string
+          category_id: string | null
+          created_at: string
+          currency_iso: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_available: boolean
+          name: string
+          preparation_time_minutes: number
+          price: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          category_id?: string | null
+          created_at?: string
+          currency_iso?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_available?: boolean
+          name: string
+          preparation_time_minutes?: number
+          price?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          category_id?: string | null
+          created_at?: string
+          currency_iso?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_available?: boolean
+          name?: string
+          preparation_time_minutes?: number
+          price?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_currency_iso_fkey"
+            columns: ["currency_iso"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "menu_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "v_ecommerce_storefront_public"
@@ -2093,6 +2602,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_dashboard"
+            referencedColumns: ["customer_id"]
           },
           {
             foreignKeyName: "orders_specialist_id_fkey"
@@ -3149,6 +3665,75 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_client_app_settings: {
+        Row: {
+          brand_name: string | null
+          created_at: string
+          custom_sections: Json
+          custom_tokens: Json
+          google_login_enabled: boolean
+          hero_image_url: string | null
+          id: string
+          logo_url: string | null
+          show_google_login_preview: boolean
+          template_slug: string
+          tenant_id: string
+          theme_mode: string
+          updated_at: string
+          welcome_subtitle: string | null
+          welcome_title: string | null
+        }
+        Insert: {
+          brand_name?: string | null
+          created_at?: string
+          custom_sections?: Json
+          custom_tokens?: Json
+          google_login_enabled?: boolean
+          hero_image_url?: string | null
+          id?: string
+          logo_url?: string | null
+          show_google_login_preview?: boolean
+          template_slug?: string
+          tenant_id: string
+          theme_mode?: string
+          updated_at?: string
+          welcome_subtitle?: string | null
+          welcome_title?: string | null
+        }
+        Update: {
+          brand_name?: string | null
+          created_at?: string
+          custom_sections?: Json
+          custom_tokens?: Json
+          google_login_enabled?: boolean
+          hero_image_url?: string | null
+          id?: string
+          logo_url?: string | null
+          show_google_login_preview?: boolean
+          template_slug?: string
+          tenant_id?: string
+          theme_mode?: string
+          updated_at?: string
+          welcome_subtitle?: string | null
+          welcome_title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_client_app_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_client_app_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "v_ecommerce_storefront_public"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
       tenant_ecommerce_settings: {
         Row: {
           accent_color: string | null
@@ -3408,6 +3993,7 @@ export type Database = {
       }
       tenants: {
         Row: {
+          client_app_enabled: boolean
           country_code: string | null
           created_at: string | null
           created_by: string | null
@@ -3433,6 +4019,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          client_app_enabled?: boolean
           country_code?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -3458,6 +4045,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          client_app_enabled?: boolean
           country_code?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -3551,6 +4139,10 @@ export type Database = {
       workstations: {
         Row: {
           branch_id: string
+          cafeteria_qr_enabled: boolean
+          cafeteria_qr_last_generated_at: string | null
+          cafeteria_qr_slug: string | null
+          cafeteria_qr_updated_by: string | null
           code: string | null
           compatible_services: string[] | null
           created_at: string | null
@@ -3566,6 +4158,10 @@ export type Database = {
         }
         Insert: {
           branch_id: string
+          cafeteria_qr_enabled?: boolean
+          cafeteria_qr_last_generated_at?: string | null
+          cafeteria_qr_slug?: string | null
+          cafeteria_qr_updated_by?: string | null
           code?: string | null
           compatible_services?: string[] | null
           created_at?: string | null
@@ -3581,6 +4177,10 @@ export type Database = {
         }
         Update: {
           branch_id?: string
+          cafeteria_qr_enabled?: boolean
+          cafeteria_qr_last_generated_at?: string | null
+          cafeteria_qr_slug?: string | null
+          cafeteria_qr_updated_by?: string | null
           code?: string | null
           compatible_services?: string[] | null
           created_at?: string | null
@@ -3601,6 +4201,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workstations_cafeteria_qr_updated_by_fkey"
+            columns: ["cafeteria_qr_updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workstations_cafeteria_qr_updated_by_fkey"
+            columns: ["cafeteria_qr_updated_by"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "workstations_cafeteria_qr_updated_by_fkey"
+            columns: ["cafeteria_qr_updated_by"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
           },
           {
             foreignKeyName: "workstations_tenant_id_fkey"
@@ -3705,6 +4326,109 @@ export type Database = {
           },
         ]
       }
+      v_cafe_orders_today: {
+        Row: {
+          branch_id: string | null
+          branch_name: string | null
+          cancelled_at: string | null
+          client_id: string | null
+          client_name: string | null
+          created_at: string | null
+          currency_iso: string | null
+          delivered_at: string | null
+          elapsed_minutes: number | null
+          estimated_ready_at: string | null
+          id: string | null
+          items_count: number | null
+          notes: string | null
+          order_number: number | null
+          order_type: Database["public"]["Enums"]["cafe_order_type"] | null
+          placed_by_email: string | null
+          placed_by_name: string | null
+          preparing_at: string | null
+          ready_at: string | null
+          source: string | null
+          specialist_id: string | null
+          specialist_name: string | null
+          status: Database["public"]["Enums"]["cafe_order_status"] | null
+          tenant_id: string | null
+          total: number | null
+          workstation_id: string | null
+          workstation_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cafe_orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_dashboard"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_currency_iso_fkey"
+            columns: ["currency_iso"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "cafe_orders_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_ecommerce_storefront_public"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "cafe_orders_workstation_id_fkey"
+            columns: ["workstation_id"]
+            isOneToOne: false
+            referencedRelation: "workstations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_cash_registers_summary: {
         Row: {
           branch_id: string | null
@@ -3748,6 +4472,83 @@ export type Database = {
           },
         ]
       }
+      v_customer_dashboard: {
+        Row: {
+          avatar_url: string | null
+          customer_id: string | null
+          email: string | null
+          first_name: string | null
+          full_name: string | null
+          last_5_appointments: Json | null
+          last_name: string | null
+          last_visit_at: string | null
+          loyalty_points: number | null
+          next_appointment: Json | null
+          paid_orders_count: number | null
+          past_appointments_count: number | null
+          phone: string | null
+          preferred_branch_id: string | null
+          preferred_currency: string | null
+          preferred_language: string | null
+          preferred_specialist_id: string | null
+          tenant_id: string | null
+          top_services: Json | null
+          total_spent: number | null
+          total_visits: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_preferred_branch_id_fkey"
+            columns: ["preferred_branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_preferred_currency_fkey"
+            columns: ["preferred_currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "customers_preferred_specialist_id_fkey"
+            columns: ["preferred_specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_preferred_specialist_id_fkey"
+            columns: ["preferred_specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "customers_preferred_specialist_id_fkey"
+            columns: ["preferred_specialist_id"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "customers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_ecommerce_storefront_public"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
       v_daily_appointments: {
         Row: {
           branch_id: string | null
@@ -3784,6 +4585,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_dashboard"
+            referencedColumns: ["customer_id"]
           },
           {
             foreignKeyName: "appointments_service_id_fkey"
@@ -4118,9 +4926,40 @@ export type Database = {
         Returns: boolean
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      find_or_create_cafeteria_customer: {
+        Args: {
+          p_branch_id: string
+          p_email: string
+          p_full_name: string
+          p_tenant_id: string
+        }
+        Returns: {
+          customer_id: string
+          was_created: boolean
+        }[]
+      }
       generate_commissions_for_order: {
         Args: { p_invoice_id?: string; p_order_id: string }
         Returns: number
+      }
+      get_available_slots_for_service: {
+        Args: {
+          p_branch_id: string
+          p_date: string
+          p_service_id: string
+          p_slot_interval_minutes?: number
+          p_specialist_id?: string
+          p_tenant_id: string
+        }
+        Returns: {
+          slot_end: string
+          slot_start: string
+          specialist_avatar_url: string
+          specialist_id: string
+          specialist_name: string
+          specialist_rating: number
+          specialist_total_ratings: number
+        }[]
       }
       get_current_tenant_id: { Args: never; Returns: string }
       get_exchange_rate: {
@@ -4155,6 +4994,43 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      get_public_cafeteria_qr_context: {
+        Args: { p_qr_slug: string; p_tenant_slug: string }
+        Returns: {
+          branch_id: string
+          branch_name: string
+          qr_enabled: boolean
+          specialist_id: string
+          specialist_name: string
+          station_active: boolean
+          tenant_id: string
+          tenant_name: string
+          tenant_slug: string
+          workstation_code: string
+          workstation_id: string
+          workstation_name: string
+        }[]
+      }
+      get_public_client_app_settings: {
+        Args: { p_tenant_slug: string }
+        Returns: {
+          brand_name: string
+          client_app_enabled: boolean
+          custom_sections: Json
+          custom_tokens: Json
+          google_login_enabled: boolean
+          hero_image_url: string
+          logo_url: string
+          show_google_login_preview: boolean
+          template_slug: string
+          tenant_id: string
+          tenant_name: string
+          tenant_slug: string
+          theme_mode: string
+          welcome_subtitle: string
+          welcome_title: string
+        }[]
       }
       get_public_ecommerce_products: {
         Args: { p_category?: string; p_search?: string; p_tenant_slug: string }
@@ -4207,6 +5083,19 @@ export type Database = {
           text_color: string
           whatsapp_message_template: string
           whatsapp_number: string
+        }[]
+      }
+      get_service_specialists: {
+        Args: { p_branch_id: string; p_service_id: string; p_tenant_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          custom_duration: number
+          custom_price: number
+          full_name: string
+          rating: number
+          specialist_id: string
+          total_ratings: number
         }[]
       }
       get_user_tenant_role: {
@@ -4265,6 +5154,13 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "no_show"
+      cafe_order_status:
+        | "pending"
+        | "preparing"
+        | "ready"
+        | "delivered"
+        | "cancelled"
+      cafe_order_type: "client" | "specialist" | "walkin"
       commission_scope: "all" | "item_type" | "service"
       commission_status: "pending" | "approved" | "paid" | "cancelled"
       commission_type: "percentage" | "fixed"
@@ -4276,6 +5172,7 @@ export type Database = {
         | "friday"
         | "saturday"
         | "sunday"
+      favorite_entity_type: "service" | "product" | "specialist"
       global_role: "super_admin" | "admin" | "support"
       inventory_movement_type:
         | "entry"
@@ -4439,6 +5336,14 @@ export const Constants = {
         "cancelled",
         "no_show",
       ],
+      cafe_order_status: [
+        "pending",
+        "preparing",
+        "ready",
+        "delivered",
+        "cancelled",
+      ],
+      cafe_order_type: ["client", "specialist", "walkin"],
       commission_scope: ["all", "item_type", "service"],
       commission_status: ["pending", "approved", "paid", "cancelled"],
       commission_type: ["percentage", "fixed"],
@@ -4451,6 +5356,7 @@ export const Constants = {
         "saturday",
         "sunday",
       ],
+      favorite_entity_type: ["service", "product", "specialist"],
       global_role: ["super_admin", "admin", "support"],
       inventory_movement_type: [
         "entry",

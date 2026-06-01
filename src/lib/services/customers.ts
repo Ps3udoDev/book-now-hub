@@ -22,6 +22,7 @@ export interface CreateCustomerData {
   preferred_specialist_id?: string | null;
   tags?: string[];
   is_active?: boolean;
+  avatar_url?: string | null;
 }
 
 export interface UpdateCustomerData {
@@ -40,6 +41,7 @@ export interface UpdateCustomerData {
   preferred_specialist_id?: string | null;
   tags?: string[];
   is_active?: boolean;
+  avatar_url?: string | null;
 }
 
 export interface CustomerFilters {
@@ -102,7 +104,7 @@ class CustomersService {
       .select("*")
       .eq("tenant_id", tenantId)
       .or(
-        `first_name.ilike.${searchTerm},last_name.ilike.${searchTerm},email.ilike.${searchTerm},phone.ilike.${searchTerm}`
+        `first_name.ilike.${searchTerm},last_name.ilike.${searchTerm},email.ilike.${searchTerm},phone.ilike.${searchTerm}`,
       )
       .order("last_name", { ascending: true })
       .limit(20);
@@ -133,7 +135,7 @@ class CustomersService {
    */
   async getCustomerByEmail(
     tenantId: string,
-    email: string
+    email: string,
   ): Promise<Customer | null> {
     const { data, error } = await this.supabase
       .from("customers")
@@ -154,7 +156,7 @@ class CustomersService {
    */
   async getCustomerByPhone(
     tenantId: string,
-    phone: string
+    phone: string,
   ): Promise<Customer | null> {
     // Limpiar el teléfono de caracteres especiales
     const cleanPhone = phone.replace(/\D/g, "");
@@ -181,7 +183,7 @@ class CustomersService {
     if (data.email) {
       const existing = await this.getCustomerByEmail(
         data.tenant_id,
-        data.email
+        data.email,
       );
       if (existing) {
         throw new Error("Ya existe un cliente con ese correo electrónico");
@@ -206,6 +208,7 @@ class CustomersService {
       preferred_specialist_id: data.preferred_specialist_id || null,
       tags: data.tags || [],
       is_active: data.is_active ?? true,
+      avatar_url: data.avatar_url ?? null,
     };
 
     const { data: customer, error } = await this.supabase
@@ -229,7 +232,7 @@ class CustomersService {
    */
   async updateCustomer(
     customerId: string,
-    data: UpdateCustomerData
+    data: UpdateCustomerData,
   ): Promise<Customer> {
     const updateData: CustomerUpdate = {};
 
@@ -277,6 +280,9 @@ class CustomersService {
     }
     if (data.is_active !== undefined) {
       updateData.is_active = data.is_active;
+    }
+    if (data.avatar_url !== undefined) {
+      updateData.avatar_url = data.avatar_url;
     }
 
     const { data: customer, error } = await this.supabase
@@ -413,8 +419,8 @@ class CustomersService {
       active: customers.filter((c) => c.is_active).length,
       withEmail: customers.filter((c) => c.email).length,
       withPhone: customers.filter((c) => c.phone).length,
-      newThisMonth: customers.filter(
-        (c) => c.created_at ? new Date(c.created_at) >= startOfMonth : false
+      newThisMonth: customers.filter((c) =>
+        c.created_at ? new Date(c.created_at) >= startOfMonth : false,
       ).length,
     };
   }
@@ -425,7 +431,7 @@ class CustomersService {
   async getCustomersWithBirthday(
     tenantId: string,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
   ): Promise<Customer[]> {
     // Extraer mes y día para comparar
     const startMonth = startDate.getMonth() + 1;

@@ -1,8 +1,9 @@
+export { CustomerCard, CustomerSelectItem } from "./customer-card";
 export {
   CustomerForm,
-  PHONE_COUNTRY_CODES,
   DOCUMENT_TYPES,
+  PHONE_COUNTRY_CODES,
   SUGGESTED_TAGS,
 } from "./customer-form";
-export { CustomerCard, CustomerSelectItem } from "./customer-card";
+export { CustomerPickerDialog } from "./customer-picker-dialog";
 export * from "./link-account-dialog";

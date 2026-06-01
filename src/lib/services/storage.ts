@@ -95,6 +95,20 @@ class StorageService {
 
     return this.buildScopedPath(tenantId, "products", productId, fileName);
   }
+
+  buildMenuImagePath(
+    tenantId: string,
+    menuItemId: string,
+    fileExtension = "webp",
+    variant: "original" | "thumbnail" = "original",
+  ): string {
+    const fileName =
+      variant === "thumbnail"
+        ? `${crypto.randomUUID()}-thumb.${fileExtension}`
+        : `${crypto.randomUUID()}.${fileExtension}`;
+
+    return this.buildScopedPath(tenantId, "menu", menuItemId, fileName);
+  }
 }
 
 export const storageService = new StorageService();

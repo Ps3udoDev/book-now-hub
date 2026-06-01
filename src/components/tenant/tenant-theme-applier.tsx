@@ -7,8 +7,9 @@ import { useTenantContext } from "@/providers/tenant-provider";
 import { useTheme } from "@/providers/theme-provider";
 import type { ThemeCSSVariables } from "@/types";
 
-// Mapeo de variables generales del tema → variables del sidebar
-// Esto asegura que el sidebar adopte los colores del tema del tenant
+// Mapeo de fallback: si el tema NO define una variable de sidebar explícitamente,
+// la derivamos a partir de la variable general equivalente. El tema puede forzar
+// un sidebar con su propio color (p.ej. primary) definiendo --sidebar directamente.
 const SIDEBAR_VAR_MAPPING: Record<string, string> = {
   "--background": "--sidebar",
   "--foreground": "--sidebar-foreground",
@@ -18,6 +19,13 @@ const SIDEBAR_VAR_MAPPING: Record<string, string> = {
   "--accent-foreground": "--sidebar-accent-foreground",
   "--border": "--sidebar-border",
   "--ring": "--sidebar-ring",
+};
+
+// Fuentes del tema → variables CSS que consume globals.css
+const FONT_VAR_MAPPING: Record<string, string> = {
+  sans: "--font-body",
+  serif: "--font-heading",
+  mono: "--font-mono",
 };
 
 /**
@@ -65,6 +73,18 @@ export function TenantThemeApplier() {
       if (value) {
         root.style.setProperty(sidebarVar, value as string);
         appliedKeys.push(sidebarVar);
+      }
+    }
+
+    // Aplicar fuentes del tema (serif para títulos, sans para body)
+    const themeFonts = (theme?.fonts ?? null) as Record<string, string> | null;
+    if (themeFonts) {
+      for (const [fontKey, cssVar] of Object.entries(FONT_VAR_MAPPING)) {
+        const value = themeFonts[fontKey];
+        if (value) {
+          root.style.setProperty(cssVar, value);
+          appliedKeys.push(cssVar);
+        }
       }
     }
 

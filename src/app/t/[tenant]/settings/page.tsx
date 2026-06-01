@@ -5,9 +5,11 @@ import {
   Bell,
   Building2,
   ChevronRight,
+  Coffee,
   Coins,
-  ShoppingBag,
   Palette,
+  ShoppingBag,
+  Smartphone,
   User,
 } from "lucide-react";
 import Link from "next/link";
@@ -46,9 +48,25 @@ const settingsSections = [
   },
   {
     title: "Ecommerce",
-    description: "Configura la tienda publica, templates y contacto por WhatsApp",
+    description:
+      "Configura la tienda publica, templates y contacto por WhatsApp",
     href: "ecommerce",
     icon: ShoppingBag,
+    available: true,
+  },
+  {
+    title: "App del cliente",
+    description:
+      "Comparte el enlace, descarga el QR y activa el acceso publico para reservas",
+    href: "app-cliente",
+    icon: Smartphone,
+    available: true,
+  },
+  {
+    title: "Settings Cafetería",
+    description: "Gestiona QR por estación y accesos públicos al menú",
+    href: "cafeteria",
+    icon: Coffee,
     available: true,
   },
   {
