@@ -195,7 +195,9 @@ class ProductsService {
     return data || [];
   }
 
-  async getProductById(productId: string): Promise<ProductWithRelations | null> {
+  async getProductById(
+    productId: string,
+  ): Promise<ProductWithRelations | null> {
     const { data: product, error } = await this.db
       .from("products")
       .select("*")
@@ -207,19 +209,21 @@ class ProductsService {
       throw error;
     }
 
-    const [{ data: images, error: imagesError }, { data: stockSummary, error: stockError }] =
-      await Promise.all([
-        this.db
-          .from("product_images")
-          .select("*")
-          .eq("product_id", productId)
-          .order("sort_order", { ascending: true }),
-        this.db
-          .from("v_product_stock_summary")
-          .select("*")
-          .eq("product_id", productId)
-          .maybeSingle(),
-      ]);
+    const [
+      { data: images, error: imagesError },
+      { data: stockSummary, error: stockError },
+    ] = await Promise.all([
+      this.db
+        .from("product_images")
+        .select("*")
+        .eq("product_id", productId)
+        .order("sort_order", { ascending: true }),
+      this.db
+        .from("v_product_stock_summary")
+        .select("*")
+        .eq("product_id", productId)
+        .maybeSingle(),
+    ]);
 
     if (imagesError) throw imagesError;
     if (stockError) throw stockError;
@@ -248,7 +252,10 @@ class ProductsService {
     return product;
   }
 
-  async updateProduct(productId: string, data: UpdateProductData): Promise<Product> {
+  async updateProduct(
+    productId: string,
+    data: UpdateProductData,
+  ): Promise<Product> {
     const { data: product, error } = await this.db
       .from("products")
       .update({
@@ -275,6 +282,19 @@ class ProductsService {
     if (error) throw error;
   }
 
+  /**
+   * Borrado físico del producto. Las FKs product_images e
+   * inventory_movements tienen ON DELETE CASCADE en BD.
+   * Nota: no elimina archivos del bucket; ese paso se hace en la API route.
+   */
+  async deleteProduct(productId: string): Promise<void> {
+    const { error } = await this.db
+      .from("products")
+      .delete()
+      .eq("id", productId);
+    if (error) throw error;
+  }
+
   async addProductImage(data: {
     product_id: string;
     storage_path: string;
@@ -297,7 +317,10 @@ class ProductsService {
   }
 
   async removeProductImage(imageId: string): Promise<void> {
-    const { error } = await this.db.from("product_images").delete().eq("id", imageId);
+    const { error } = await this.db
+      .from("product_images")
+      .delete()
+      .eq("id", imageId);
     if (error) throw error;
   }
 

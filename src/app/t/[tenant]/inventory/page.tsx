@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { ArrowRight, Loader2, Package, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowRight, Loader2, Package, Plus, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/inventory";
 import { Button } from "@/components/ui/button";
@@ -15,17 +15,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useProducts, type ProductApiItem } from "@/hooks/supabase/use-products";
+import {
+  type ProductApiItem,
+  useProducts,
+} from "@/hooks/supabase/use-products";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
 export default function InventoryPage() {
   const params = useParams();
   const tenantSlug = params.tenant as string;
   const { tenant } = useAuthStore();
-  const { products, isLoading, error, mutate } = useProducts(tenant?.id || null);
+  const { products, isLoading, error, mutate } = useProducts(
+    tenant?.id || null,
+  );
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all");
 
   const categories = useMemo(
     () =>
@@ -65,7 +72,12 @@ export default function InventoryPage() {
   };
 
   const handleDelete = async (product: ProductApiItem) => {
-    if (!confirm(`¿Deseas desactivar "${product.name}"?`)) return;
+    if (
+      !confirm(
+        `¿Eliminar permanentemente "${product.name}"?\n\nSe borrarán también sus imágenes y su historial de movimientos de inventario. Esta acción no se puede deshacer.`,
+      )
+    )
+      return;
 
     const response = await fetch(`/api/products/${product.id}`, {
       method: "DELETE",
@@ -74,11 +86,11 @@ export default function InventoryPage() {
     const json = await response.json();
 
     if (!response.ok) {
-      toast.error(json.error || "No se pudo desactivar el producto");
+      toast.error(json.error || "No se pudo eliminar el producto");
       return;
     }
 
-    toast.success("Producto desactivado");
+    toast.success("Producto eliminado");
     refresh();
   };
 
@@ -96,7 +108,9 @@ export default function InventoryPage() {
       return;
     }
 
-    toast.success(product.is_active ? "Producto desactivado" : "Producto activado");
+    toast.success(
+      product.is_active ? "Producto desactivado" : "Producto activado",
+    );
     refresh();
   };
 

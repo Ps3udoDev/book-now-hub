@@ -45,7 +45,11 @@ export async function GET(request: NextRequest) {
       .eq("slug", tenantSlug)
       .maybeSingle();
 
-    if (tenant && ["active", "trial"].includes(tenant.status)) {
+    if (
+      tenant &&
+      tenant.status &&
+      ["active", "trial"].includes(tenant.status)
+    ) {
       const fullName =
         (user.user_metadata?.full_name as string | undefined) ||
         (user.user_metadata?.name as string | undefined) ||

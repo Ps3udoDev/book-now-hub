@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!["active", "trial"].includes(tenant.status)) {
+    if (!tenant.status || !["active", "trial"].includes(tenant.status)) {
       return NextResponse.json(
         { error: "Este tenant no esta aceptando nuevos registros" },
         { status: 403 },

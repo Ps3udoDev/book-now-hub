@@ -221,13 +221,38 @@ export async function DELETE(
     if (access instanceof NextResponse) return access;
 
     const admin = supabaseAdmin as any;
-    const { error } = await admin
-      .from("products")
-      .update({
-        is_active: false,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id);
+
+    // Borrar primero los archivos del bucket (el cascade en BD solo elimina
+    // las filas de product_images, no los objetos de storage).
+    const { data: images } = await admin
+      .from("product_images")
+      .select("storage_path, thumbnail_path")
+      .eq("product_id", id);
+
+    const paths = (
+      (images as { storage_path: string; thumbnail_path: string | null }[]) ||
+      []
+    )
+      .flatMap((image) => [image.storage_path, image.thumbnail_path])
+      .filter((path): path is string => Boolean(path));
+
+    if (paths.length) {
+      const { error: storageError } = await admin.storage
+        .from("product-images")
+        .remove(paths);
+
+      if (storageError) {
+        console.warn(
+          "No se pudieron eliminar archivos de storage:",
+          storageError.message,
+        );
+      }
+    }
+
+    // Borrado físico del producto. Las FKs product_images e
+    // inventory_movements tienen ON DELETE CASCADE, así que sus filas
+    // se eliminan automáticamente.
+    const { error } = await admin.from("products").delete().eq("id", id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
