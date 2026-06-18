@@ -1,22 +1,18 @@
 // src/app/c/[tenant]/register/page.tsx
+// Registro del cliente final con la estetica del prototipo.
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock, Mail, Phone, User } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  ClientButton,
+  ClientField,
+  clientInputClass,
+  Display,
+} from "@/components/client/themed";
 import { clientAuthService } from "@/lib/services/client-auth";
 
 export default function ClientRegisterPage() {
@@ -35,9 +31,13 @@ export default function ClientRegisterPage() {
     event.preventDefault();
     setLoading(true);
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+
+      await clientAuthService.signOut().catch(() => undefined);
+
       const res = await clientAuthService.register({
         tenant_slug: tenantSlug,
-        email,
+        email: normalizedEmail,
         password,
         full_name: fullName,
         phone: phone || null,
@@ -48,7 +48,7 @@ export default function ClientRegisterPage() {
           "Te enviamos un correo para verificar tu cuenta. Revisa tu bandeja antes de iniciar sesión.",
         );
       } else {
-        await clientAuthService.signInWithPassword(email, password);
+        await clientAuthService.signInWithPassword(normalizedEmail, password);
         router.replace(`/c/${tenantSlug}/onboarding`);
       }
     } catch (error) {
@@ -61,96 +61,101 @@ export default function ClientRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Crea tu cuenta</CardTitle>
-          <CardDescription>
-            Regístrate para agendar y ver tu historial
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {success ? (
-            <div className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-400">
-              {success}
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nombre completo</Label>
-                <Input
-                  id="fullName"
-                  required
-                  autoComplete="name"
-                  value={fullName}
-                  onChange={(event) => setFullName(event.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Correo electrónico</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Teléfono (opcional)</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  disabled={loading}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Mínimo 8 caracteres
-                </p>
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creando cuenta…
-                  </>
-                ) : (
-                  "Crear cuenta"
-                )}
-              </Button>
-            </form>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-muted-foreground">
-            ¿Ya tienes cuenta?{" "}
-            <Link
-              href={`/c/${tenantSlug}/login`}
-              className="font-medium text-primary hover:underline"
-            >
-              Inicia sesión
-            </Link>
-          </p>
-        </CardFooter>
-      </Card>
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-8 pt-16">
+      <Display className="text-[32px] font-medium leading-[1.1]">
+        Crea tu cuenta
+      </Display>
+      <p className="mb-7 mt-2 text-sm text-[var(--client-fg-muted)]">
+        Regístrate para agendar y ver tu historial.
+      </p>
+
+      {success ? (
+        <div
+          className="border border-[var(--client-border)] bg-[var(--client-surface)] p-4 text-sm text-[var(--client-fg)]"
+          style={{ borderRadius: "var(--client-rad-md)" }}
+        >
+          {success}
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+          <ClientField icon={<User className="h-[18px] w-[18px]" />}>
+            <input
+              id="fullName"
+              required
+              autoComplete="name"
+              placeholder="Nombre completo"
+              className={clientInputClass}
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+              disabled={loading}
+            />
+          </ClientField>
+          <ClientField icon={<Mail className="h-[18px] w-[18px]" />}>
+            <input
+              id="email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="tu@email.com"
+              className={clientInputClass}
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              disabled={loading}
+            />
+          </ClientField>
+          <ClientField icon={<Phone className="h-[18px] w-[18px]" />}>
+            <input
+              id="phone"
+              type="tel"
+              autoComplete="tel"
+              placeholder="Teléfono (opcional)"
+              className={clientInputClass}
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              disabled={loading}
+            />
+          </ClientField>
+          <div>
+            <ClientField icon={<Lock className="h-[18px] w-[18px]" />}>
+              <input
+                id="password"
+                type="password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="Contraseña"
+                className={clientInputClass}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                disabled={loading}
+              />
+            </ClientField>
+            <p className="mt-1.5 text-xs text-[var(--client-fg-faint)]">
+              Mínimo 8 caracteres
+            </p>
+          </div>
+          <ClientButton type="submit" disabled={loading} className="h-[52px]">
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Creando cuenta…
+              </>
+            ) : (
+              "Crear cuenta"
+            )}
+          </ClientButton>
+        </form>
+      )}
+
+      <p className="mt-6 text-center text-sm text-[var(--client-fg-muted)]">
+        ¿Ya tienes cuenta?{" "}
+        <Link
+          href={`/c/${tenantSlug}/login`}
+          className="font-semibold text-[var(--client-primary)] hover:underline"
+        >
+          Inicia sesión
+        </Link>
+      </p>
     </div>
   );
 }

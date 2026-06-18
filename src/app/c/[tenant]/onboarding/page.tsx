@@ -1,31 +1,22 @@
 // src/app/c/[tenant]/onboarding/page.tsx
-// Pantalla de onboarding post-registro: completa nombre, telefono y preferencias.
+// Onboarding post-registro en pasos (prototipo): nombre → contacto → preferencias.
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Bell, Loader2, Phone, User } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+  ClientButton,
+  ClientChip,
+  ClientField,
+  clientInputClass,
+  Display,
+} from "@/components/client/themed";
 import { useClientProfile } from "@/hooks/supabase/use-client-profile";
 import { clientAuthService } from "@/lib/services/client-auth";
+
+const STEPS = ["nombre", "contacto", "preferencias"] as const;
 
 export default function ClientOnboardingPage() {
   const params = useParams();
@@ -34,6 +25,7 @@ export default function ClientOnboardingPage() {
 
   const { customer, isLoading } = useClientProfile(tenantSlug);
 
+  const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -51,8 +43,7 @@ export default function ClientOnboardingPage() {
     }
   }, [customer]);
 
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async () => {
     setSaving(true);
     try {
       await clientAuthService.completeOnboarding({
@@ -75,96 +66,197 @@ export default function ClientOnboardingPage() {
     }
   };
 
+  const handleNext = (event: FormEvent) => {
+    event.preventDefault();
+    if (step === 0 && !firstName.trim()) {
+      toast.error("Cuéntanos tu nombre");
+      return;
+    }
+    if (step < STEPS.length - 1) {
+      setStep(step + 1);
+    } else {
+      void handleSubmit();
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex min-h-screen items-center justify-center bg-[var(--client-bg)]">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--client-primary)]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Cuéntanos sobre ti</CardTitle>
-          <CardDescription>
-            Necesitamos algunos datos para personalizar tu experiencia
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Nombre</Label>
-                <Input
-                  id="firstName"
-                  required
-                  value={firstName}
-                  onChange={(event) => setFirstName(event.target.value)}
-                  disabled={saving}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Apellido</Label>
-                <Input
-                  id="lastName"
-                  required
-                  value={lastName}
-                  onChange={(event) => setLastName(event.target.value)}
-                  disabled={saving}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Teléfono</Label>
-              <Input
+    <form
+      onSubmit={handleNext}
+      className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-8 pt-10"
+    >
+      {/* Progreso */}
+      <div className="mb-8 flex gap-1.5">
+        {STEPS.map((key, index) => (
+          <span
+            key={key}
+            className="h-1 flex-1 rounded-full transition-colors"
+            style={{
+              background:
+                index <= step
+                  ? "var(--client-primary)"
+                  : "var(--client-surface-alt)",
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-3.5">
+        {step === 0 ? (
+          <>
+            <Display className="text-[30px] font-medium leading-[1.1]">
+              ¿Cómo te llamas?
+            </Display>
+            <p className="mb-4 text-sm text-[var(--client-fg-muted)]">
+              Lo usaremos para personalizar tu experiencia.
+            </p>
+            <ClientField icon={<User className="h-[18px] w-[18px]" />}>
+              <input
+                id="firstName"
+                required
+                placeholder="Tu nombre"
+                className={clientInputClass}
+                value={firstName}
+                onChange={(event) => setFirstName(event.target.value)}
+                disabled={saving}
+              />
+            </ClientField>
+            <ClientField icon={<User className="h-[18px] w-[18px]" />}>
+              <input
+                id="lastName"
+                placeholder="Tu apellido"
+                className={clientInputClass}
+                value={lastName}
+                onChange={(event) => setLastName(event.target.value)}
+                disabled={saving}
+              />
+            </ClientField>
+          </>
+        ) : null}
+
+        {step === 1 ? (
+          <>
+            <Display className="text-[30px] font-medium leading-[1.1]">
+              Tu contacto
+            </Display>
+            <p className="mb-4 text-sm text-[var(--client-fg-muted)]">
+              Para recordatorios de cita y avisos importantes.
+            </p>
+            <ClientField icon={<Phone className="h-[18px] w-[18px]" />}>
+              <input
                 id="phone"
                 type="tel"
                 autoComplete="tel"
+                placeholder="+593 000 000 000"
+                className={clientInputClass}
                 value={phone}
                 onChange={(event) => setPhone(event.target.value)}
                 disabled={saving}
               />
+            </ClientField>
+            <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-[var(--client-fg-faint)]">
+              Idioma preferido
+            </p>
+            <div className="flex gap-2">
+              <ClientChip
+                active={language === "es"}
+                onClick={() => setLanguage("es")}
+              >
+                Español
+              </ClientChip>
+              <ClientChip
+                active={language === "en"}
+                onClick={() => setLanguage("en")}
+              >
+                English
+              </ClientChip>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="language">Idioma preferido</Label>
-              <Select value={language} onValueChange={setLanguage}>
-                <SelectTrigger id="language">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="es">Español</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div>
-                <p className="text-sm font-medium">Recibir promociones</p>
-                <p className="text-xs text-muted-foreground">
+          </>
+        ) : null}
+
+        {step === 2 ? (
+          <>
+            <Display className="text-[30px] font-medium leading-[1.1]">
+              Últimos detalles
+            </Display>
+            <p className="mb-4 text-sm text-[var(--client-fg-muted)]">
+              Lo cambias cuando quieras desde tu perfil.
+            </p>
+            <button
+              type="button"
+              onClick={() => setMarketingConsent((current) => !current)}
+              className="flex items-center gap-3 border border-[var(--client-border)] bg-[var(--client-surface)] p-3.5 text-left"
+              style={{ borderRadius: "var(--client-rad-lg)" }}
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--client-surface-alt)] text-[var(--client-fg)]">
+                <Bell className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-[var(--client-fg)]">
+                  Recibir promociones
+                </span>
+                <span className="block text-xs text-[var(--client-fg-muted)]">
                   Ofertas y novedades por email
-                </p>
-              </div>
-              <Switch
-                checked={marketingConsent}
-                onCheckedChange={setMarketingConsent}
-                disabled={saving}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Guardando…
-                </>
-              ) : (
-                "Continuar"
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+                </span>
+              </span>
+              <span
+                className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
+                style={{
+                  background: marketingConsent
+                    ? "var(--client-primary)"
+                    : "var(--client-surface-alt)",
+                }}
+              >
+                <span
+                  className="absolute top-[3px] h-[18px] w-[18px] rounded-full shadow transition-all"
+                  style={{
+                    left: marketingConsent ? 22 : 3,
+                    background: marketingConsent
+                      ? "var(--client-primary-fg)"
+                      : "var(--client-surface)",
+                  }}
+                />
+              </span>
+            </button>
+          </>
+        ) : null}
+      </div>
+
+      <div className="mt-8 flex gap-2.5">
+        {step > 0 ? (
+          <ClientButton
+            variant="ghost"
+            onClick={() => setStep(step - 1)}
+            disabled={saving}
+            className="h-[52px] flex-1"
+          >
+            Atrás
+          </ClientButton>
+        ) : null}
+        <ClientButton
+          type="submit"
+          disabled={saving}
+          className="h-[52px] flex-[2]"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Guardando…
+            </>
+          ) : step < STEPS.length - 1 ? (
+            "Continuar"
+          ) : (
+            "Comenzar"
+          )}
+        </ClientButton>
+      </div>
+    </form>
   );
 }

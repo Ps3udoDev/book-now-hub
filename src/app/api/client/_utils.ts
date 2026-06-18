@@ -2,6 +2,7 @@
 // Helpers compartidos por las rutas /api/client/* (app del cliente final).
 // El cliente final es un usuario auth.users vinculado a customers via user_id.
 import { type NextRequest, NextResponse } from "next/server";
+import { ensureClientCustomer } from "@/lib/services/client-customer";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createServerSB } from "@/lib/supabase/server";
 import type { Customer, Tenant } from "@/types";
@@ -10,6 +11,20 @@ export interface ClientAuthContext {
   user: { id: string; email: string | null };
   tenant: Tenant;
   customer: Customer;
+}
+
+function getUserFullName(user: {
+  email?: string | null;
+  user_metadata?: Record<string, unknown>;
+}) {
+  const metadataName =
+    typeof user.user_metadata?.full_name === "string"
+      ? user.user_metadata.full_name
+      : typeof user.user_metadata?.name === "string"
+        ? user.user_metadata.name
+        : null;
+
+  return metadataName?.trim() || user.email || "Cliente";
 }
 
 /**
@@ -41,9 +56,7 @@ export async function requireClientCustomer(
     );
   }
 
-  const admin = supabaseAdmin as any;
-
-  const { data: tenant, error: tenantError } = await admin
+  const { data: tenant, error: tenantError } = await supabaseAdmin
     .from("tenants")
     .select("*")
     .eq("slug", tenantSlug)
@@ -56,7 +69,7 @@ export async function requireClientCustomer(
     );
   }
 
-  const { data: customer, error: customerError } = await admin
+  const { data: customer, error: customerError } = await supabaseAdmin
     .from("customers")
     .select("*")
     .eq("tenant_id", tenant.id)
@@ -68,9 +81,35 @@ export async function requireClientCustomer(
   }
 
   if (!customer) {
+    try {
+      const ensuredCustomer = await ensureClientCustomer({
+        tenantId: tenant.id,
+        userId: user.id,
+        email: user.email ?? null,
+        fullName: getUserFullName(user),
+      });
+
+      return {
+        user: { id: user.id, email: user.email ?? null },
+        tenant: tenant as Tenant,
+        customer: ensuredCustomer,
+      };
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error:
+            (error as Error).message ??
+            "El usuario no tiene perfil de cliente en este tenant",
+        },
+        { status: 500 },
+      );
+    }
+  }
+
+  if (customer.is_active === false) {
     return NextResponse.json(
-      { error: "El usuario no tiene perfil de cliente en este tenant" },
-      { status: 404 },
+      { error: "El perfil de cliente esta inactivo en este tenant" },
+      { status: 403 },
     );
   }
 

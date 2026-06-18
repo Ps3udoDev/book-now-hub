@@ -3,6 +3,7 @@
 // Crea el auth.user, envia el correo de verificacion y vincula
 // (o crea) un registro en customers para el tenant indicado.
 import { type NextRequest, NextResponse } from "next/server";
+import { ensureClientCustomer } from "@/lib/services/client-customer";
 import {
   createAuthUser,
   getAuthUserByEmail,
@@ -41,9 +42,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const admin = supabaseAdmin as any;
-
-    const { data: tenant, error: tenantError } = await admin
+    const { data: tenant, error: tenantError } = await supabaseAdmin
       .from("tenants")
       .select("id, slug, status")
       .eq("slug", body.tenant_slug)
@@ -98,26 +97,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // get_or_create_customer_for_user busca por user_id, luego por email
-    // (vincula si encuentra customer huerfano), o crea uno nuevo.
-    const { data: customerId, error: rpcError } = await admin.rpc(
-      "get_or_create_customer_for_user",
-      {
-        p_tenant_id: tenant.id,
-        p_user_id: authUser.id,
-        p_email: email,
-        p_full_name: fullName,
-        p_phone: phone,
-      },
-    );
-
-    if (rpcError) {
+    let customerId: string;
+    try {
+      const customer = await ensureClientCustomer({
+        tenantId: tenant.id,
+        userId: authUser.id,
+        email,
+        fullName,
+        phone,
+      });
+      customerId = customer.id;
+    } catch (error) {
       // Rollback solo si nosotros creamos el auth.user en este request
       if (createdAuthUser) {
-        await admin.auth.admin.deleteUser(authUser.id);
+        await supabaseAdmin.auth.admin.deleteUser(authUser.id);
       }
       return NextResponse.json(
-        { error: `Error al crear cliente: ${rpcError.message}` },
+        { error: `Error al crear cliente: ${(error as Error).message}` },
         { status: 500 },
       );
     }
@@ -138,7 +134,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (Object.keys(updates).length > 0) {
-      await admin.from("customers").update(updates).eq("id", customerId);
+      await supabaseAdmin
+        .from("customers")
+        .update(updates)
+        .eq("id", customerId);
     }
 
     return NextResponse.json(

@@ -3,20 +3,16 @@
 // con una sesion activa. Permite definir una contraseña nueva.
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  ClientButton,
+  ClientField,
+  clientInputClass,
+  Display,
+} from "@/components/client/themed";
 import { clientAuthService } from "@/lib/services/client-auth";
 
 export default function ClientResetPasswordPage() {
@@ -56,51 +52,52 @@ export default function ClientResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Nueva contraseña</CardTitle>
-          <CardDescription>Define una contraseña segura</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                disabled={saving}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm">Confirmar contraseña</Label>
-              <Input
-                id="confirm"
-                type="password"
-                required
-                minLength={8}
-                value={confirm}
-                onChange={(event) => setConfirm(event.target.value)}
-                disabled={saving}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Guardando…
-                </>
-              ) : (
-                "Cambiar contraseña"
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-8 pt-16">
+      <Display className="text-[32px] font-medium leading-[1.1]">
+        Nueva contraseña
+      </Display>
+      <p className="mb-7 mt-2 text-sm text-[var(--client-fg-muted)]">
+        Define una contraseña segura.
+      </p>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+        <ClientField icon={<Lock className="h-[18px] w-[18px]" />}>
+          <input
+            id="password"
+            type="password"
+            required
+            minLength={8}
+            placeholder="Contraseña"
+            className={clientInputClass}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            disabled={saving}
+          />
+        </ClientField>
+        <ClientField icon={<Lock className="h-[18px] w-[18px]" />}>
+          <input
+            id="confirm"
+            type="password"
+            required
+            minLength={8}
+            placeholder="Confirmar contraseña"
+            className={clientInputClass}
+            value={confirm}
+            onChange={(event) => setConfirm(event.target.value)}
+            disabled={saving}
+          />
+        </ClientField>
+        <ClientButton type="submit" disabled={saving} className="h-[52px]">
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Guardando…
+            </>
+          ) : (
+            "Cambiar contraseña"
+          )}
+        </ClientButton>
+      </form>
     </div>
   );
 }

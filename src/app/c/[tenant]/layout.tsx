@@ -9,6 +9,7 @@ import { Loader2, Lock } from "lucide-react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
 import { ClientBottomNav } from "@/components/client/client-bottom-nav";
+import { ClientThemeProvider } from "@/components/client/themed";
 import {
   type ClientAppSettingsShape,
   getClientAppFontHref,
@@ -54,6 +55,12 @@ export default function ClientAppLayout({ children }: { children: ReactNode }) {
         const res = await fetch(
           `/api/client/tenant-status?tenant=${encodeURIComponent(tenantSlug)}`,
         );
+        const contentType = res.headers.get("content-type") ?? "";
+        if (!contentType.includes("application/json")) {
+          throw new Error(
+            `Respuesta inesperada del servidor (${res.status || "sin status"})`,
+          );
+        }
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) {
@@ -143,13 +150,18 @@ export default function ClientAppLayout({ children }: { children: ReactNode }) {
 
   if (isPublic) {
     return (
-      <div
-        className="min-h-screen bg-[var(--client-bg)] text-[var(--client-fg)]"
-        style={getClientAppThemeStyle(tenantStatus?.settings)}
-      >
-        <link rel="stylesheet" href={getClientAppFontHref()} />
-        {children}
-      </div>
+      <ClientThemeProvider settings={tenantStatus?.settings}>
+        <div
+          className="min-h-screen bg-[var(--client-bg)] text-[var(--client-fg)]"
+          style={{
+            ...getClientAppThemeStyle(tenantStatus?.settings),
+            fontFamily: "var(--client-font-body)",
+          }}
+        >
+          <link rel="stylesheet" href={getClientAppFontHref()} />
+          {children}
+        </div>
+      </ClientThemeProvider>
     );
   }
 
@@ -166,14 +178,19 @@ export default function ClientAppLayout({ children }: { children: ReactNode }) {
 
   return (
     <ClientTenantProvider tenantSlug={tenantSlug}>
-      <div
-        className="min-h-screen bg-[var(--client-bg)] text-[var(--client-fg)]"
-        style={getClientAppThemeStyle(tenantStatus?.settings)}
-      >
-        <link rel="stylesheet" href={getClientAppFontHref()} />
-        {children}
-        <ClientBottomNav tenantSlug={tenantSlug} />
-      </div>
+      <ClientThemeProvider settings={tenantStatus?.settings}>
+        <div
+          className="min-h-screen bg-[var(--client-bg)] text-[var(--client-fg)]"
+          style={{
+            ...getClientAppThemeStyle(tenantStatus?.settings),
+            fontFamily: "var(--client-font-body)",
+          }}
+        >
+          <link rel="stylesheet" href={getClientAppFontHref()} />
+          {children}
+          <ClientBottomNav tenantSlug={tenantSlug} />
+        </div>
+      </ClientThemeProvider>
     </ClientTenantProvider>
   );
 }

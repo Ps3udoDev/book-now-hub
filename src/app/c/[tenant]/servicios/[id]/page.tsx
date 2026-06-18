@@ -1,32 +1,34 @@
 // src/app/c/[tenant]/servicios/[id]/page.tsx
-// Detalle del servicio + flujo de agendamiento por pasos:
-//   1) fecha
-//   2) horarios disponibles (auto-asigna mejor evaluado)
-//   3) toggle "elegir especialista" → lista
-//   4) confirmacion
-//   5) exito + .ics
+// Detalle del servicio + flujo de agendamiento por pasos, fiel al prototipo:
+//   hero full-bleed → 1) fecha (strip horizontal) → 2) hora → 3) especialista
+//   → 4) notas → CTA sticky "Reservar" → confirmacion → exito (.ics).
 "use client";
 
 import {
   ArrowLeft,
-  CalendarDays,
-  CheckCircle2,
+  Calendar,
+  Check,
   Clock,
+  CreditCard,
   Download,
+  Heart,
   Loader2,
   Sparkles,
+  Star,
   User,
-  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { SpecialistPicker } from "@/components/client/specialist-picker";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  ClientButton,
+  ClientCard,
+  displayStyle,
+  StepHeader,
+  useClientTheme,
+} from "@/components/client/themed";
 import {
   Select,
   SelectContent,
@@ -35,7 +37,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import {
   useClientAvailability,
   useClientService,
@@ -58,11 +59,38 @@ const SLOT_SKELETON_KEYS = [
   "slot-skel-h",
 ];
 
-function todayIso(): string {
-  const now = new Date();
-  const offset = now.getTimezoneOffset();
-  const local = new Date(now.getTime() - offset * 60_000);
+function toLocalIso(date: Date): string {
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60_000);
   return local.toISOString().substring(0, 10);
+}
+
+function todayIso(): string {
+  return toLocalIso(new Date());
+}
+
+// 14 dias desde hoy para el strip de fechas del prototipo.
+function buildDateStrip() {
+  const days: Array<{ iso: string; wd: string; day: number; month: string }> =
+    [];
+  const base = new Date();
+  for (let i = 0; i < 14; i++) {
+    const current = new Date(base);
+    current.setDate(base.getDate() + i);
+    days.push({
+      iso: toLocalIso(current),
+      wd: current
+        .toLocaleDateString("es-VE", { weekday: "short" })
+        .replace(".", "")
+        .toUpperCase(),
+      day: current.getDate(),
+      month: current
+        .toLocaleDateString("es-VE", { month: "short" })
+        .replace(".", "")
+        .toUpperCase(),
+    });
+  }
+  return days;
 }
 
 function formatTime(value: string): string {
@@ -90,11 +118,14 @@ export default function ClientBookingPage() {
   const router = useRouter();
   const serviceId = params.id as string;
   const { tenantSlug } = useClientTenant();
+  const { isBarber } = useClientTheme();
 
   const { service, defaultBranchId, branches, isLoading } = useClientService(
     tenantSlug,
     serviceId,
   );
+
+  const dateStrip = useMemo(() => buildDateStrip(), []);
 
   const [branchId, setBranchId] = useState<string | null>(null);
   const [date, setDate] = useState<string>(() => todayIso());
@@ -189,62 +220,91 @@ export default function ClientBookingPage() {
 
   if (isLoading || !service) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
-        <Skeleton className="h-8 w-32" />
-        <Skeleton className="h-48 w-full rounded-xl" />
-        <Skeleton className="h-32 w-full rounded-xl" />
+      <div className="mx-auto max-w-md space-y-4 px-5 py-6">
+        <Skeleton className="h-52 w-full rounded-2xl" />
+        <Skeleton className="h-8 w-2/3" />
+        <Skeleton className="h-32 w-full rounded-2xl" />
       </div>
     );
   }
 
+  // ── Éxito ────────────────────────────────────────────────────────────────
   if (step === "success" && createdAppointment) {
+    const confirmedSpecialist = pickSpecialistMode
+      ? (selectedSlot?.available_specialists.find(
+          (sp) => sp.specialist_id === chosenSpecialistId,
+        )?.specialist_name ?? "Asignado")
+      : (selectedSlot?.best.specialist_name ?? "Asignado");
+
     return (
-      <div className="max-w-3xl mx-auto px-4 py-12 space-y-6">
-        <Card>
-          <CardContent className="text-center py-10 space-y-5">
-            <div className="h-16 w-16 mx-auto rounded-full bg-emerald-500/10 flex items-center justify-center">
-              <CheckCircle2 className="h-8 w-8 text-emerald-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">¡Cita agendada!</h1>
-              <p className="text-muted-foreground mt-1">
-                Te enviaremos un recordatorio antes de tu visita
-              </p>
-            </div>
-            <div className="rounded-lg border p-4 text-left space-y-2 max-w-sm mx-auto">
-              <div className="flex items-center gap-2 text-sm">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="font-medium">{service.name}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CalendarDays className="h-4 w-4" />
-                <span className="capitalize">
-                  {formatLongDate(createdAppointment.scheduled_at)}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span>
-                  {formatTime(createdAppointment.scheduled_at)} ·{" "}
-                  {createdAppointment.duration_minutes} min
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 justify-center">
-              <Button onClick={handleDownloadIcs} variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Agregar a calendario
-              </Button>
-              <Button onClick={() => router.replace(`/c/${tenantSlug}`)}>
-                Volver al inicio
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 pb-28 pt-10 text-center">
+        <span
+          className="grid h-24 w-24 place-items-center rounded-full bg-[var(--client-surface-alt)] text-[var(--client-success)]"
+          style={{
+            boxShadow:
+              "0 0 0 8px var(--client-surface), 0 0 0 9px var(--client-border)",
+          }}
+        >
+          <Check className="h-12 w-12" strokeWidth={2.5} />
+        </span>
+        <h1
+          className="mb-1.5 mt-6 text-[30px] font-semibold leading-tight text-[var(--client-fg)]"
+          style={displayStyle(isBarber)}
+        >
+          ¡Cita confirmada!
+        </h1>
+        <p className="mb-6 max-w-[280px] text-sm leading-relaxed text-[var(--client-fg-muted)]">
+          Te enviaremos un recordatorio antes de tu visita. Tienes el evento
+          listo para tu calendario.
+        </p>
+
+        <ClientCard className="w-full max-w-[320px] p-4 text-left">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--client-fg-muted)]">
+            Resumen
+          </p>
+          <p
+            className="mb-3 mt-1.5 text-lg font-semibold leading-tight text-[var(--client-fg)]"
+            style={displayStyle(isBarber)}
+          >
+            {service.name}
+          </p>
+          <SummaryRow
+            icon={<Calendar className="h-4 w-4" />}
+            label="Fecha"
+            value={formatLongDate(createdAppointment.scheduled_at)}
+          />
+          <SummaryRow
+            icon={<Clock className="h-4 w-4" />}
+            label="Hora"
+            value={`${formatTime(createdAppointment.scheduled_at)} · ${createdAppointment.duration_minutes} min`}
+          />
+          <SummaryRow
+            icon={<User className="h-4 w-4" />}
+            label="Especialista"
+            value={confirmedSpecialist}
+          />
+          <SummaryRow
+            icon={<CreditCard className="h-4 w-4" />}
+            label="Total"
+            value={formatPrice(service.base_price, service.currency_code)}
+            last
+          />
+        </ClientCard>
+
+        <div className="mt-4 grid w-full max-w-[320px] grid-cols-1 gap-2.5">
+          <ClientButton variant="surface" onClick={handleDownloadIcs}>
+            <Download className="h-4 w-4" />
+            Agregar a calendario (.ics)
+          </ClientButton>
+          <ClientButton onClick={() => router.replace(`/c/${tenantSlug}`)}>
+            Volver a inicio
+          </ClientButton>
+        </div>
       </div>
     );
   }
 
+  // ── Confirmación ─────────────────────────────────────────────────────────
   if (step === "confirm" && selectedSlot) {
     const specialistId = pickSpecialistMode
       ? chosenSpecialistId
@@ -255,203 +315,220 @@ export default function ClientBookingPage() {
       ) ?? selectedSlot.best;
 
     return (
-      <div className="max-w-2xl mx-auto px-4 py-6 pb-24 space-y-5">
+      <div className="mx-auto max-w-md space-y-5 px-5 pb-28 pt-4">
         <button
           type="button"
           onClick={() => setStep("select_slot")}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="grid h-10 w-10 place-items-center rounded-full border border-[var(--client-border)] bg-[var(--client-surface)] text-[var(--client-fg)]"
+          aria-label="Volver"
         >
           <ArrowLeft className="h-4 w-4" />
-          Volver
         </button>
 
-        <h1 className="text-2xl font-bold">Confirmar cita</h1>
+        <h1
+          className="text-[26px] font-semibold leading-tight text-[var(--client-fg)]"
+          style={displayStyle(isBarber)}
+        >
+          Confirmar cita
+        </h1>
 
-        <Card>
-          <CardContent className="p-6 space-y-4">
-            <Row label="Servicio" value={service.name} />
-            <Row label="Sucursal" value={branch?.name ?? "—"} />
-            <Row
-              label="Fecha"
-              value={formatLongDate(selectedSlot.slot_start)}
-            />
-            <Row
-              label="Hora"
-              value={`${formatTime(selectedSlot.slot_start)} (${service.duration_minutes} min)`}
-            />
-            <Row label="Especialista" value={specialist.specialist_name} />
-            <Row
-              label="Total estimado"
-              value={formatPrice(service.base_price, service.currency_code)}
-              emphasis
-            />
-          </CardContent>
-        </Card>
-
-        <div className="space-y-2">
-          <Label htmlFor="notes">Notas para el especialista (opcional)</Label>
-          <Input
-            id="notes"
-            placeholder="Por ejemplo: alergia a algún producto"
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            disabled={submitting}
+        <ClientCard className="space-y-0 p-4">
+          <ConfirmRow label="Servicio" value={service.name} />
+          <ConfirmRow label="Sucursal" value={branch?.name ?? "—"} />
+          <ConfirmRow
+            label="Fecha"
+            value={formatLongDate(selectedSlot.slot_start)}
           />
-        </div>
+          <ConfirmRow
+            label="Hora"
+            value={`${formatTime(selectedSlot.slot_start)} (${service.duration_minutes} min)`}
+          />
+          <ConfirmRow label="Especialista" value={specialist.specialist_name} />
+          {notes.trim() ? <ConfirmRow label="Notas" value={notes} /> : null}
+          <ConfirmRow
+            label="Total estimado"
+            value={formatPrice(service.base_price, service.currency_code)}
+            emphasis
+            last
+          />
+        </ClientCard>
 
-        <Button
-          size="lg"
-          className="w-full"
+        <ClientButton
+          className="h-[52px] w-full"
           onClick={handleConfirm}
           disabled={submitting}
         >
           {submitting ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
               Confirmando…
             </>
           ) : (
             "Confirmar cita"
           )}
-        </Button>
+        </ClientButton>
       </div>
     );
   }
 
-  // Step: select_slot
+  // ── Selección (hero + pasos) ─────────────────────────────────────────────
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 pb-24 space-y-6">
-      <Link
-        href={`/c/${tenantSlug}/servicios`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Servicios
-      </Link>
+    <div className="mx-auto max-w-md pb-36">
+      {/* Hero full-bleed con back flotante */}
+      <div className="relative h-[240px]">
+        {service.image_url ? (
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${service.image_url})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          />
+        ) : (
+          <div className="absolute inset-0 grid place-items-center bg-[var(--client-surface-alt)]">
+            <Sparkles className="h-12 w-12 text-[var(--client-fg-faint)]" />
+          </div>
+        )}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, var(--client-bg) 100%)",
+          }}
+        />
+        <Link
+          href={`/c/${tenantSlug}/servicios`}
+          aria-label="Volver a servicios"
+          className="absolute left-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-black"
+        >
+          <ArrowLeft className="h-[18px] w-[18px]" />
+        </Link>
+        <span className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-black">
+          <Heart className="h-[18px] w-[18px]" />
+        </span>
+      </div>
 
-      {/* Hero */}
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          {service.image_url ? (
-            <img
-              src={service.image_url}
-              alt={service.name}
-              className="w-full aspect-[16/9] object-cover"
-            />
-          ) : (
-            <div className="w-full aspect-[16/9] bg-gradient-to-br from-primary/15 via-primary/5 to-transparent flex items-center justify-center">
-              <Sparkles className="h-12 w-12 text-primary/40" />
-            </div>
-          )}
-          <div className="p-6 space-y-3">
-            <h1 className="text-2xl font-bold">{service.name}</h1>
-            {service.description ? (
-              <p className="text-muted-foreground">{service.description}</p>
+      <div className="px-5">
+        {/* Titulo + meta + precio */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            {service.category ? (
+              <p className="text-[11.5px] font-semibold uppercase tracking-wider text-[var(--client-fg-muted)]">
+                {service.category}
+              </p>
             ) : null}
-            <div className="flex items-center gap-4 text-sm">
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <Clock className="h-4 w-4" />
+            <h1
+              className="mt-1 text-[26px] font-semibold leading-[1.15] text-[var(--client-fg)]"
+              style={displayStyle(isBarber)}
+            >
+              {service.name}
+            </h1>
+            <div className="mt-2 flex items-center gap-2.5 text-[13px] text-[var(--client-fg-muted)]">
+              <span className="inline-flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
                 {service.duration_minutes} min
               </span>
-              <span className="font-semibold text-primary">
-                {formatPrice(service.base_price, service.currency_code)}
+              <span className="h-[3px] w-[3px] rounded-full bg-[var(--client-fg-faint)]" />
+              <span className="inline-flex items-center gap-1 font-semibold text-[var(--client-success)]">
+                <Star className="h-3.5 w-3.5" />
+                Reserva online
               </span>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Sucursal */}
-      {branches.length > 1 ? (
-        <div className="space-y-2">
-          <Label>Sucursal</Label>
-          <Select value={branchId ?? undefined} onValueChange={setBranchId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona una sucursal" />
-            </SelectTrigger>
-            <SelectContent>
-              {branches.map((b) => (
-                <SelectItem key={b.id} value={b.id}>
-                  {b.name}
-                  {b.city ? ` · ${b.city}` : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : null}
-
-      {/* Fecha */}
-      <div className="space-y-2">
-        <Label htmlFor="date">Fecha</Label>
-        <Input
-          id="date"
-          type="date"
-          min={todayIso()}
-          value={date}
-          onChange={(event) => {
-            setDate(event.target.value);
-            setSelectedSlotStart(null);
-          }}
-        />
-      </div>
-
-      {/* Modo elegir especialista */}
-      <div className="flex items-center justify-between rounded-lg border p-3">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <p className="text-sm font-medium">Prefiero elegir especialista</p>
-            <p className="text-xs text-muted-foreground">
-              Si lo dejas desactivado asignamos al mejor evaluado disponible
+          <div className="shrink-0 text-right">
+            <p
+              className="text-[24px] font-bold leading-none tracking-tight text-[var(--client-fg)]"
+              style={{ fontFamily: "var(--client-font-display)" }}
+            >
+              {formatPrice(service.base_price, service.currency_code)}
+            </p>
+            <p className="mt-1 text-[11.5px] text-[var(--client-fg-muted)]">
+              desde
             </p>
           </div>
         </div>
-        <Switch
-          checked={pickSpecialistMode}
-          onCheckedChange={(checked) => {
-            setPickSpecialistMode(checked);
-            setSelectedSlotStart(null);
-            if (!checked) setChosenSpecialistId(null);
-          }}
-        />
-      </div>
 
-      {/* Si modo manual: mostrar selector de specialist primero */}
-      {pickSpecialistMode ? (
-        <SpecialistOptions
-          tenantSlug={tenantSlug}
-          serviceId={serviceId}
-          branchId={branchId}
-          chosenSpecialistId={chosenSpecialistId}
-          onChoose={(id) => {
-            setChosenSpecialistId(id);
-            setSelectedSlotStart(null);
-          }}
-        />
-      ) : null}
+        {service.description ? (
+          <p className="mt-3.5 text-sm leading-relaxed text-[var(--client-fg-muted)]">
+            {service.description}
+          </p>
+        ) : null}
 
-      {/* Slots */}
-      <section className="space-y-2">
-        <h3 className="text-base font-semibold flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          Horarios disponibles
-        </h3>
+        {/* Sucursal (solo si hay varias) */}
+        {branches.length > 1 ? (
+          <>
+            <p className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wider text-[var(--client-fg-faint)]">
+              Sucursal
+            </p>
+            <Select value={branchId ?? undefined} onValueChange={setBranchId}>
+              <SelectTrigger className="h-12 border-[var(--client-border)] bg-[var(--client-surface)]">
+                <SelectValue placeholder="Selecciona una sucursal" />
+              </SelectTrigger>
+              <SelectContent>
+                {branches.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>
+                    {b.name}
+                    {b.city ? ` · ${b.city}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        ) : null}
 
+        {/* PASO 1: fecha */}
+        <StepHeader num={1} title="Elige fecha" />
+        <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1.5">
+          {dateStrip.map((d) => {
+            const on = date === d.iso;
+            return (
+              <button
+                key={d.iso}
+                type="button"
+                onClick={() => {
+                  setDate(d.iso);
+                  setSelectedSlotStart(null);
+                }}
+                className={cn(
+                  "flex w-[58px] shrink-0 flex-col items-center gap-0.5 border py-2.5 transition-colors",
+                  on
+                    ? "border-[var(--client-primary)] bg-[var(--client-primary)] text-[var(--client-primary-fg)]"
+                    : "border-[var(--client-border)] bg-[var(--client-surface)] text-[var(--client-fg)]",
+                )}
+                style={{ borderRadius: "var(--client-rad-md)" }}
+              >
+                <span className="text-[10.5px] tracking-wide opacity-80">
+                  {d.wd}
+                </span>
+                <span
+                  className="text-xl font-semibold"
+                  style={{ fontFamily: "var(--client-font-display)" }}
+                >
+                  {d.day}
+                </span>
+                <span className="text-[10px] opacity-70">{d.month}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* PASO 2: hora */}
+        <StepHeader num={2} title="Hora disponible" />
         {slotsLoading ? (
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {SLOT_SKELETON_KEYS.map((key) => (
-              <Skeleton key={key} className="h-10 rounded-md" />
+              <Skeleton key={key} className="h-11 rounded-lg" />
             ))}
           </div>
         ) : slots.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4">
+          <p className="py-3 text-sm text-[var(--client-fg-muted)]">
             {pickSpecialistMode && !chosenSpecialistId
               ? "Selecciona un especialista para ver horarios"
               : "No hay horarios disponibles para esta fecha"}
           </p>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {slots.map((slot) => {
               const isSelected = slot.slot_start === selectedSlotStart;
               return (
@@ -460,11 +537,12 @@ export default function ClientBookingPage() {
                   type="button"
                   onClick={() => setSelectedSlotStart(slot.slot_start)}
                   className={cn(
-                    "rounded-md border px-3 py-2 text-sm transition-colors",
+                    "border py-2.5 text-[13px] font-semibold transition-colors",
                     isSelected
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "hover:bg-accent",
+                      ? "border-[var(--client-primary)] bg-[var(--client-primary)] text-[var(--client-primary-fg)]"
+                      : "border-[var(--client-border)] bg-[var(--client-surface)] text-[var(--client-fg)] hover:bg-[var(--client-surface-alt)]",
                   )}
+                  style={{ borderRadius: "var(--client-rad-sm)" }}
                 >
                   {formatTime(slot.slot_start)}
                 </button>
@@ -472,61 +550,182 @@ export default function ClientBookingPage() {
             })}
           </div>
         )}
-      </section>
 
-      {/* Resumen del slot elegido */}
-      {selectedSlot ? (
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4 space-y-2">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+        {/* PASO 3: especialista */}
+        <StepHeader num={3} title="Especialista" />
+        <button
+          type="button"
+          onClick={() => {
+            const next = !pickSpecialistMode;
+            setPickSpecialistMode(next);
+            setSelectedSlotStart(null);
+            if (!next) setChosenSpecialistId(null);
+          }}
+          className="flex w-full items-center gap-3 border border-[var(--client-border)] bg-[var(--client-surface)] p-3.5 text-left"
+          style={{ borderRadius: "var(--client-rad-lg)" }}
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-[var(--client-fg)]">
+              Prefiero elegir especialista
+            </span>
+            <span className="block text-xs text-[var(--client-fg-muted)]">
+              Si lo dejas en off asignamos al mejor evaluado disponible.
+            </span>
+          </span>
+          <span
+            className="relative h-[26px] w-[46px] shrink-0 rounded-full transition-colors"
+            style={{
+              background: pickSpecialistMode
+                ? "var(--client-primary)"
+                : "var(--client-surface-alt)",
+            }}
+          >
+            <span
+              className="absolute top-[3px] h-5 w-5 rounded-full shadow transition-all"
+              style={{
+                left: pickSpecialistMode ? 23 : 3,
+                background: pickSpecialistMode
+                  ? "var(--client-primary-fg)"
+                  : "var(--client-surface)",
+              }}
+            />
+          </span>
+        </button>
+
+        {pickSpecialistMode ? (
+          <div className="mt-3">
+            <SpecialistOptions
+              tenantSlug={tenantSlug}
+              serviceId={serviceId}
+              branchId={branchId}
+              date={date}
+              chosenSpecialistId={chosenSpecialistId}
+              onChoose={(id) => {
+                setChosenSpecialistId(id);
+                setSelectedSlotStart(null);
+              }}
+            />
+          </div>
+        ) : null}
+
+        {/* PASO 4: notas */}
+        <StepHeader num={4} title="Notas (opcional)" />
+        <textarea
+          placeholder="¿Algo que debamos saber? Alergias, preferencias…"
+          value={notes}
+          onChange={(event) => setNotes(event.target.value)}
+          className="min-h-[80px] w-full resize-none border border-[var(--client-border)] bg-[var(--client-surface)] p-3.5 text-sm text-[var(--client-fg)] outline-none placeholder:text-[var(--client-fg-faint)]"
+          style={{ borderRadius: "var(--client-rad-md)" }}
+        />
+
+        {selectedSlot ? (
+          <ClientCard className="mt-4 p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--client-fg-muted)]">
               Tu selección
             </p>
-            <p className="font-medium">
+            <p className="mt-1 font-semibold capitalize text-[var(--client-fg)]">
               {formatLongDate(selectedSlot.slot_start)} ·{" "}
               {formatTime(selectedSlot.slot_start)}
             </p>
-            <p className="text-sm flex items-center gap-1">
-              <User className="h-4 w-4 text-primary" />
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-[var(--client-fg-muted)]">
+              <User className="h-4 w-4 text-[var(--client-primary)]" />
               {pickSpecialistMode
                 ? (selectedSlot.available_specialists.find(
                     (sp) => sp.specialist_id === chosenSpecialistId,
                   )?.specialist_name ?? "—")
                 : `${selectedSlot.best.specialist_name} (asignación automática)`}
             </p>
-          </CardContent>
-        </Card>
-      ) : null}
+          </ClientCard>
+        ) : null}
+      </div>
 
-      <Button
-        size="lg"
-        className="w-full"
-        disabled={!selectedSlot}
-        onClick={() => setStep("confirm")}
-      >
-        Continuar
-      </Button>
+      {/* CTA sticky */}
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--client-border)] bg-[var(--client-bg)]">
+        <div className="mx-auto flex max-w-md items-center gap-3.5 px-5 pb-5 pt-3">
+          <div className="shrink-0">
+            <p className="text-[11px] uppercase tracking-wide text-[var(--client-fg-muted)]">
+              Total
+            </p>
+            <p
+              className="text-[22px] font-bold leading-none text-[var(--client-fg)]"
+              style={{ fontFamily: "var(--client-font-display)" }}
+            >
+              {formatPrice(service.base_price, service.currency_code)}
+            </p>
+          </div>
+          <ClientButton
+            className="h-[52px] flex-1"
+            disabled={!selectedSlot}
+            onClick={() => setStep("confirm")}
+          >
+            {selectedSlot
+              ? `Reservar · ${formatTime(selectedSlot.slot_start)}`
+              : "Selecciona hora"}
+          </ClientButton>
+        </div>
+      </div>
     </div>
   );
 }
 
-function Row({
+function ConfirmRow({
   label,
   value,
   emphasis,
+  last,
 }: {
   label: string;
   value: string;
   emphasis?: boolean;
+  last?: boolean;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 capitalize">
-      <span className="text-sm text-muted-foreground shrink-0">{label}</span>
+    <div
+      className="flex items-start justify-between gap-3 py-2.5"
+      style={
+        last ? undefined : { borderBottom: "1px solid var(--client-border)" }
+      }
+    >
+      <span className="shrink-0 text-sm text-[var(--client-fg-muted)]">
+        {label}
+      </span>
       <span
         className={cn(
-          "text-sm text-right",
-          emphasis && "font-semibold text-primary",
+          "text-right text-sm capitalize",
+          emphasis
+            ? "font-bold text-[var(--client-primary)]"
+            : "font-medium text-[var(--client-fg)]",
         )}
       >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function SummaryRow({
+  icon,
+  label,
+  value,
+  last,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  last?: boolean;
+}) {
+  return (
+    <div
+      className="flex items-center gap-3 py-2"
+      style={
+        last ? undefined : { borderBottom: "1px solid var(--client-border)" }
+      }
+    >
+      <span className="shrink-0 text-[var(--client-fg-muted)]">{icon}</span>
+      <span className="flex-1 text-[13px] text-[var(--client-fg-muted)]">
+        {label}
+      </span>
+      <span className="text-right text-[13.5px] font-semibold capitalize text-[var(--client-fg)]">
         {value}
       </span>
     </div>
@@ -537,25 +736,26 @@ function SpecialistOptions({
   tenantSlug,
   serviceId,
   branchId,
+  date,
   chosenSpecialistId,
   onChoose,
 }: {
   tenantSlug: string;
   serviceId: string;
   branchId: string | null;
+  date: string;
   chosenSpecialistId: string | null;
   onChoose: (id: string) => void;
 }) {
-  const todayDate = todayIso();
   const { slots } = useClientAvailability(
     tenantSlug,
     serviceId,
     branchId,
-    todayDate,
+    date,
     null,
   );
 
-  // De-duplicar especialistas por id usando todos los slots de hoy.
+  // De-duplicar especialistas por id usando los slots de la fecha elegida.
   const specialists = useMemo(() => {
     const map = new Map<string, ClientSpecialistOption>();
     for (const slot of slots) {
@@ -571,14 +771,11 @@ function SpecialistOptions({
   }, [slots]);
 
   return (
-    <section className="space-y-2">
-      <h3 className="text-base font-semibold">Elige tu especialista</h3>
-      <SpecialistPicker
-        specialists={specialists}
-        selectedId={chosenSpecialistId}
-        onSelect={onChoose}
-      />
-    </section>
+    <SpecialistPicker
+      specialists={specialists}
+      selectedId={chosenSpecialistId}
+      onSelect={onChoose}
+    />
   );
 }
 

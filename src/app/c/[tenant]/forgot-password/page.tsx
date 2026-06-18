@@ -1,22 +1,17 @@
 // src/app/c/[tenant]/forgot-password/page.tsx
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  ClientButton,
+  ClientField,
+  clientInputClass,
+  Display,
+} from "@/components/client/themed";
 import { clientAuthService } from "@/lib/services/client-auth";
 
 export default function ClientForgotPasswordPage() {
@@ -44,55 +39,55 @@ export default function ClientForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Recuperar contraseña</CardTitle>
-          <CardDescription>
-            Te enviaremos un enlace para restablecerla
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {sent ? (
-            <div className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-400">
-              Si la cuenta existe, recibirás un correo en breve.
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Correo electrónico</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Enviando…
-                  </>
-                ) : (
-                  "Enviar enlace"
-                )}
-              </Button>
-            </form>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <Link
-            href={`/c/${tenantSlug}/login`}
-            className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
-          >
-            Volver al inicio de sesión
-          </Link>
-        </CardFooter>
-      </Card>
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-8 pt-16">
+      <Display className="text-[32px] font-medium leading-[1.1]">
+        Recuperar contraseña
+      </Display>
+      <p className="mb-7 mt-2 text-sm text-[var(--client-fg-muted)]">
+        Te enviaremos un enlace para restablecerla.
+      </p>
+
+      {sent ? (
+        <div
+          className="border border-[var(--client-border)] bg-[var(--client-surface)] p-4 text-sm text-[var(--client-fg)]"
+          style={{ borderRadius: "var(--client-rad-md)" }}
+        >
+          Si la cuenta existe, recibirás un correo en breve.
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+          <ClientField icon={<Mail className="h-[18px] w-[18px]" />}>
+            <input
+              id="email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="tu@email.com"
+              className={clientInputClass}
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              disabled={loading}
+            />
+          </ClientField>
+          <ClientButton type="submit" disabled={loading} className="h-[52px]">
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Enviando…
+              </>
+            ) : (
+              "Enviar enlace"
+            )}
+          </ClientButton>
+        </form>
+      )}
+
+      <Link
+        href={`/c/${tenantSlug}/login`}
+        className="mt-6 text-center text-sm text-[var(--client-fg-muted)] hover:text-[var(--client-fg)]"
+      >
+        Volver al inicio de sesión
+      </Link>
     </div>
   );
 }

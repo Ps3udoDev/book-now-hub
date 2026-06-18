@@ -1,5 +1,8 @@
 // src/app/t/[tenant]/settings/app-cliente/page.tsx
 // Configuracion visual y operativa de la app del cliente final.
+// Layout "Tenant Admin" del bundle de Claude Design (app-client-elviz-studio):
+// rail izquierdo de templates, preview central sobre dot-grid y rail derecho
+// de personalizacion + compartir.
 "use client";
 
 import {
@@ -9,15 +12,14 @@ import {
   Download,
   ExternalLink,
   Loader2,
-  Lock,
   MessageCircle,
   Moon,
   Palette,
   QrCode,
   RotateCcw,
-  Save,
   Smartphone,
   Sun,
+  Tablet,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -25,25 +27,23 @@ import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { ClientAppPreview } from "@/features/client-app/components/client-app-preview";
+import {
+  ClientAppPreview,
+  type ClientAppPreviewScreen,
+} from "@/features/client-app/components/client-app-preview";
 import {
   type ClientAppSettingsShape,
+  type ClientAppTemplate,
   type ClientAppTemplateSlug,
   type ClientAppThemeMode,
   type ClientAppTokenOverrides,
   clientAppTemplates,
+  getClientAppFontHref,
   getClientAppTemplate,
   normalizeClientAppOverrides,
   resolveClientAppTheme,
@@ -52,8 +52,6 @@ import { useTenantClientAppSettings } from "@/hooks/supabase/use-client-app-sett
 import { clientAppSettingsService } from "@/lib/services/client-app-settings";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { cn } from "@/lib/utils";
-
-type PreviewScreen = "home" | "services" | "booking" | "success" | "profile";
 
 interface TenantStatus {
   tenant_id: string;
@@ -100,11 +98,11 @@ const COLOR_FIELDS: Array<{
   { key: "fg", label: "Texto" },
 ];
 
-const PREVIEW_SCREENS: Array<{ id: PreviewScreen; label: string }> = [
-  { id: "home", label: "Inicio" },
+const PREVIEW_SCREENS: Array<{ id: ClientAppPreviewScreen; label: string }> = [
+  { id: "home", label: "Dashboard" },
   { id: "services", label: "Servicios" },
   { id: "booking", label: "Booking" },
-  { id: "success", label: "Exito" },
+  { id: "success", label: "Éxito" },
   { id: "profile", label: "Perfil" },
 ];
 
@@ -122,7 +120,10 @@ export default function ClientAppSettingsPage() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [tenantStatus, setTenantStatus] = useState<TenantStatus | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
-  const [previewScreen, setPreviewScreen] = useState<PreviewScreen>("home");
+  const [previewScreen, setPreviewScreen] =
+    useState<ClientAppPreviewScreen>("home");
+  const [device, setDevice] = useState<"phone" | "tablet">("phone");
+  const [justSaved, setJustSaved] = useState(false);
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
 
   const {
@@ -134,6 +135,10 @@ export default function ClientAppSettingsPage() {
   const isOwnerOrAdmin = tenantUser
     ? ["owner", "admin"].includes(tenantUser.role)
     : false;
+
+  const appliedTemplate = settings
+    ? getClientAppTemplate(settings.template_slug).id
+    : null;
 
   const homeUrl = useMemo(
     () => (origin ? `${origin}/c/${tenantSlug}` : ""),
@@ -168,6 +173,7 @@ export default function ClientAppSettingsPage() {
 
   const resolvedTheme = resolveClientAppTheme(previewSettings);
   const selectedTemplate = getClientAppTemplate(form.template_slug);
+  const previewMode = form.theme_mode === "dark" ? "dark" : "light";
 
   const whatsappShareUrl = useMemo(() => {
     if (!homeUrl) return "";
@@ -255,10 +261,12 @@ export default function ClientAppSettingsPage() {
     key: K,
     value: FormState[K],
   ) => {
+    setJustSaved(false);
     setForm((current) => ({ ...current, [key]: value }));
   };
 
   const updateColor = (key: keyof ClientAppTokenOverrides, value: string) => {
+    setJustSaved(false);
     setForm((current) => ({
       ...current,
       custom_tokens: {
@@ -348,6 +356,7 @@ export default function ClientAppSettingsPage() {
         custom_sections: {},
       });
       await mutate();
+      setJustSaved(true);
       toast.success("Aspecto de la app cliente actualizado");
     } catch (error) {
       toast.error(
@@ -358,395 +367,209 @@ export default function ClientAppSettingsPage() {
     }
   };
 
+  const phoneSize =
+    device === "phone"
+      ? { width: 340, height: 700 }
+      : { width: 640, height: 480 };
+
   return (
-    <div className="max-w-7xl space-y-6">
-      <Link
-        href={`/t/${tenantSlug}/settings`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Volver a Configuración
-      </Link>
+    <div className="flex h-full min-h-0 flex-col">
+      <link rel="stylesheet" href={getClientAppFontHref()} />
 
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold">
-            <Smartphone className="h-6 w-6" />
-            App del cliente
-          </h1>
-          <p className="max-w-2xl text-muted-foreground">
-            Activa el acceso, comparte la app y personaliza el look que verán
-            tus clientes al agendar, iniciar sesión y revisar su historial.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={resetTemplateColors}
-            disabled={savingSettings}
+      {/* Top bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/t/${tenantSlug}/settings`}
+            className="grid h-9 w-9 place-items-center rounded-lg border text-muted-foreground transition hover:text-foreground"
+            aria-label="Volver a Configuración"
           >
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Restablecer colores
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSaveSettings}
-            disabled={savingSettings || loadingSettings || !isOwnerOrAdmin}
-          >
-            {savingSettings ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            Guardar aspecto
-          </Button>
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div className="grid h-9 w-9 place-items-center rounded-lg bg-foreground text-background">
+            <Smartphone className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-sm font-bold leading-tight">App del cliente</p>
+            <p className="text-xs text-muted-foreground">
+              Tenant: {tenantSlug}
+              {tenant?.name ? ` · ${tenant.name}` : ""}
+            </p>
+          </div>
         </div>
-      </header>
+        <div className="flex flex-wrap items-center gap-2">
+          {loadingStatus ? (
+            <Skeleton className="h-9 w-36" />
+          ) : (
+            <div className="flex h-9 items-center gap-2 rounded-lg border px-3">
+              <span
+                className={cn(
+                  "h-2 w-2 rounded-full",
+                  enabled ? "bg-emerald-500" : "bg-muted-foreground/40",
+                )}
+              />
+              <span className="text-xs font-semibold">
+                {enabled ? "App activa" : "Desactivada"}
+              </span>
+              <Switch
+                checked={enabled}
+                onCheckedChange={handleToggle}
+                disabled={savingToggle || !isOwnerOrAdmin}
+              />
+            </div>
+          )}
+          <a
+            href={homeUrl || "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(!homeUrl && "pointer-events-none opacity-50")}
+          >
+            <Button type="button" size="sm" className="h-9">
+              Vista de cliente
+              <ExternalLink className="ml-2 h-3.5 w-3.5" />
+            </Button>
+          </a>
+        </div>
+      </div>
 
-      <div className="grid gap-6 xl:grid-cols-[390px_minmax(0,1fr)_360px]">
-        <section className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Lock className="h-5 w-5" />
-                Estado del acceso
-              </CardTitle>
-              <CardDescription>
-                Si está desactivada, los clientes verán un aviso de app no
-                disponible.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loadingStatus ? (
-                <Skeleton className="h-12 w-full" />
-              ) : (
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div>
-                    <p className="font-medium">
-                      {enabled
-                        ? "App del cliente activa"
-                        : "App del cliente desactivada"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {enabled
-                        ? "Los clientes pueden registrarse y agendar"
-                        : "Las rutas /c/[tenant] muestran un aviso"}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={enabled}
-                    onCheckedChange={handleToggle}
-                    disabled={savingToggle || !isOwnerOrAdmin}
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Templates</CardTitle>
-              <CardDescription>
-                Elige una base visual prefabricada y ajusta sus tokens.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {clientAppTemplates.map((template) => {
-                const active = form.template_slug === template.id;
-                const palette =
-                  template[form.theme_mode === "dark" ? "dark" : "light"];
-                return (
-                  <button
-                    type="button"
-                    key={template.id}
-                    className={cn(
-                      "w-full overflow-hidden rounded-xl border-2 bg-card text-left transition",
-                      active ? "border-primary" : "border-border",
-                    )}
-                    onClick={() => updateForm("template_slug", template.id)}
-                  >
-                    <div
-                      className="relative h-24"
-                      style={{ backgroundColor: palette.bg }}
-                    >
-                      <img
-                        src={template.heroImage}
-                        alt=""
-                        className="absolute inset-0 h-full w-full object-cover opacity-45"
-                      />
-                      <div
-                        className="absolute inset-0"
-                        style={{
-                          background: `linear-gradient(180deg, transparent 20%, ${palette.bg} 100%)`,
-                        }}
-                      />
-                      <div className="absolute bottom-3 left-3 flex gap-2">
-                        <span
-                          className="h-5 w-5 rounded-full"
-                          style={{ backgroundColor: palette.primary }}
-                        />
-                        <span
-                          className="h-5 w-5 rounded-full"
-                          style={{ backgroundColor: palette.accent }}
-                        />
-                        <span
-                          className="h-5 w-5 rounded-md border"
-                          style={{ backgroundColor: palette.surface }}
-                        />
-                      </div>
-                    </div>
-                    <div className="p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="font-semibold">{template.name}</p>
-                        {active ? (
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                            Activo
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {template.tagline}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
+      <div className="grid min-h-0 flex-1 gap-0 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
+        {/* Rail izquierdo — templates */}
+        <section className="space-y-2.5 overflow-y-auto py-4 xl:border-r xl:pr-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              Template
+            </p>
+            <h2 className="mt-1 text-xl font-bold tracking-tight">
+              Aspecto y estilo
+            </h2>
+            <p className="mb-3 mt-1 text-xs leading-relaxed text-muted-foreground">
+              Elige una base, ajusta colores y aplica a tu negocio. Los cambios
+              se ven en vivo a la derecha.
+            </p>
+          </div>
+          {clientAppTemplates.map((template) => (
+            <TemplateCard
+              key={template.id}
+              template={template}
+              mode={previewMode}
+              active={form.template_slug === template.id}
+              applied={appliedTemplate === template.id}
+              onClick={() => updateForm("template_slug", template.id)}
+            />
+          ))}
         </section>
 
-        <section className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <CardTitle className="text-base">Preview en vivo</CardTitle>
-                <CardDescription>
-                  {selectedTemplate.description}
-                </CardDescription>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
+        {/* Centro — preview en vivo */}
+        <section className="flex min-h-0 flex-col xl:border-r">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5">
+            <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
+              {PREVIEW_SCREENS.map((item) => (
+                <button
                   type="button"
-                  size="sm"
-                  variant={form.theme_mode === "light" ? "default" : "outline"}
-                  onClick={() => updateForm("theme_mode", "light")}
+                  key={item.id}
+                  onClick={() => setPreviewScreen(item.id)}
+                  className={cn(
+                    "rounded-md px-2.5 py-1.5 text-xs font-semibold transition",
+                    previewScreen === item.id
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
                 >
-                  <Sun className="mr-1.5 h-3.5 w-3.5" />
-                  Claro
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={form.theme_mode === "dark" ? "default" : "outline"}
-                  onClick={() => updateForm("theme_mode", "dark")}
-                >
-                  <Moon className="mr-1.5 h-3.5 w-3.5" />
-                  Oscuro
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {PREVIEW_SCREENS.map((item) => (
-                  <Button
-                    type="button"
-                    key={item.id}
-                    size="sm"
-                    variant={previewScreen === item.id ? "default" : "outline"}
-                    onClick={() => setPreviewScreen(item.id)}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-              </div>
-              <div className="rounded-2xl border bg-muted/40 p-4">
-                <ClientAppPreview
-                  settings={previewSettings}
-                  screen={previewScreen}
-                  tenantName={tenant?.name ?? tenantSlug}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Enlaces</CardTitle>
-                <CardDescription>
-                  Copia y comparte el enlace que más se ajuste al canal.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <UrlRow
-                  label="Inicio del app"
-                  url={homeUrl}
-                  copied={copiedUrl === homeUrl}
-                  onCopy={() => handleCopy(homeUrl, "URL")}
-                  disabled={!homeUrl}
-                />
-                <UrlRow
-                  label="Login"
-                  url={loginUrl}
-                  copied={copiedUrl === loginUrl}
-                  onCopy={() => handleCopy(loginUrl, "Login")}
-                  disabled={!loginUrl}
-                />
-                <UrlRow
-                  label="Registro"
-                  url={registerUrl}
-                  copied={copiedUrl === registerUrl}
-                  onCopy={() => handleCopy(registerUrl, "Registro")}
-                  disabled={!registerUrl}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <QrCode className="h-5 w-5" />
-                  QR y compartir
-                </CardTitle>
-                <CardDescription>
-                  Listo para imprimir o enviar por WhatsApp.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-4">
-                  <div className="grid h-28 w-28 place-items-center rounded-lg border bg-card p-2">
-                    {qrDataUrl ? (
-                      <img
-                        src={qrDataUrl}
-                        alt={`QR para ${tenantSlug}`}
-                        className="max-h-full max-w-full"
-                      />
-                    ) : (
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <Button
-                      type="button"
-                      className="w-full"
-                      variant="outline"
-                      onClick={handleDownloadQr}
-                      disabled={!qrDataUrl}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Descargar PNG
-                    </Button>
-                    <a
-                      href={whatsappShareUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block"
-                    >
-                      <Button
-                        type="button"
-                        className="w-full"
-                        disabled={!homeUrl}
-                      >
-                        <MessageCircle className="mr-2 h-4 w-4" />
-                        WhatsApp
-                      </Button>
-                    </a>
-                    <a
-                      href={homeUrl || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block"
-                    >
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        disabled={!homeUrl}
-                      >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Abrir app
-                      </Button>
-                    </a>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                size="sm"
+                variant={form.theme_mode === "light" ? "default" : "outline"}
+                className="h-8 px-2.5"
+                onClick={() => updateForm("theme_mode", "light")}
+                aria-label="Modo claro"
+              >
+                <Sun className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={form.theme_mode === "dark" ? "default" : "outline"}
+                className="h-8 px-2.5"
+                onClick={() => updateForm("theme_mode", "dark")}
+                aria-label="Modo oscuro"
+              >
+                <Moon className="h-3.5 w-3.5" />
+              </Button>
+              <span className="mx-1 h-5 w-px bg-border" />
+              <Button
+                type="button"
+                size="sm"
+                variant={device === "phone" ? "default" : "outline"}
+                className="h-8 px-2.5"
+                onClick={() => setDevice("phone")}
+                aria-label="Vista móvil"
+              >
+                <Smartphone className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={device === "tablet" ? "default" : "outline"}
+                className="h-8 px-2.5"
+                onClick={() => setDevice("tablet")}
+                aria-label="Vista tablet"
+              >
+                <Tablet className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+          <div
+            className="grid min-h-0 flex-1 place-items-center overflow-auto p-6"
+            style={{
+              backgroundImage:
+                "radial-gradient(color-mix(in srgb, var(--foreground) 8%, transparent) 1px, transparent 1px)",
+              backgroundSize: "20px 20px",
+            }}
+          >
+            <div
+              className="overflow-hidden border"
+              style={{
+                width: phoneSize.width,
+                height: phoneSize.height,
+                borderRadius: device === "phone" ? 32 : 14,
+                boxShadow: "0 30px 60px -25px rgba(0,0,0,0.4)",
+                background: resolvedTheme.tokens.bg,
+              }}
+            >
+              <ClientAppPreview
+                settings={previewSettings}
+                screen={previewScreen}
+                tenantName={tenant?.name ?? tenantSlug}
+                width={phoneSize.width}
+                height={phoneSize.height}
+              />
+            </div>
           </div>
         </section>
 
-        <section className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Branding</CardTitle>
-              <CardDescription>
-                Textos e imagen principal del primer impacto.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Nombre visible</Label>
-                <Input
-                  value={form.brand_name}
-                  onChange={(event) =>
-                    updateForm("brand_name", event.target.value)
-                  }
-                  placeholder={tenant?.name ?? "Nombre del negocio"}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>URL del logo</Label>
-                <Input
-                  value={form.logo_url}
-                  onChange={(event) =>
-                    updateForm("logo_url", event.target.value)
-                  }
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Hero image URL</Label>
-                <Input
-                  value={form.hero_image_url}
-                  onChange={(event) =>
-                    updateForm("hero_image_url", event.target.value)
-                  }
-                  placeholder={selectedTemplate.heroImage}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Título de bienvenida</Label>
-                <Input
-                  value={form.welcome_title}
-                  onChange={(event) =>
-                    updateForm("welcome_title", event.target.value)
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Subtítulo</Label>
-                <Textarea
-                  rows={3}
-                  value={form.welcome_subtitle}
-                  onChange={(event) =>
-                    updateForm("welcome_subtitle", event.target.value)
-                  }
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Palette className="h-5 w-5" />
+        {/* Rail derecho — personalizacion + compartir */}
+        <section className="flex min-h-0 flex-col xl:pl-4">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto py-4">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                Personalización
+              </p>
+              <h3 className="mt-1 flex items-center gap-2 text-base font-bold tracking-tight">
+                <Palette className="h-4 w-4" />
                 Colores
-              </CardTitle>
-              <CardDescription>
-                Vacío equivale al color base de {selectedTemplate.name}.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Sobreescribe los tokens de {selectedTemplate.name}. Vacío =
+                valor base.
+              </p>
+            </div>
+
+            <div className="space-y-3">
               {COLOR_FIELDS.map((field) => {
                 const base =
                   resolvedTheme.template[resolvedTheme.mode][field.key];
@@ -754,7 +577,7 @@ export default function ClientAppSettingsPage() {
                 return (
                   <div key={field.key} className="flex items-center gap-3">
                     <label
-                      className="relative h-10 w-10 shrink-0 cursor-pointer rounded-lg border"
+                      className="relative h-9 w-9 shrink-0 cursor-pointer rounded-lg border"
                       style={{ backgroundColor: current }}
                     >
                       <input
@@ -767,8 +590,10 @@ export default function ClientAppSettingsPage() {
                       />
                     </label>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">{field.label}</p>
-                      <p className="font-mono text-xs text-muted-foreground">
+                      <p className="text-sm font-semibold leading-tight">
+                        {field.label}
+                      </p>
+                      <p className="font-mono text-[11px] text-muted-foreground">
                         {current}
                       </p>
                     </div>
@@ -777,31 +602,80 @@ export default function ClientAppSettingsPage() {
                         type="button"
                         variant="ghost"
                         size="icon"
+                        className="h-7 w-7"
                         onClick={() => resetColor(field.key)}
                         aria-label={`Restablecer ${field.label}`}
                       >
-                        <RotateCcw className="h-4 w-4" />
+                        <RotateCcw className="h-3.5 w-3.5" />
                       </Button>
                     ) : null}
                   </div>
                 );
               })}
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Login social</CardTitle>
-              <CardDescription>
-                Google se muestra solo como preview visual por ahora.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
+            <div className="h-px bg-border" />
+
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold tracking-tight">Branding</h3>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Nombre visible</Label>
+                <Input
+                  className="h-9"
+                  value={form.brand_name}
+                  onChange={(event) =>
+                    updateForm("brand_name", event.target.value)
+                  }
+                  placeholder={tenant?.name ?? "Nombre del negocio"}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">URL del logo</Label>
+                <Input
+                  className="h-9"
+                  value={form.logo_url}
+                  onChange={(event) =>
+                    updateForm("logo_url", event.target.value)
+                  }
+                  placeholder="https://..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Hero image URL</Label>
+                <Input
+                  className="h-9"
+                  value={form.hero_image_url}
+                  onChange={(event) =>
+                    updateForm("hero_image_url", event.target.value)
+                  }
+                  placeholder={selectedTemplate.heroImage}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Título de bienvenida</Label>
+                <Input
+                  className="h-9"
+                  value={form.welcome_title}
+                  onChange={(event) =>
+                    updateForm("welcome_title", event.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Subtítulo</Label>
+                <Textarea
+                  rows={2}
+                  value={form.welcome_subtitle}
+                  onChange={(event) =>
+                    updateForm("welcome_subtitle", event.target.value)
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
                 <div>
-                  <p className="text-sm font-medium">Mostrar botón Google</p>
-                  <p className="text-xs text-muted-foreground">
-                    No iniciará OAuth hasta activar la integración real.
+                  <p className="text-xs font-semibold">Mostrar botón Google</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Solo preview visual, sin OAuth real.
                   </p>
                 </div>
                 <Switch
@@ -811,11 +685,210 @@ export default function ClientAppSettingsPage() {
                   }
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            <div className="space-y-3">
+              <h3 className="flex items-center gap-2 text-sm font-bold tracking-tight">
+                <QrCode className="h-4 w-4" />
+                Compartir
+              </h3>
+              <UrlRow
+                label="Inicio del app"
+                url={homeUrl}
+                copied={copiedUrl === homeUrl}
+                onCopy={() => handleCopy(homeUrl, "URL")}
+                disabled={!homeUrl}
+              />
+              <UrlRow
+                label="Login"
+                url={loginUrl}
+                copied={copiedUrl === loginUrl}
+                onCopy={() => handleCopy(loginUrl, "Login")}
+                disabled={!loginUrl}
+              />
+              <UrlRow
+                label="Registro"
+                url={registerUrl}
+                copied={copiedUrl === registerUrl}
+                onCopy={() => handleCopy(registerUrl, "Registro")}
+                disabled={!registerUrl}
+              />
+              <div className="flex items-center gap-3">
+                <div className="grid h-24 w-24 shrink-0 place-items-center rounded-lg border bg-card p-1.5">
+                  {qrDataUrl ? (
+                    <div
+                      role="img"
+                      aria-label={`QR para ${tenantSlug}`}
+                      className="h-full w-full"
+                      style={{
+                        backgroundImage: `url(${qrDataUrl})`,
+                        backgroundSize: "contain",
+                        backgroundPosition: "center",
+                        backgroundRepeat: "no-repeat",
+                      }}
+                    />
+                  ) : (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleDownloadQr}
+                    disabled={!qrDataUrl}
+                  >
+                    <Download className="mr-2 h-3.5 w-3.5" />
+                    Descargar PNG
+                  </Button>
+                  <a
+                    href={whatsappShareUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="w-full"
+                      disabled={!homeUrl}
+                    >
+                      <MessageCircle className="mr-2 h-3.5 w-3.5" />
+                      WhatsApp
+                    </Button>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA sticky */}
+          <div className="space-y-2 border-t py-3">
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={resetTemplateColors}
+                disabled={savingSettings}
+              >
+                <RotateCcw className="mr-2 h-3.5 w-3.5" />
+                Restablecer todo
+              </Button>
+            </div>
+            <Button
+              type="button"
+              className="h-11 w-full font-bold"
+              onClick={handleSaveSettings}
+              disabled={savingSettings || loadingSettings || !isOwnerOrAdmin}
+            >
+              {savingSettings ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Aplicar a mi tenant
+            </Button>
+            {justSaved && appliedTemplate === form.template_slug ? (
+              <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs font-semibold text-emerald-600">
+                <Check className="h-3.5 w-3.5" />
+                {selectedTemplate.name} aplicado · clientes verán este aspecto
+              </div>
+            ) : null}
+          </div>
         </section>
       </div>
     </div>
+  );
+}
+
+function TemplateCard({
+  template,
+  mode,
+  active,
+  applied,
+  onClick,
+}: {
+  template: ClientAppTemplate;
+  mode: "light" | "dark";
+  active: boolean;
+  applied: boolean;
+  onClick: () => void;
+}) {
+  const palette = template[mode];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "w-full overflow-hidden rounded-xl border-2 bg-card text-left transition",
+        active
+          ? "-translate-y-px border-primary"
+          : "border-border hover:border-muted-foreground/40",
+      )}
+    >
+      <div
+        className="relative flex h-20 items-end overflow-hidden"
+        style={{ backgroundColor: palette.bg }}
+      >
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 opacity-50"
+          style={{
+            backgroundImage: `url(${template.heroImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(180deg, transparent 30%, ${palette.bg} 100%)`,
+          }}
+        />
+        <div className="relative flex items-center gap-2 p-2.5">
+          <span
+            className="h-5 w-5 rounded-full"
+            style={{ backgroundColor: palette.primary }}
+          />
+          <span
+            className="h-5 w-5 rounded-full"
+            style={{ backgroundColor: palette.accent }}
+          />
+          <span
+            className="h-5 w-5 rounded-md border"
+            style={{
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+            }}
+          />
+        </div>
+      </div>
+      <div className="flex items-start justify-between gap-2 px-3 py-2.5">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-bold tracking-tight">
+              {template.name}
+            </span>
+            {applied ? (
+              <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-emerald-600">
+                ACTIVO
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+            {template.tagline}
+          </p>
+        </div>
+        {active ? (
+          <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+            <Check className="h-2.5 w-2.5" />
+          </span>
+        ) : null}
+      </div>
+    </button>
   );
 }
 
@@ -833,29 +906,30 @@ function UrlRow({
   disabled?: boolean;
 }) {
   return (
-    <div className="space-y-1.5">
-      <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+    <div className="space-y-1">
+      <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">
         {label}
       </Label>
-      <div className="flex gap-2">
+      <div className="flex gap-1.5">
         <Input
           value={url}
           readOnly
           disabled={disabled}
-          className="font-mono text-xs"
+          className="h-8 font-mono text-[11px]"
         />
         <Button
           type="button"
           variant="outline"
           size="icon"
+          className="h-8 w-8 shrink-0"
           onClick={onCopy}
           disabled={disabled}
           aria-label="Copiar"
         >
           {copied ? (
-            <Check className="h-4 w-4 text-emerald-500" />
+            <Check className="h-3.5 w-3.5 text-emerald-500" />
           ) : (
-            <Copy className="h-4 w-4" />
+            <Copy className="h-3.5 w-3.5" />
           )}
         </Button>
       </div>

@@ -1,15 +1,20 @@
 // src/app/c/[tenant]/productos/page.tsx
-// Catalogo de productos del salon para clientes autenticados.
+// Tienda de productos del salon, fiel al prototipo: busqueda, chips de
+// categoria y cards surface con favorito.
 "use client";
 
-import { ArrowLeft, Heart, Package, Search } from "lucide-react";
+import { Heart, Package, Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import {
+  ClientChip,
+  ClientField,
+  clientInputClass,
+  displayStyle,
+  ScreenHeader,
+  useClientTheme,
+} from "@/components/client/themed";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   formatMoney,
@@ -32,6 +37,7 @@ function getProductImageUrl(product: PublicEcommerceProduct) {
 
 export default function ClientProductsPage() {
   const { tenantSlug } = useClientTenant();
+  const { isBarber } = useClientTheme();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | null>(null);
   const [pendingFavorite, setPendingFavorite] = useState<string | null>(null);
@@ -88,109 +94,108 @@ export default function ClientProductsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 pb-24">
-      <header className="space-y-3">
-        <Link
-          href={`/c/${tenantSlug}`}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Inicio
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold">Productos</h1>
-          <p className="text-sm text-muted-foreground">
-            Cuidados y productos disponibles en el salon.
-          </p>
-        </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar producto..."
-            className="pl-9"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </div>
-        {categories.length > 0 ? (
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <Button
-              type="button"
-              size="sm"
-              variant={category ? "outline" : "default"}
-              onClick={() => setCategory(null)}
+    <div className="mx-auto max-w-md space-y-4 px-5 pb-28 pt-4">
+      <ScreenHeader title="Tienda" />
+
+      <ClientField icon={<Search className="h-4 w-4" />}>
+        <input
+          placeholder="Buscar producto…"
+          className={clientInputClass}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+      </ClientField>
+
+      {categories.length > 0 ? (
+        <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
+          <ClientChip active={!category} onClick={() => setCategory(null)}>
+            Todos
+          </ClientChip>
+          {categories.map((current) => (
+            <ClientChip
+              key={current}
+              active={category === current}
+              onClick={() => setCategory(current)}
             >
-              Todos
-            </Button>
-            {categories.map((current) => (
-              <Button
-                type="button"
-                key={current}
-                size="sm"
-                variant={category === current ? "default" : "outline"}
-                onClick={() => setCategory(current)}
-              >
-                {current}
-              </Button>
-            ))}
-          </div>
-        ) : null}
-      </header>
+              {current}
+            </ClientChip>
+          ))}
+        </div>
+      ) : null}
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3">
           {["a", "b", "c", "d"].map((key) => (
-            <Skeleton key={key} className="h-72 rounded-xl" />
+            <Skeleton key={key} className="h-60 rounded-2xl" />
           ))}
         </div>
       ) : products.length === 0 ? (
-        <div className="rounded-xl border py-12 text-center">
-          <Package className="mx-auto h-10 w-10 text-muted-foreground" />
-          <p className="mt-3 text-sm text-muted-foreground">
+        <div
+          className="border border-dashed border-[var(--client-border)] py-12 text-center"
+          style={{ borderRadius: "var(--client-rad-lg)" }}
+        >
+          <Package className="mx-auto h-9 w-9 text-[var(--client-fg-faint)]" />
+          <p className="mt-3 text-sm text-[var(--client-fg-muted)]">
             No hay productos disponibles.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3">
           {products.map((product) => {
             const productId = product.product_id;
             const imageUrl = getProductImageUrl(product);
             const isFavorite = favoriteByProductId.has(productId);
 
             return (
-              <Card key={productId} className="overflow-hidden">
-                <Link href={`/c/${tenantSlug}/productos/${productId}`}>
+              <div
+                key={productId}
+                className="overflow-hidden border border-[var(--client-border)] bg-[var(--client-surface)] shadow-[var(--client-shadow-soft)]"
+                style={{ borderRadius: "var(--client-rad-lg)" }}
+              >
+                <Link
+                  href={`/c/${tenantSlug}/productos/${productId}`}
+                  className="relative block"
+                >
                   {imageUrl ? (
-                    <img
-                      src={imageUrl}
-                      alt={product.name}
-                      className="aspect-[4/3] w-full object-cover"
+                    <div
+                      className="aspect-square w-full"
+                      style={{
+                        backgroundImage: `url(${imageUrl})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
                     />
                   ) : (
-                    <div className="flex aspect-[4/3] w-full items-center justify-center bg-muted">
-                      <Package className="h-10 w-10 text-muted-foreground" />
+                    <div className="grid aspect-square w-full place-items-center bg-[var(--client-surface-alt)]">
+                      <Package className="h-9 w-9 text-[var(--client-fg-faint)]" />
                     </div>
                   )}
+                  {product.category ? (
+                    <span className="absolute left-2.5 top-2.5 rounded-full bg-[var(--client-accent)] px-2 py-0.5 text-[10px] font-bold text-[var(--client-accent-fg)]">
+                      {product.category}
+                    </span>
+                  ) : null}
                 </Link>
-                <CardContent className="space-y-3 p-4">
-                  <div className="flex items-start justify-between gap-3">
+                <div className="p-3">
+                  <div className="flex items-start justify-between gap-2">
                     <Link
                       href={`/c/${tenantSlug}/productos/${productId}`}
                       className="min-w-0"
                     >
-                      <h2 className="line-clamp-2 font-semibold leading-tight">
+                      <p
+                        className="line-clamp-2 min-h-[36px] text-[14px] font-medium leading-tight text-[var(--client-fg)]"
+                        style={displayStyle(isBarber)}
+                      >
                         {product.name}
-                      </h2>
+                      </p>
                       {product.brand ? (
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="mt-0.5 text-[11px] text-[var(--client-fg-muted)]">
                           {product.brand}
                         </p>
                       ) : null}
                     </Link>
-                    <Button
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="icon"
                       aria-label={
                         isFavorite
                           ? "Quitar de favoritos"
@@ -198,25 +203,22 @@ export default function ClientProductsPage() {
                       }
                       disabled={pendingFavorite === productId}
                       onClick={() => toggleFavorite(productId)}
+                      className="shrink-0 p-1 text-[var(--client-fg-muted)] disabled:opacity-50"
                     >
                       <Heart
                         className={cn(
-                          "h-5 w-5",
-                          isFavorite && "fill-primary text-primary",
+                          "h-[18px] w-[18px]",
+                          isFavorite &&
+                            "fill-[var(--client-accent)] text-[var(--client-accent)]",
                         )}
                       />
-                    </Button>
+                    </button>
                   </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-primary">
-                      {formatMoney(product.price, product.currency_iso)}
-                    </span>
-                    {product.category ? (
-                      <Badge variant="secondary">{product.category}</Badge>
-                    ) : null}
-                  </div>
-                </CardContent>
-              </Card>
+                  <p className="mt-1.5 text-[15px] font-bold text-[var(--client-fg)]">
+                    {formatMoney(product.price, product.currency_iso)}
+                  </p>
+                </div>
+              </div>
             );
           })}
         </div>

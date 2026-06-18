@@ -8,6 +8,12 @@ const PUBLIC_ROUTES = ["/"];
 // Rutas auth de Supabase (callback OAuth, email confirm, password reset)
 const AUTH_PUBLIC_PREFIXES = ["/auth/callback", "/auth/confirm"];
 
+// Endpoints publicos usados por la app del cliente antes de tener sesion
+const PUBLIC_API_PREFIXES = [
+  "/api/client/tenant-status",
+  "/api/client/auth/register",
+];
+
 // Rutas de ADMIN (root console) - sin /t/
 const ADMIN_ROUTES = [
   "/login",
@@ -83,6 +89,10 @@ export async function middleware(request: NextRequest) {
 
   // Auth callbacks de Supabase no requieren sesion previa
   if (AUTH_PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+    return NextResponse.next();
+  }
+
+  if (PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return NextResponse.next();
   }
 

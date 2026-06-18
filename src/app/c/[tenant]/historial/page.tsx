@@ -1,14 +1,24 @@
 // src/app/c/[tenant]/historial/page.tsx
-// Historial completo y filtrable de citas del cliente.
+// Historial de citas fiel al prototipo: chips de estado, filtros avanzados
+// plegables y lista de visitas con icono de estado.
 "use client";
 
-import { ArrowLeft, CalendarClock, Search } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  Clock,
+  Search,
+  SlidersHorizontal,
+  XCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import {
+  ClientButton,
+  ClientCard,
+  ClientChip,
+  ScreenHeader,
+} from "@/components/client/themed";
 import {
   Select,
   SelectContent,
@@ -23,6 +33,7 @@ import type {
   ClientHistoryAppointment,
   ClientHistoryFilters,
 } from "@/lib/services/client-profile";
+import { cn } from "@/lib/utils";
 import { useClientTenant } from "@/providers/client-tenant-provider";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -31,8 +42,16 @@ const STATUS_LABELS: Record<string, string> = {
   in_progress: "En curso",
   completed: "Completada",
   cancelled: "Cancelada",
-  no_show: "No asistio",
+  no_show: "No asistió",
 };
+
+const STATUS_CHIPS = [
+  { value: "all", label: "Todas" },
+  { value: "pending", label: "Pendientes" },
+  { value: "confirmed", label: "Confirmadas" },
+  { value: "completed", label: "Completadas" },
+  { value: "cancelled", label: "Canceladas" },
+];
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString("es-EC", {
@@ -50,7 +69,7 @@ function formatTime(value: string) {
 }
 
 function formatMoney(value: number | null, currency: string | null) {
-  if (value == null) return "Sin pago registrado";
+  if (value == null) return "—";
   try {
     return new Intl.NumberFormat("es-EC", {
       style: "currency",
@@ -69,6 +88,7 @@ export default function ClientHistoryPage() {
   const [toDate, setToDate] = useState("");
   const [serviceId, setServiceId] = useState("all");
   const [specialistId, setSpecialistId] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
 
   const filters = useMemo<ClientHistoryFilters>(
     () => ({
@@ -105,47 +125,45 @@ export default function ClientHistoryPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 pb-24">
-      <header className="space-y-3">
-        <Link
-          href={`/c/${tenantSlug}`}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Inicio
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold">Historial</h1>
-          <p className="text-sm text-muted-foreground">
-            Revisa tus visitas, pagos y detalles de cada cita.
-          </p>
-        </div>
-      </header>
-
-      <Card>
-        <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
-          <Select
-            value={status}
-            onValueChange={(value) => resetPage(() => setStatus(value))}
+    <div className="mx-auto max-w-md space-y-4 px-5 pb-28 pt-4">
+      <ScreenHeader
+        title="Historial"
+        right={
+          <button
+            type="button"
+            onClick={() => setShowFilters((current) => !current)}
+            aria-label="Más filtros"
+            className={cn(
+              "grid h-10 w-10 place-items-center rounded-full border transition-colors",
+              showFilters
+                ? "border-[var(--client-primary)] bg-[var(--client-primary)] text-[var(--client-primary-fg)]"
+                : "border-[var(--client-border)] bg-[var(--client-surface)] text-[var(--client-fg)]",
+            )}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los estados</SelectItem>
-              {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <SlidersHorizontal className="h-[18px] w-[18px]" />
+          </button>
+        }
+      />
 
+      <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
+        {STATUS_CHIPS.map((chip) => (
+          <ClientChip
+            key={chip.value}
+            active={status === chip.value}
+            onClick={() => resetPage(() => setStatus(chip.value))}
+          >
+            {chip.label}
+          </ClientChip>
+        ))}
+      </div>
+
+      {showFilters ? (
+        <ClientCard className="grid gap-2.5 p-4">
           <Select
             value={serviceId}
             onValueChange={(value) => resetPage(() => setServiceId(value))}
           >
-            <SelectTrigger>
+            <SelectTrigger className="border-[var(--client-border)] bg-[var(--client-bg)]">
               <SelectValue placeholder="Servicio" />
             </SelectTrigger>
             <SelectContent>
@@ -162,7 +180,7 @@ export default function ClientHistoryPage() {
             value={specialistId}
             onValueChange={(value) => resetPage(() => setSpecialistId(value))}
           >
-            <SelectTrigger>
+            <SelectTrigger className="border-[var(--client-border)] bg-[var(--client-bg)]">
               <SelectValue placeholder="Especialista" />
             </SelectTrigger>
             <SelectContent>
@@ -176,39 +194,43 @@ export default function ClientHistoryPage() {
           </Select>
 
           <div className="grid grid-cols-2 gap-2">
-            <Input
+            <input
               type="date"
               value={fromDate}
               onChange={(event) =>
                 resetPage(() => setFromDate(event.target.value))
               }
               aria-label="Desde"
+              className="h-10 border border-[var(--client-border)] bg-[var(--client-bg)] px-3 text-sm text-[var(--client-fg)] outline-none"
+              style={{ borderRadius: "var(--client-rad-sm)" }}
             />
-            <Input
+            <input
               type="date"
               value={toDate}
               onChange={(event) =>
                 resetPage(() => setToDate(event.target.value))
               }
               aria-label="Hasta"
+              className="h-10 border border-[var(--client-border)] bg-[var(--client-bg)] px-3 text-sm text-[var(--client-fg)] outline-none"
+              style={{ borderRadius: "var(--client-rad-sm)" }}
             />
           </div>
-        </CardContent>
-      </Card>
+        </ClientCard>
+      ) : null}
 
       {isLoading ? (
         <div className="space-y-3">
           {["a", "b", "c"].map((key) => (
-            <Skeleton key={key} className="h-32 rounded-xl" />
+            <Skeleton key={key} className="h-24 rounded-2xl" />
           ))}
         </div>
       ) : appointments.length === 0 ? (
-        <div className="rounded-xl border py-12 text-center">
-          <Search className="mx-auto h-10 w-10 text-muted-foreground" />
-          <p className="mt-3 text-sm text-muted-foreground">
+        <ClientCard className="border-dashed py-12 text-center">
+          <Search className="mx-auto h-9 w-9 text-[var(--client-fg-faint)]" />
+          <p className="mt-3 text-sm text-[var(--client-fg-muted)]">
             No encontramos citas con estos filtros.
           </p>
-        </div>
+        </ClientCard>
       ) : (
         <div className="space-y-3">
           {appointments.map((appointment) => (
@@ -223,23 +245,25 @@ export default function ClientHistoryPage() {
 
       {pagination.total_pages > 1 ? (
         <div className="flex items-center justify-between gap-3">
-          <Button
-            variant="outline"
+          <ClientButton
+            variant="ghost"
+            className="h-10 px-4 text-[13px]"
             disabled={page <= 1 || isLoading}
             onClick={() => setPage((current) => Math.max(1, current - 1))}
           >
             Anterior
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Pagina {pagination.page} de {pagination.total_pages}
+          </ClientButton>
+          <span className="text-sm text-[var(--client-fg-muted)]">
+            Página {pagination.page} de {pagination.total_pages}
           </span>
-          <Button
-            variant="outline"
+          <ClientButton
+            variant="ghost"
+            className="h-10 px-4 text-[13px]"
             disabled={page >= pagination.total_pages || isLoading}
             onClick={() => setPage((current) => current + 1)}
           >
             Siguiente
-          </Button>
+          </ClientButton>
         </div>
       ) : null}
     </div>
@@ -253,40 +277,79 @@ function HistoryCard({
   appointment: ClientHistoryAppointment;
   tenantSlug: string;
 }) {
-  return (
-    <Link href={`/c/${tenantSlug}/historial/${appointment.id}`}>
-      <Card className="transition-colors hover:bg-accent/40">
-        <CardContent className="space-y-3 p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-semibold leading-tight">
-                {appointment.services?.name ?? "Servicio"}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {formatDate(appointment.scheduled_at)} ·{" "}
-                {formatTime(appointment.scheduled_at)}
-              </p>
-            </div>
-            <Badge variant="secondary">
-              {STATUS_LABELS[appointment.status] ?? appointment.status}
-            </Badge>
-          </div>
+  const upcoming =
+    appointment.status === "pending" || appointment.status === "confirmed";
+  const cancelled =
+    appointment.status === "cancelled" || appointment.status === "no_show";
 
-          <div className="grid gap-2 text-sm sm:grid-cols-2">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <CalendarClock className="h-4 w-4" />
-              <span>{appointment.profiles?.full_name ?? "Por asignar"}</span>
-            </div>
-            <p className="font-medium">
-              {formatMoney(appointment.paid_amount, appointment.paid_currency)}
+  return (
+    <Link
+      href={`/c/${tenantSlug}/historial/${appointment.id}`}
+      className="block"
+    >
+      <div
+        className={cn(
+          "relative overflow-hidden border bg-[var(--client-surface)] p-3.5 shadow-[var(--client-shadow-soft)] transition-colors hover:bg-[var(--client-surface-alt)]",
+          upcoming
+            ? "border-[var(--client-primary)]"
+            : "border-[var(--client-border)]",
+        )}
+        style={{ borderRadius: "var(--client-rad-lg)" }}
+      >
+        {upcoming ? (
+          <span className="absolute bottom-0 left-0 top-0 w-1 bg-[var(--client-primary)]" />
+        ) : null}
+        <div className={cn("flex items-center gap-3", upcoming && "pl-2")}>
+          <span
+            className={cn(
+              "grid h-10 w-10 shrink-0 place-items-center bg-[var(--client-surface-alt)]",
+              cancelled
+                ? "text-[var(--client-fg-faint)]"
+                : upcoming
+                  ? "text-[var(--client-primary)]"
+                  : "text-[var(--client-success)]",
+            )}
+            style={{ borderRadius: "var(--client-rad-sm)" }}
+          >
+            {cancelled ? (
+              <XCircle className="h-[18px] w-[18px]" />
+            ) : upcoming ? (
+              <Clock className="h-[18px] w-[18px]" />
+            ) : (
+              <CheckCircle2 className="h-[18px] w-[18px]" />
+            )}
+          </span>
+          <div className="min-w-0 flex-1">
+            {upcoming ? (
+              <p className="text-[10.5px] font-bold uppercase tracking-wide text-[var(--client-primary)]">
+                Próxima
+              </p>
+            ) : null}
+            <p
+              className="truncate text-sm font-semibold text-[var(--client-fg)]"
+              style={{ fontFamily: "var(--client-font-display)" }}
+            >
+              {appointment.services?.name ?? "Servicio"}
+            </p>
+            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--client-fg-muted)]">
+              <CalendarClock className="h-3 w-3 shrink-0" />
+              {formatDate(appointment.scheduled_at)} ·{" "}
+              {formatTime(appointment.scheduled_at)}
+              {appointment.profiles?.full_name
+                ? ` · ${appointment.profiles.full_name}`
+                : ""}
             </p>
           </div>
-
-          <p className="text-xs text-muted-foreground">
-            Calificacion: pendiente
-          </p>
-        </CardContent>
-      </Card>
+          <div className="shrink-0 text-right">
+            <p className="text-sm font-bold text-[var(--client-fg)]">
+              {formatMoney(appointment.paid_amount, appointment.paid_currency)}
+            </p>
+            <p className="mt-0.5 text-[11px] text-[var(--client-fg-muted)]">
+              {STATUS_LABELS[appointment.status] ?? appointment.status}
+            </p>
+          </div>
+        </div>
+      </div>
     </Link>
   );
 }

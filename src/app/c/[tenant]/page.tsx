@@ -1,22 +1,24 @@
 // src/app/c/[tenant]/page.tsx
-// Home del cliente final (3.4): saludo personalizado, tarjeta de proxima cita,
-// favoritos, historial reciente y CTA para agendar.
+// Home del cliente final, fiel al prototipo: saludo + avatar + campana,
+// hero de proxima cita (variante por template), favoritos y recientes.
 "use client";
 
-import { Bell, LogOut, Sparkles } from "lucide-react";
+import { Bell, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { FavoritesSection } from "@/components/client/favorites-section";
 import { NextAppointmentCard } from "@/components/client/next-appointment-card";
 import { RecentHistorySection } from "@/components/client/recent-history-section";
+import {
+  ClientButton,
+  displayStyle,
+  useClientTheme,
+} from "@/components/client/themed";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useClientDashboard,
   useClientFavorites,
 } from "@/hooks/supabase/use-client-profile";
-import { clientAuthService } from "@/lib/services/client-auth";
 import { useClientTenant } from "@/providers/client-tenant-provider";
 import type {
   CustomerDashboardNextAppointment,
@@ -40,8 +42,8 @@ function getGreeting(): string {
 }
 
 export default function ClientHomePage() {
-  const router = useRouter();
   const { tenantSlug, customer, tenantName, isLoading } = useClientTenant();
+  const { isBarber, brandName } = useClientTheme();
   const { dashboard, isLoading: dashboardLoading } =
     useClientDashboard(tenantSlug);
   const { favorites, isLoading: favoritesLoading } =
@@ -59,80 +61,70 @@ export default function ClientHomePage() {
       | null
       | undefined) ?? [];
 
-  const handleLogout = async () => {
-    await clientAuthService.signOut();
-    router.replace(`/c/${tenantSlug}/login`);
-  };
-
   if (isLoading || dashboardLoading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+      <div className="mx-auto max-w-md space-y-6 px-5 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Skeleton className="h-12 w-12 rounded-full" />
+            <Skeleton className="h-11 w-11 rounded-full" />
             <div className="space-y-2">
-              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3.5 w-24" />
               <Skeleton className="h-5 w-40" />
             </div>
           </div>
-          <Skeleton className="h-9 w-9 rounded-full" />
+          <Skeleton className="h-11 w-11 rounded-full" />
         </div>
-        <Skeleton className="h-40 w-full rounded-xl" />
-        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+        <Skeleton className="h-32 w-full rounded-2xl" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-24">
+    <div className="mx-auto max-w-md space-y-6 px-5 pb-28 pt-4">
       <header className="flex items-center justify-between">
         <Link
           href={`/c/${tenantSlug}/perfil`}
-          className="flex items-center gap-3 group"
+          className="group flex items-center gap-3"
         >
-          <Avatar className="h-12 w-12 ring-2 ring-transparent group-hover:ring-primary/30 transition-all">
+          <Avatar className="h-11 w-11 border border-[var(--client-border)]">
             <AvatarImage src={customer?.avatar_url ?? undefined} />
-            <AvatarFallback>{getInitials(firstName || "U")}</AvatarFallback>
+            <AvatarFallback className="bg-[var(--client-surface-alt)] text-[var(--client-fg)]">
+              {getInitials(firstName || "U")}
+            </AvatarFallback>
           </Avatar>
           <div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-[12.5px] text-[var(--client-fg-muted)]">
               {getGreeting()}
-              {tenantName ? ` · ${tenantName}` : ""}
+              {brandName || tenantName ? ` · ${brandName ?? tenantName}` : ""}
             </p>
-            <p className="font-semibold leading-tight">
-              {firstName ? `Hola, ${firstName}` : "Bienvenido"}
+            <p
+              className="text-[19px] font-semibold leading-tight text-[var(--client-fg)]"
+              style={displayStyle(isBarber)}
+            >
+              {firstName || "Bienvenido"}
             </p>
           </div>
         </Link>
 
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Notificaciones"
-            className="relative"
-          >
-            <Bell className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Cerrar sesión"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-5 w-5" />
-          </Button>
-        </div>
+        <button
+          type="button"
+          aria-label="Notificaciones"
+          className="relative grid h-11 w-11 place-items-center rounded-full border border-[var(--client-border)] bg-[var(--client-surface)] text-[var(--client-fg)]"
+        >
+          <Bell className="h-5 w-5" />
+          <span className="absolute right-2.5 top-2 h-2 w-2 rounded-full border-2 border-[var(--client-surface)] bg-[var(--client-accent)]" />
+        </button>
       </header>
 
       <NextAppointmentCard appointment={next ?? null} tenantSlug={tenantSlug} />
 
       {next ? (
         <Link href={`/c/${tenantSlug}/servicios`} className="block">
-          <Button size="lg" className="w-full">
-            <Sparkles className="h-4 w-4 mr-2" />
+          <ClientButton className="w-full">
+            <Sparkles className="h-4 w-4" />
             Agendar otra cita
-          </Button>
+          </ClientButton>
         </Link>
       ) : null}
 

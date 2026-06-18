@@ -5,9 +5,10 @@
 // - Google OAuth → ?code=...
 //
 // Si viene `tenant` en el query, despues del intercambio aseguramos
-// que existe un customer vinculado en ese tenant via get_or_create_customer_for_user.
+// que existe un customer vinculado en ese tenant.
 // El parametro `next` define la URL final (default: home del cliente del tenant).
 import { type NextRequest, NextResponse } from "next/server";
+import { ensureClientCustomer } from "@/lib/services/client-customer";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createServerSB } from "@/lib/supabase/server";
 
@@ -38,8 +39,7 @@ export async function GET(request: NextRequest) {
 
   // Si trae tenant, garantizar customer vinculado para ese tenant.
   if (tenantSlug) {
-    const admin = supabaseAdmin as any;
-    const { data: tenant } = await admin
+    const { data: tenant } = await supabaseAdmin
       .from("tenants")
       .select("id, slug, status")
       .eq("slug", tenantSlug)
@@ -52,12 +52,11 @@ export async function GET(request: NextRequest) {
         user.email ||
         "Cliente";
 
-      await admin.rpc("get_or_create_customer_for_user", {
-        p_tenant_id: tenant.id,
-        p_user_id: user.id,
-        p_email: user.email ?? "",
-        p_full_name: fullName,
-        p_phone: null,
+      await ensureClientCustomer({
+        tenantId: tenant.id,
+        userId: user.id,
+        email: user.email ?? null,
+        fullName,
       });
     }
   }

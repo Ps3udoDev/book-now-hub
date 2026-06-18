@@ -7,7 +7,7 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 if (!supabaseUrl || !supabaseServiceRoleKey) {
   throw new Error(
     "Missing SUPABASE_SERVICE_ROLE_KEY environment variable. " +
-    "This is required for admin operations."
+      "This is required for admin operations.",
   );
 }
 
@@ -19,7 +19,7 @@ export const supabaseAdmin = createClient<Database>(
       autoRefreshToken: false,
       persistSession: false,
     },
-  }
+  },
 );
 
 /**
@@ -28,7 +28,7 @@ export const supabaseAdmin = createClient<Database>(
 export async function createAuthUser(
   email: string,
   password: string,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ) {
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
@@ -53,11 +53,11 @@ export async function updateAuthUser(
     email?: string;
     password?: string;
     user_metadata?: Record<string, unknown>;
-  }
+  },
 ) {
   const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
     userId,
-    updates
+    updates,
   );
 
   if (error) {
@@ -97,15 +97,29 @@ export async function getAuthUser(userId: string) {
  * Obtener usuario por email
  */
 export async function getAuthUserByEmail(email: string) {
-  const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+  const normalizedEmail = email.toLowerCase();
+  const perPage = 1000;
+  let page = 1;
 
-  if (error) {
-    throw new Error(`Error listing users: ${error.message}`);
+  while (true) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+      page,
+      perPage,
+    });
+
+    if (error) {
+      throw new Error(`Error listing users: ${error.message}`);
+    }
+
+    const user = data.users.find(
+      (item) => item.email?.toLowerCase() === normalizedEmail,
+    );
+
+    if (user) return user;
+    if (data.users.length < perPage) return null;
+
+    page += 1;
   }
-
-  return data.users.find(
-    (user) => user.email?.toLowerCase() === email.toLowerCase()
-  );
 }
 
 /**
@@ -113,13 +127,13 @@ export async function getAuthUserByEmail(email: string) {
  */
 export async function inviteUserByEmail(
   email: string,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ) {
   const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(
     email,
     {
       data: metadata,
-    }
+    },
   );
 
   if (error) {

@@ -1,10 +1,14 @@
 // src/components/client/favorites-section.tsx
+// Rail de favoritos del dashboard, con la estetica del prototipo.
 "use client";
 
 import { Heart, Package, Sparkles, Star, User } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  ClientButton,
+  ClientCard,
+  SectionHeading,
+} from "@/components/client/themed";
 import type { ClientFavoriteWithEntity } from "@/lib/services/client-profile";
 
 interface FavoritesSectionProps {
@@ -17,6 +21,12 @@ const ICON_BY_TYPE = {
   service: Sparkles,
   product: Package,
   specialist: User,
+} as const;
+
+const TYPE_LABEL = {
+  service: "Servicio",
+  product: "Producto",
+  specialist: "Especialista",
 } as const;
 
 function getEntityName(favorite: ClientFavoriteWithEntity): string {
@@ -46,42 +56,31 @@ export function FavoritesSection({
   isLoading,
 }: FavoritesSectionProps) {
   return (
-    <section className="space-y-3">
-      <header className="flex items-center justify-between">
-        <h3 className="text-base font-semibold flex items-center gap-2">
-          <Heart className="h-4 w-4 text-rose-500 fill-rose-500" />
-          Tus favoritos
-        </h3>
-        {favorites.length > 0 ? (
-          <Link
-            href={`/c/${tenantSlug}/favoritos`}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Ver todos
-          </Link>
-        ) : null}
-      </header>
+    <section>
+      <SectionHeading
+        title="Favoritos"
+        action={favorites.length > 0 ? "Ver todo" : undefined}
+        href={`/c/${tenantSlug}/servicios`}
+      />
 
       {isLoading ? (
         <div className="grid grid-cols-2 gap-3">
-          <div className="h-24 rounded-xl bg-muted animate-pulse" />
-          <div className="h-24 rounded-xl bg-muted animate-pulse" />
+          <div className="h-24 animate-pulse rounded-2xl bg-[var(--client-surface-alt)]" />
+          <div className="h-24 animate-pulse rounded-2xl bg-[var(--client-surface-alt)]" />
         </div>
       ) : favorites.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="text-center py-8 space-y-2">
-            <Star className="h-6 w-6 text-muted-foreground mx-auto" />
-            <p className="text-sm text-muted-foreground">
-              Aún no tienes favoritos. Marca con el corazón los servicios o
-              productos que más te gusten.
-            </p>
-            <Link href={`/c/${tenantSlug}/servicios`}>
-              <Button variant="outline" size="sm" className="mt-2">
-                Explorar servicios
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        <ClientCard className="space-y-2.5 border-dashed px-5 py-8 text-center">
+          <Star className="mx-auto h-6 w-6 text-[var(--client-fg-faint)]" />
+          <p className="text-sm text-[var(--client-fg-muted)]">
+            Aún no tienes favoritos. Marca con el corazón los servicios o
+            productos que más te gusten.
+          </p>
+          <Link href={`/c/${tenantSlug}/servicios`} className="inline-block">
+            <ClientButton variant="ghost" className="h-9 px-4 text-[13px]">
+              Explorar servicios
+            </ClientButton>
+          </Link>
+        </ClientCard>
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {favorites.slice(0, 4).map((favorite) => {
@@ -90,20 +89,20 @@ export function FavoritesSection({
               <Link
                 key={favorite.id}
                 href={getEntityHref(favorite, tenantSlug)}
-                className="group rounded-xl border p-3 hover:bg-accent/50 transition-colors"
+                className="group border border-[var(--client-border)] bg-[var(--client-surface)] p-3.5 shadow-[var(--client-shadow-soft)] transition-colors hover:bg-[var(--client-surface-alt)]"
+                style={{ borderRadius: "var(--client-rad-lg)" }}
               >
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-2 group-hover:scale-105 transition-transform">
+                <span
+                  className="mb-2.5 grid h-9 w-9 place-items-center bg-[var(--client-surface-alt)] text-[var(--client-accent)]"
+                  style={{ borderRadius: "var(--client-rad-md)" }}
+                >
                   <Icon className="h-4 w-4" />
-                </div>
-                <p className="font-medium text-sm truncate">
+                </span>
+                <p className="truncate text-sm font-semibold text-[var(--client-fg)]">
                   {getEntityName(favorite)}
                 </p>
-                <p className="text-xs text-muted-foreground capitalize">
-                  {favorite.entity_type === "service"
-                    ? "Servicio"
-                    : favorite.entity_type === "product"
-                      ? "Producto"
-                      : "Especialista"}
+                <p className="text-xs text-[var(--client-fg-muted)]">
+                  {TYPE_LABEL[favorite.entity_type] ?? "Favorito"}
                 </p>
               </Link>
             );

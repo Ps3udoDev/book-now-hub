@@ -1,22 +1,20 @@
 // src/app/c/[tenant]/login/page.tsx
+// Login del cliente final, fiel al prototipo: banda hero con imagen del
+// template, campos con icono, CTA primaria y social login.
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  AuthHero,
+  ClientButton,
+  ClientDivider,
+  ClientField,
+  clientInputClass,
+} from "@/components/client/themed";
 import { usePublicClientAppSettings } from "@/hooks/supabase/use-client-app-settings";
 import { clientAuthService } from "@/lib/services/client-auth";
 
@@ -27,6 +25,7 @@ export default function ClientLoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const { settings } = usePublicClientAppSettings(tenantSlug);
@@ -65,105 +64,107 @@ export default function ClientLoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--client-bg)] px-4 py-10 text-[var(--client-fg)]">
-      <Card className="w-full max-w-md border-[var(--client-border)] bg-[var(--client-surface)] shadow-[var(--client-shadow)]">
-        <CardHeader className="text-center">
-          <CardTitle
-            className="text-2xl"
-            style={{ fontFamily: "var(--client-font-display)" }}
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+      <AuthHero
+        title={
+          settings?.welcome_title || settings?.brand_name || "Reserva tu hora."
+        }
+      />
+
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-1 flex-col gap-3.5 px-6 pb-8 pt-6"
+      >
+        <ClientField icon={<Mail className="h-[18px] w-[18px]" />}>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="tu@email.com"
+            className={clientInputClass}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            disabled={loading}
+          />
+        </ClientField>
+        <ClientField icon={<Lock className="h-[18px] w-[18px]" />}>
+          <input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            required
+            placeholder="Contraseña"
+            className={clientInputClass}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            disabled={loading}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((current) => !current)}
+            className="p-1 text-[var(--client-fg-muted)]"
+            aria-label={
+              showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+            }
           >
-            {settings?.brand_name || "Bienvenido"}
-          </CardTitle>
-          <CardDescription>Inicia sesión para agendar tu cita</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo electrónico</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                disabled={loading}
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="password">Contraseña</Label>
-                <Link
-                  href={`/c/${tenantSlug}/forgot-password`}
-                  className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
-                >
-                  ¿Olvidaste tu contraseña?
-                </Link>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                disabled={loading}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
+            {showPassword ? (
+              <EyeOff className="h-[18px] w-[18px]" />
+            ) : (
+              <Eye className="h-[18px] w-[18px]" />
+            )}
+          </button>
+        </ClientField>
+
+        <Link
+          href={`/c/${tenantSlug}/forgot-password`}
+          className="self-end text-[13px] font-medium text-[var(--client-fg-muted)] hover:text-[var(--client-fg)]"
+        >
+          ¿Olvidaste tu contraseña?
+        </Link>
+
+        <ClientButton type="submit" disabled={loading} className="h-[52px]">
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Iniciando sesión…
+            </>
+          ) : (
+            "Iniciar sesión"
+          )}
+        </ClientButton>
+
+        {(settings?.show_google_login_preview ?? true) ? (
+          <>
+            <ClientDivider label="o continúa con" />
+            <ClientButton
+              variant="surface"
+              onClick={handleGoogle}
+              disabled={googleLoading}
+              className="h-[50px]"
+            >
+              {googleLoading ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Iniciando sesión…
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Conectando con Google…
                 </>
               ) : (
-                "Iniciar sesión"
+                `Google${settings?.google_login_enabled ? "" : " (pronto)"}`
               )}
-            </Button>
-          </form>
+            </ClientButton>
+          </>
+        ) : null}
 
-          {(settings?.show_google_login_preview ?? true) ? (
-            <>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">o</span>
-                </div>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleGoogle}
-                disabled={googleLoading}
-              >
-                {googleLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Conectando con Google…
-                  </>
-                ) : (
-                  `Continuar con Google${settings?.google_login_enabled ? "" : " (pronto)"}`
-                )}
-              </Button>
-            </>
-          ) : null}
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-muted-foreground">
-            ¿No tienes cuenta?{" "}
-            <Link
-              href={`/c/${tenantSlug}/register`}
-              className="font-medium text-primary hover:underline"
-            >
-              Regístrate
-            </Link>
-          </p>
-        </CardFooter>
-      </Card>
+        <p className="mt-2 text-center text-sm text-[var(--client-fg-muted)]">
+          ¿No tienes cuenta?{" "}
+          <Link
+            href={`/c/${tenantSlug}/register`}
+            className="font-semibold text-[var(--client-primary)] hover:underline"
+          >
+            Crear cuenta
+          </Link>
+        </p>
+      </form>
     </div>
   );
 }

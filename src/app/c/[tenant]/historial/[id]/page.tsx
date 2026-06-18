@@ -1,9 +1,8 @@
 // src/app/c/[tenant]/historial/[id]/page.tsx
-// Detalle completo de una visita del cliente.
+// Detalle completo de una visita del cliente, con la estetica del prototipo.
 "use client";
 
 import {
-  ArrowLeft,
   Clock,
   CreditCard,
   type LucideIcon,
@@ -13,9 +12,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ClientButton,
+  ClientCard,
+  displayStyle,
+  ScreenHeader,
+  SectionHeading,
+  useClientTheme,
+} from "@/components/client/themed";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClientHistoryDetail } from "@/hooks/supabase/use-client-profile";
 import { useClientTenant } from "@/providers/client-tenant-provider";
@@ -26,14 +30,14 @@ const STATUS_LABELS: Record<string, string> = {
   in_progress: "En curso",
   completed: "Completada",
   cancelled: "Cancelada",
-  no_show: "No asistio",
+  no_show: "No asistió",
 };
 
 const PAYMENT_LABELS: Record<string, string> = {
   cash: "Efectivo",
   card: "Tarjeta",
   transfer: "Transferencia",
-  mobile_payment: "Pago movil",
+  mobile_payment: "Pago móvil",
   zelle: "Zelle",
   paypal: "PayPal",
 };
@@ -70,6 +74,7 @@ export default function ClientHistoryDetailPage() {
   const params = useParams();
   const appointmentId = params.id as string;
   const { tenantSlug } = useClientTenant();
+  const { isBarber } = useClientTheme();
   const { appointment, isLoading, error } = useClientHistoryDetail(
     tenantSlug,
     appointmentId,
@@ -77,22 +82,27 @@ export default function ClientHistoryDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4 px-4 py-6">
+      <div className="mx-auto max-w-md space-y-4 px-5 py-6">
         <Skeleton className="h-8 w-32" />
-        <Skeleton className="h-44 rounded-xl" />
-        <Skeleton className="h-36 rounded-xl" />
+        <Skeleton className="h-44 rounded-2xl" />
+        <Skeleton className="h-36 rounded-2xl" />
       </div>
     );
   }
 
   if (error || !appointment) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4 px-4 py-6 text-center">
-        <h1 className="text-xl font-semibold">No pudimos cargar la cita</h1>
-        <p className="text-sm text-muted-foreground">{error}</p>
-        <Button asChild>
-          <Link href={`/c/${tenantSlug}/historial`}>Volver al historial</Link>
-        </Button>
+      <div className="mx-auto max-w-md space-y-4 px-5 py-10 text-center">
+        <h1
+          className="text-xl font-semibold text-[var(--client-fg)]"
+          style={displayStyle(isBarber)}
+        >
+          No pudimos cargar la cita
+        </h1>
+        <p className="text-sm text-[var(--client-fg-muted)]">{error}</p>
+        <Link href={`/c/${tenantSlug}/historial`} className="inline-block">
+          <ClientButton className="h-11">Volver al historial</ClientButton>
+        </Link>
       </div>
     );
   }
@@ -115,148 +125,155 @@ export default function ClientHistoryDetailPage() {
         ];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 px-4 py-6 pb-24">
-      <Link
-        href={`/c/${tenantSlug}/historial`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Historial
-      </Link>
+    <div className="mx-auto max-w-md space-y-5 px-5 pb-28 pt-4">
+      <ScreenHeader
+        title="Detalle de visita"
+        backHref={`/c/${tenantSlug}/historial`}
+      />
 
-      <Card>
-        <CardContent className="space-y-4 p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold leading-tight">
-                {appointment.services?.name ?? "Cita"}
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground capitalize">
-                {formatDate(appointment.scheduled_at)}
-              </p>
-            </div>
-            <Badge>
-              {STATUS_LABELS[appointment.status] ?? appointment.status}
-            </Badge>
+      <ClientCard className="space-y-4 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1
+              className="text-[22px] font-semibold leading-tight text-[var(--client-fg)]"
+              style={displayStyle(isBarber)}
+            >
+              {appointment.services?.name ?? "Cita"}
+            </h1>
+            <p className="mt-1 text-sm capitalize text-[var(--client-fg-muted)]">
+              {formatDate(appointment.scheduled_at)}
+            </p>
           </div>
+          <span className="shrink-0 rounded-full bg-[var(--client-surface-alt)] px-3 py-1 text-xs font-semibold text-[var(--client-fg)]">
+            {STATUS_LABELS[appointment.status] ?? appointment.status}
+          </span>
+        </div>
 
-          <div className="grid gap-3 text-sm sm:grid-cols-2">
-            <Info
-              icon={Clock}
-              label="Hora"
-              value={formatTime(appointment.scheduled_at)}
-            />
-            <Info
-              icon={User}
-              label="Especialista"
-              value={appointment.profiles?.full_name ?? "Por asignar"}
-            />
-            <Info
-              icon={MapPin}
-              label="Sucursal"
-              value={appointment.branches?.name ?? "Sucursal"}
-            />
-            <Info
-              icon={CreditCard}
-              label="Pagado"
-              value={formatMoney(
-                appointment.paid_amount,
-                appointment.paid_currency,
-              )}
-            />
+        <div className="grid grid-cols-2 gap-2.5">
+          <Info
+            icon={Clock}
+            label="Hora"
+            value={formatTime(appointment.scheduled_at)}
+          />
+          <Info
+            icon={User}
+            label="Especialista"
+            value={appointment.profiles?.full_name ?? "Por asignar"}
+          />
+          <Info
+            icon={MapPin}
+            label="Sucursal"
+            value={appointment.branches?.name ?? "Sucursal"}
+          />
+          <Info
+            icon={CreditCard}
+            label="Pagado"
+            value={formatMoney(
+              appointment.paid_amount,
+              appointment.paid_currency,
+            )}
+          />
+        </div>
+
+        {appointment.customer_notes ? (
+          <div
+            className="border border-[var(--client-border)] bg-[var(--client-bg)] p-3 text-sm"
+            style={{ borderRadius: "var(--client-rad-md)" }}
+          >
+            <p className="font-semibold text-[var(--client-fg)]">Notas</p>
+            <p className="mt-1 text-[var(--client-fg-muted)]">
+              {appointment.customer_notes}
+            </p>
           </div>
+        ) : null}
+      </ClientCard>
 
-          {appointment.customer_notes ? (
-            <div className="rounded-lg border p-3 text-sm">
-              <p className="font-medium">Notas</p>
-              <p className="mt-1 text-muted-foreground">
-                {appointment.customer_notes}
-              </p>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Servicios de la visita</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {services.map((item) => (
+      <section>
+        <SectionHeading title="Servicios de la visita" />
+        <ClientCard className="overflow-hidden">
+          {services.map((item, index) => (
             <div
               key={item.id}
-              className="flex items-start justify-between gap-3 rounded-lg border p-3"
+              className="flex items-start justify-between gap-3 px-4 py-3"
+              style={
+                index < services.length - 1
+                  ? { borderBottom: "1px solid var(--client-border)" }
+                  : undefined
+              }
             >
               <div className="min-w-0">
-                <p className="font-medium">
+                <p className="font-semibold text-[var(--client-fg)]">
                   {item.services?.name ?? "Servicio"}
                   {item.service_variants?.name
                     ? ` · ${item.service_variants.name}`
                     : ""}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 text-xs text-[var(--client-fg-muted)]">
                   {item.profiles?.full_name ?? "Especialista por asignar"} ·{" "}
                   {item.duration_minutes ?? appointment.duration_minutes} min
                 </p>
               </div>
-              <span className="shrink-0 text-sm font-semibold">
+              <span className="shrink-0 text-sm font-bold text-[var(--client-fg)]">
                 {formatMoney(item.price, appointment.currency_code)}
               </span>
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </ClientCard>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Metodo de pago</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <section>
+        <SectionHeading title="Método de pago" />
+        <ClientCard className="overflow-hidden">
           {appointment.payments.length > 0 ? (
-            appointment.payments.map((payment) => (
+            appointment.payments.map((payment, index) => (
               <div
                 key={payment.id}
-                className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm"
+                className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
+                style={
+                  index < appointment.payments.length - 1
+                    ? { borderBottom: "1px solid var(--client-border)" }
+                    : undefined
+                }
               >
-                <span>
+                <span className="text-[var(--client-fg)]">
                   {payment.payment_method
                     ? (PAYMENT_LABELS[payment.payment_method] ??
                       payment.payment_method)
                     : "Pago"}
                 </span>
-                <span className="font-semibold">
+                <span className="font-bold text-[var(--client-fg)]">
                   {formatMoney(payment.amount, payment.currency_code)}
                 </span>
               </div>
             ))
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="px-4 py-3 text-sm text-[var(--client-fg-muted)]">
               No hay pagos asociados a esta cita.
             </p>
           )}
-        </CardContent>
-      </Card>
+        </ClientCard>
+      </section>
 
-      <Card>
-        <CardContent className="flex items-center justify-between gap-3 p-4">
-          <div className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <p className="text-sm font-medium">Calificacion</p>
-              <p className="text-xs text-muted-foreground">
-                {appointment.rating
-                  ? `${appointment.rating.score}/5`
-                  : "Aun no has calificado esta visita"}
-              </p>
-            </div>
+      <ClientCard className="flex items-center justify-between gap-3 p-4">
+        <div className="flex items-center gap-3">
+          <Star className="h-5 w-5 text-[var(--client-accent)]" />
+          <div>
+            <p className="text-sm font-semibold text-[var(--client-fg)]">
+              Calificación
+            </p>
+            <p className="text-xs text-[var(--client-fg-muted)]">
+              {appointment.rating
+                ? `${appointment.rating.score}/5`
+                : "Aún no has calificado esta visita"}
+            </p>
           </div>
-          {!appointment.rating && appointment.status === "completed" ? (
-            <Button size="sm" variant="outline" disabled>
-              Calificar
-            </Button>
-          ) : null}
-        </CardContent>
-      </Card>
+        </div>
+        {!appointment.rating && appointment.status === "completed" ? (
+          <ClientButton variant="ghost" className="h-9 px-3.5 text-xs" disabled>
+            Calificar
+          </ClientButton>
+        ) : null}
+      </ClientCard>
     </div>
   );
 }
@@ -271,11 +288,16 @@ function Info({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border p-3">
-      <Icon className="h-4 w-4 text-muted-foreground" />
+    <div
+      className="flex items-center gap-2.5 border border-[var(--client-border)] bg-[var(--client-bg)] p-3"
+      style={{ borderRadius: "var(--client-rad-md)" }}
+    >
+      <Icon className="h-4 w-4 shrink-0 text-[var(--client-fg-muted)]" />
       <div className="min-w-0">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="truncate font-medium">{value}</p>
+        <p className="text-[11px] text-[var(--client-fg-muted)]">{label}</p>
+        <p className="truncate text-[13px] font-semibold text-[var(--client-fg)]">
+          {value}
+        </p>
       </div>
     </div>
   );

@@ -1,9 +1,11 @@
 // src/components/client/recent-history-section.tsx
+// Lista "Reciente" del dashboard, fiel al prototipo: icono check en bloque
+// surfaceAlt + servicio + fecha + precio.
 "use client";
 
-import { History, User } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
+import { ClientCard, SectionHeading } from "@/components/client/themed";
 import type { CustomerDashboardPastAppointment } from "@/types";
 
 interface RecentHistorySectionProps {
@@ -15,7 +17,6 @@ function formatDate(value: string): string {
   return new Date(value).toLocaleDateString("es-VE", {
     day: "numeric",
     month: "short",
-    year: "numeric",
   });
 }
 
@@ -31,67 +32,55 @@ export function RecentHistorySection({
   const recent = appointments.slice(0, 3);
 
   return (
-    <section className="space-y-3">
-      <header className="flex items-center justify-between">
-        <h3 className="text-base font-semibold flex items-center gap-2">
-          <History className="h-4 w-4 text-muted-foreground" />
-          Historial reciente
-        </h3>
-        {recent.length > 0 ? (
-          <Link
-            href={`/c/${tenantSlug}/historial`}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Ver todo
-          </Link>
-        ) : null}
-      </header>
+    <section>
+      <SectionHeading
+        title="Reciente"
+        action={recent.length > 0 ? "Historial" : undefined}
+        href={`/c/${tenantSlug}/historial`}
+      />
 
       {recent.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="text-center py-8">
-            <p className="text-sm text-muted-foreground">
-              Aún no tienes citas completadas.
-            </p>
-          </CardContent>
-        </Card>
+        <ClientCard className="border-dashed px-5 py-8 text-center">
+          <p className="text-sm text-[var(--client-fg-muted)]">
+            Aún no tienes citas completadas.
+          </p>
+        </ClientCard>
       ) : (
-        <Card>
-          <CardContent className="p-0 divide-y">
-            {recent.map((appointment) => (
-              <Link
-                key={appointment.id}
-                href={`/c/${tenantSlug}/historial/${appointment.id}`}
-                className="flex items-center justify-between gap-3 p-4 hover:bg-accent/50 transition-colors"
+        <ClientCard className="overflow-hidden">
+          {recent.map((appointment, index) => (
+            <Link
+              key={appointment.id}
+              href={`/c/${tenantSlug}/historial/${appointment.id}`}
+              className="flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-[var(--client-surface-alt)]"
+              style={
+                index < recent.length - 1
+                  ? { borderBottom: "1px solid var(--client-border)" }
+                  : undefined
+              }
+            >
+              <span
+                className="grid h-9 w-9 shrink-0 place-items-center bg-[var(--client-surface-alt)] text-[var(--client-success)]"
+                style={{ borderRadius: "var(--client-rad-md)" }}
               >
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium truncate">
-                    {appointment.service_name}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                    <span>{formatDate(appointment.scheduled_at)}</span>
-                    {appointment.specialist_name ? (
-                      <>
-                        <span>·</span>
-                        <span className="flex items-center gap-1 truncate">
-                          <User className="h-3 w-3 shrink-0" />
-                          <span className="truncate">
-                            {appointment.specialist_name}
-                          </span>
-                        </span>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-medium">
-                    {formatPrice(appointment.price, appointment.currency_code)}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
+                <CheckCircle2 className="h-[18px] w-[18px]" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14.5px] font-semibold text-[var(--client-fg)]">
+                  {appointment.service_name}
+                </span>
+                <span className="block text-xs capitalize text-[var(--client-fg-muted)]">
+                  {formatDate(appointment.scheduled_at)}
+                  {appointment.specialist_name
+                    ? ` · ${appointment.specialist_name}`
+                    : ""}
+                </span>
+              </span>
+              <span className="shrink-0 text-sm font-semibold text-[var(--client-fg)]">
+                {formatPrice(appointment.price, appointment.currency_code)}
+              </span>
+            </Link>
+          ))}
+        </ClientCard>
       )}
     </section>
   );
