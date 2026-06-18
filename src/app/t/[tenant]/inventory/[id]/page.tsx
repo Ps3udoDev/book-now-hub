@@ -1,19 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   ProductForm,
-  ProductImageUploader,
   type ProductFormValues,
+  ProductImageUploader,
 } from "@/components/inventory";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBranches } from "@/hooks/supabase/use-branches";
+import { useProductCategories } from "@/hooks/supabase/use-product-categories";
 import { useProduct } from "@/hooks/supabase/use-products";
 import { storageService } from "@/lib/services/storage";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -29,6 +30,7 @@ export default function InventoryProductDetailPage() {
   const productId = params.id as string;
   const { tenant } = useAuthStore();
   const { branches } = useBranches(tenant?.id || null);
+  const { categories } = useProductCategories(tenant?.id || null);
   const { product, isLoading, error, mutate } = useProduct(productId);
   const [images, setImages] = useState<ProductImageDraft[]>([]);
   const [saving, setSaving] = useState(false);
@@ -68,11 +70,15 @@ export default function InventoryProductDetailPage() {
         throw new Error(json.error || "No se pudo actualizar el producto");
       }
 
-      const existingIds = new Set((product?.images || []).map((image) => image.id));
+      const existingIds = new Set(
+        (product?.images || []).map((image) => image.id),
+      );
       const keptExistingIds = new Set(
         images.filter((image) => image.id).map((image) => image.id as string),
       );
-      const deletedIds = Array.from(existingIds).filter((id) => !keptExistingIds.has(id));
+      const deletedIds = Array.from(existingIds).filter(
+        (id) => !keptExistingIds.has(id),
+      );
 
       for (const imageId of deletedIds) {
         await fetch(`/api/products/${productId}/images/${imageId}`, {
@@ -93,7 +99,9 @@ export default function InventoryProductDetailPage() {
         .map((image, index) => {
           const persisted =
             (image.id &&
-              (product?.images || []).find((currentImage) => currentImage.id === image.id)) ||
+              (product?.images || []).find(
+                (currentImage) => currentImage.id === image.id,
+              )) ||
             persistedNewImages.get(image.client_id);
 
           if (!persisted) return null;
@@ -186,6 +194,7 @@ export default function InventoryProductDetailPage() {
         <CardContent>
           <ProductForm
             branches={branches}
+            categories={categories.map((category) => category.name)}
             product={productFormData}
             loading={saving}
             onSubmit={handleSubmit}
@@ -211,7 +220,8 @@ export default function InventoryProductDetailPage() {
           <div className="rounded-lg border p-4">
             <p className="text-sm text-muted-foreground">Stock actual</p>
             <p className="text-2xl font-bold">
-              {product.stock_summary?.calculated_stock ?? product.stock_quantity}
+              {product.stock_summary?.calculated_stock ??
+                product.stock_quantity}
             </p>
           </div>
           <div className="rounded-lg border p-4">

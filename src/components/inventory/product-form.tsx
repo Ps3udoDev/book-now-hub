@@ -26,6 +26,7 @@ export interface ProductFormValues {
 
 interface ProductFormProps {
   branches: Branch[];
+  categories?: string[];
   loading?: boolean;
   product?: Partial<ProductFormValues> | null;
   onSubmit: (values: ProductFormValues) => Promise<void>;
@@ -34,6 +35,7 @@ interface ProductFormProps {
 
 export function ProductForm({
   branches,
+  categories = [],
   loading = false,
   product,
   onSubmit,
@@ -72,6 +74,15 @@ export function ProductForm({
     setValue,
     formState: { errors },
   } = form;
+
+  // Opciones del catálogo + la categoría actual del producto si ya no existe
+  // en el catálogo (para no perder su valor).
+  const currentCategory = watch("category");
+  const categoryOptions = useMemo(() => {
+    const set = new Set(categories.filter(Boolean));
+    if (currentCategory) set.add(currentCategory);
+    return Array.from(set).sort();
+  }, [categories, currentCategory]);
 
   useEffect(() => {
     reset({
@@ -132,11 +143,18 @@ export function ProductForm({
 
         <div className="space-y-2">
           <Label htmlFor="category">Categoría</Label>
-          <Input
+          <select
             id="category"
-            placeholder="Ej. Shampoos"
+            className="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
             {...register("category")}
-          />
+          >
+            <option value="">Sin categoría</option>
+            {categoryOptions.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="space-y-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Loader2, Package, Plus, Search } from "lucide-react";
+import { ArrowRight, Loader2, Package, Plus, Search, Tag } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -140,6 +140,12 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <Link href={`/t/${tenantSlug}/inventory/categories`}>
+              <Tag className="mr-2 h-4 w-4" />
+              Categorías
+            </Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link href={`/t/${tenantSlug}/inventory/movements`}>
               Ver movimientos

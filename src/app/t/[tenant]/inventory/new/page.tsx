@@ -1,18 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
   ProductForm,
-  ProductImageUploader,
   type ProductFormValues,
+  ProductImageUploader,
 } from "@/components/inventory";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBranches } from "@/hooks/supabase/use-branches";
+import { useProductCategories } from "@/hooks/supabase/use-product-categories";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import {
   type ProductImageDraft,
@@ -25,6 +26,7 @@ export default function NewInventoryProductPage() {
   const tenantSlug = params.tenant as string;
   const { tenant } = useAuthStore();
   const { branches, isLoading } = useBranches(tenant?.id || null);
+  const { categories } = useProductCategories(tenant?.id || null);
   const [images, setImages] = useState<ProductImageDraft[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -113,6 +115,7 @@ export default function NewInventoryProductPage() {
         <CardContent>
           <ProductForm
             branches={branches}
+            categories={categories.map((category) => category.name)}
             loading={isLoading || saving}
             onSubmit={handleSubmit}
             onCancel={() => router.push(`/t/${tenantSlug}/inventory`)}
