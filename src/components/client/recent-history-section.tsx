@@ -6,6 +6,7 @@
 import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { ClientCard, SectionHeading } from "@/components/client/themed";
+import { useClientCurrency } from "@/providers/client-currency-provider";
 import type { CustomerDashboardPastAppointment } from "@/types";
 
 interface RecentHistorySectionProps {
@@ -20,15 +21,11 @@ function formatDate(value: string): string {
   });
 }
 
-function formatPrice(price: number | null, currency: string | null): string {
-  if (price === null || price === undefined) return "—";
-  return `${currency ?? "USD"} ${price.toFixed(2)}`;
-}
-
 export function RecentHistorySection({
   appointments,
   tenantSlug,
 }: RecentHistorySectionProps) {
+  const { formatPrice } = useClientCurrency();
   const recent = appointments.slice(0, 3);
 
   return (

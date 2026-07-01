@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { Loader2, Package, ShoppingBag } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,10 +49,12 @@ type MovementItem = {
 
 export default function MyProductsPage() {
   const { tenant, user } = useAuthStore();
-  const { specialist, isLoading: specialistLoading } = useSpecialist(user?.id || null);
+  const { specialist, isLoading: specialistLoading } = useSpecialist(
+    user?.id || null,
+  );
   const { products, isLoading: productsLoading } = useProducts(
     tenant?.id || null,
-    specialist?.branch_id || undefined,
+    { branchId: specialist?.branch_id || undefined },
   );
 
   const activeProducts = useMemo(
@@ -68,16 +70,21 @@ export default function MyProductsPage() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [history, setHistory] = useState<MovementItem[]>([]);
 
-  const selectedProduct = activeProducts.find((product) => product.id === selectedProductId);
+  const selectedProduct = activeProducts.find(
+    (product) => product.id === selectedProductId,
+  );
 
   const loadHistory = async () => {
     if (!tenant?.id) return;
 
     setHistoryLoading(true);
     try {
-      const response = await fetch(`/api/inventory/movements?tenant_id=${tenant.id}`, {
-        credentials: "include",
-      });
+      const response = await fetch(
+        `/api/inventory/movements?tenant_id=${tenant.id}`,
+        {
+          credentials: "include",
+        },
+      );
       const json = await response.json();
 
       if (!response.ok) {
@@ -86,7 +93,9 @@ export default function MyProductsPage() {
 
       setHistory(json.movements || []);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error cargando historial");
+      toast.error(
+        error instanceof Error ? error.message : "Error cargando historial",
+      );
     } finally {
       setHistoryLoading(false);
     }
@@ -140,7 +149,9 @@ export default function MyProductsPage() {
       setPurpose("Uso en servicio");
       loadHistory();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error registrando retiro");
+      toast.error(
+        error instanceof Error ? error.message : "Error registrando retiro",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -213,7 +224,9 @@ export default function MyProductsPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Precio referencia</span>
+                  <span className="text-muted-foreground">
+                    Precio referencia
+                  </span>
                   <span>
                     {product.currency_iso} {Number(product.price).toFixed(2)}
                   </span>
@@ -221,7 +234,8 @@ export default function MyProductsPage() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Disponibilidad</span>
                   <span>
-                    {product.stock_summary?.calculated_stock ?? product.stock_quantity}
+                    {product.stock_summary?.calculated_stock ??
+                      product.stock_quantity}
                   </span>
                 </div>
                 <Button
@@ -271,7 +285,9 @@ export default function MyProductsPage() {
                         : "-"}
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium">{movement.product?.name || "Producto"}</div>
+                      <div className="font-medium">
+                        {movement.product?.name || "Producto"}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {movement.product?.sku || "Sin SKU"}
                       </div>
@@ -286,18 +302,25 @@ export default function MyProductsPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={withdrawalDialogOpen} onOpenChange={setWithdrawalDialogOpen}>
+      <Dialog
+        open={withdrawalDialogOpen}
+        onOpenChange={setWithdrawalDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Solicitar producto</DialogTitle>
             <DialogDescription>
-              El retiro quedara registrado como movimiento tipo specialist_withdrawal.
+              El retiro quedara registrado como movimiento tipo
+              specialist_withdrawal.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1">
               <Label>Producto</Label>
-              <Select value={selectedProductId} onValueChange={setSelectedProductId}>
+              <Select
+                value={selectedProductId}
+                onValueChange={setSelectedProductId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un producto" />
                 </SelectTrigger>
@@ -327,14 +350,19 @@ export default function MyProductsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Uso en servicio">Uso en servicio</SelectItem>
+                  <SelectItem value="Uso en servicio">
+                    Uso en servicio
+                  </SelectItem>
                   <SelectItem value="Uso personal">Uso personal</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setWithdrawalDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setWithdrawalDialogOpen(false)}
+            >
               Cancelar
             </Button>
             <Button onClick={handleRequestProduct} disabled={submitting}>

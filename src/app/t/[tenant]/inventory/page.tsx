@@ -1,9 +1,18 @@
 "use client";
 
-import { ArrowRight, Loader2, Package, Plus, Search, Tag } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Package,
+  Plus,
+  Search,
+  Tag,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/inventory";
 import { Button } from "@/components/ui/button";
@@ -15,57 +24,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useProductCategories } from "@/hooks/supabase/use-product-categories";
 import {
   type ProductApiItem,
   useProducts,
 } from "@/hooks/supabase/use-products";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
+const PAGE_SIZE = 20;
+
 export default function InventoryPage() {
   const params = useParams();
   const tenantSlug = params.tenant as string;
   const { tenant } = useAuthStore();
-  const { products, isLoading, error, mutate } = useProducts(
-    tenant?.id || null,
-  );
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [searchDebounced, setSearchDebounced] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "inactive"
   >("all");
 
-  const categories = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          products
-            .map((product) => product.category)
-            .filter((category): category is string => Boolean(category)),
-        ),
-      ).sort(),
-    [products],
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setSearchDebounced(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
+  const { products, pagination, isLoading, error, mutate } = useProducts(
+    tenant?.id || null,
+    {
+      page,
+      pageSize: PAGE_SIZE,
+      search: searchDebounced || undefined,
+      category: categoryFilter === "all" ? undefined : categoryFilter,
+      isActive: statusFilter === "all" ? undefined : statusFilter === "active",
+    },
   );
 
-  const filteredProducts = useMemo(
-    () =>
-      products.filter((product) => {
-        const matchesSearch =
-          product.name.toLowerCase().includes(search.toLowerCase()) ||
-          product.sku?.toLowerCase().includes(search.toLowerCase()) ||
-          product.category?.toLowerCase().includes(search.toLowerCase());
-
-        const matchesStatus =
-          statusFilter === "all" ||
-          (statusFilter === "active" && product.is_active) ||
-          (statusFilter === "inactive" && !product.is_active);
-
-        const matchesCategory =
-          categoryFilter === "all" || product.category === categoryFilter;
-
-        return matchesSearch && matchesStatus && matchesCategory;
-      }),
-    [categoryFilter, products, search, statusFilter],
-  );
+  const { categories } = useProductCategories(tenant?.id || null);
 
   const refresh = async () => {
     await mutate();
@@ -136,7 +135,7 @@ export default function InventoryPage() {
         <div>
           <h1 className="text-2xl font-bold">Inventario</h1>
           <p className="text-muted-foreground">
-            {products.length} productos registrados
+            {pagination?.total ?? products.length} productos registrados
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -173,15 +172,21 @@ export default function InventoryPage() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <Select
+            value={categoryFilter}
+            onValueChange={(value) => {
+              setCategoryFilter(value);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Categoría" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas las categorías</SelectItem>
               {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
+                <SelectItem key={category.id} value={category.name}>
+                  {category.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -189,28 +194,37 @@ export default function InventoryPage() {
 
           <Button
             variant={statusFilter === "all" ? "default" : "outline"}
-            onClick={() => setStatusFilter("all")}
+            onClick={() => {
+              setStatusFilter("all");
+              setPage(1);
+            }}
           >
             Todos
           </Button>
           <Button
             variant={statusFilter === "active" ? "default" : "outline"}
-            onClick={() => setStatusFilter("active")}
+            onClick={() => {
+              setStatusFilter("active");
+              setPage(1);
+            }}
           >
             Activos
           </Button>
           <Button
             variant={statusFilter === "inactive" ? "default" : "outline"}
-            onClick={() => setStatusFilter("inactive")}
+            onClick={() => {
+              setStatusFilter("inactive");
+              setPage(1);
+            }}
           >
             Inactivos
           </Button>
         </div>
       </div>
 
-      {filteredProducts.length > 0 ? (
+      {products.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredProducts.map((product) => (
+          {products.map((product) => (
             <ProductCard
               key={product.id}
               product={product}
@@ -235,6 +249,32 @@ export default function InventoryPage() {
           </Button>
         </div>
       )}
+
+      {pagination && pagination.total_pages > 1 ? (
+        <div className="flex items-center justify-between gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            Anterior
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Página {pagination.page} de {pagination.total_pages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= pagination.total_pages}
+            onClick={() => setPage((current) => current + 1)}
+          >
+            Siguiente
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

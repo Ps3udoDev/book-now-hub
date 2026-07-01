@@ -19,6 +19,9 @@ interface UpdateProfileBody {
   preferred_branch_id?: string | null;
   preferred_specialist_id?: string | null;
   marketing_consent?: boolean;
+  notify_email?: boolean;
+  notify_sms?: boolean;
+  notify_whatsapp?: boolean;
 }
 
 export async function GET(request: NextRequest) {
@@ -77,6 +80,15 @@ export async function PUT(request: NextRequest) {
     }
     if (body.marketing_consent !== undefined) {
       updates.accepts_marketing = body.marketing_consent;
+    }
+    if (body.notify_email !== undefined) {
+      updates.notify_email = body.notify_email;
+    }
+    if (body.notify_sms !== undefined) {
+      updates.notify_sms = body.notify_sms;
+    }
+    if (body.notify_whatsapp !== undefined) {
+      updates.notify_whatsapp = body.notify_whatsapp;
     }
 
     if (Object.keys(updates).length === 0) {

@@ -17,7 +17,6 @@ import {
 } from "@/components/client/themed";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  formatMoney,
   getPrimaryProductImage,
   resolveProductImageUrl,
 } from "@/features/ecommerce/utils";
@@ -26,6 +25,7 @@ import { usePublicEcommerceProducts } from "@/hooks/supabase/use-ecommerce";
 import { clientProfileService } from "@/lib/services/client-profile";
 import type { PublicEcommerceProduct } from "@/lib/services/ecommerce";
 import { cn } from "@/lib/utils";
+import { useClientCurrency } from "@/providers/client-currency-provider";
 import { useClientTenant } from "@/providers/client-tenant-provider";
 
 function getProductImageUrl(product: PublicEcommerceProduct) {
@@ -38,6 +38,7 @@ function getProductImageUrl(product: PublicEcommerceProduct) {
 export default function ClientProductsPage() {
   const { tenantSlug } = useClientTenant();
   const { isBarber } = useClientTheme();
+  const { formatPrice } = useClientCurrency();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | null>(null);
   const [pendingFavorite, setPendingFavorite] = useState<string | null>(null);
@@ -215,7 +216,7 @@ export default function ClientProductsPage() {
                     </button>
                   </div>
                   <p className="mt-1.5 text-[15px] font-bold text-[var(--client-fg)]">
-                    {formatMoney(product.price, product.currency_iso)}
+                    {formatPrice(product.price, product.currency_iso)}
                   </p>
                 </div>
               </div>

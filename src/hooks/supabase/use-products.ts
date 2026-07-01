@@ -61,19 +61,61 @@ const fetcher = async (url: string) => {
   return json;
 };
 
-export function useProducts(tenantId: string | null, branchId?: string | null) {
-  const query = tenantId
-    ? `/api/products?tenant_id=${tenantId}${branchId ? `&branch_id=${branchId}` : ""}`
-    : null;
+export interface UseProductsFilters {
+  branchId?: string | null;
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  category?: string;
+  isActive?: boolean;
+}
+
+export interface ProductsPagination {
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+}
+
+export function useProducts(
+  tenantId: string | null,
+  filters?: UseProductsFilters,
+) {
+  const params = new URLSearchParams();
+  if (tenantId) params.set("tenant_id", tenantId);
+  if (filters?.branchId) params.set("branch_id", filters.branchId);
+  if (filters?.page) params.set("page", String(filters.page));
+  if (filters?.pageSize) params.set("page_size", String(filters.pageSize));
+  if (filters?.search) params.set("search", filters.search);
+  if (filters?.category) params.set("category", filters.category);
+  if (filters?.isActive !== undefined) {
+    params.set("is_active", String(filters.isActive));
+  }
+
+  const query = tenantId ? `/api/products?${params.toString()}` : null;
 
   const { data, error, isLoading, mutate } = useSWR(query, fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 30000,
   });
 
+  const rawPagination = data?.pagination as
+    | { page: number; page_size: number; total: number }
+    | undefined;
+
+  const pagination: ProductsPagination | null = rawPagination
+    ? {
+        ...rawPagination,
+        total_pages: Math.max(
+          1,
+          Math.ceil(rawPagination.total / rawPagination.page_size),
+        ),
+      }
+    : null;
+
   return {
     products: (data?.products || []) as ProductApiItem[],
-    pagination: data?.pagination || null,
+    pagination,
     isLoading,
     error: error?.message || null,
     mutate,

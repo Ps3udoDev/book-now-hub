@@ -34,6 +34,7 @@ import type {
   ClientHistoryFilters,
 } from "@/lib/services/client-profile";
 import { cn } from "@/lib/utils";
+import { useClientCurrency } from "@/providers/client-currency-provider";
 import { useClientTenant } from "@/providers/client-tenant-provider";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -66,18 +67,6 @@ function formatTime(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function formatMoney(value: number | null, currency: string | null) {
-  if (value == null) return "—";
-  try {
-    return new Intl.NumberFormat("es-EC", {
-      style: "currency",
-      currency: currency || "USD",
-    }).format(value);
-  } catch {
-    return `${currency || "USD"} ${value.toFixed(2)}`;
-  }
 }
 
 export default function ClientHistoryPage() {
@@ -277,6 +266,7 @@ function HistoryCard({
   appointment: ClientHistoryAppointment;
   tenantSlug: string;
 }) {
+  const { formatPrice } = useClientCurrency();
   const upcoming =
     appointment.status === "pending" || appointment.status === "confirmed";
   const cancelled =
@@ -342,7 +332,7 @@ function HistoryCard({
           </div>
           <div className="shrink-0 text-right">
             <p className="text-sm font-bold text-[var(--client-fg)]">
-              {formatMoney(appointment.paid_amount, appointment.paid_currency)}
+              {formatPrice(appointment.paid_amount, appointment.paid_currency)}
             </p>
             <p className="mt-0.5 text-[11px] text-[var(--client-fg-muted)]">
               {STATUS_LABELS[appointment.status] ?? appointment.status}

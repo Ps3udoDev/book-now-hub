@@ -1519,6 +1519,9 @@ export type Database = {
           last_visit_at: string | null
           loyalty_points: number | null
           notes: string | null
+          notify_email: boolean
+          notify_sms: boolean
+          notify_whatsapp: boolean
           phone: string | null
           phone_country_code: string | null
           phone_secondary: string | null
@@ -1553,6 +1556,9 @@ export type Database = {
           last_visit_at?: string | null
           loyalty_points?: number | null
           notes?: string | null
+          notify_email?: boolean
+          notify_sms?: boolean
+          notify_whatsapp?: boolean
           phone?: string | null
           phone_country_code?: string | null
           phone_secondary?: string | null
@@ -1587,6 +1593,9 @@ export type Database = {
           last_visit_at?: string | null
           loyalty_points?: number | null
           notes?: string | null
+          notify_email?: boolean
+          notify_sms?: boolean
+          notify_whatsapp?: boolean
           phone?: string | null
           phone_country_code?: string | null
           phone_secondary?: string | null

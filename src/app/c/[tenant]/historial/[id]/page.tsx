@@ -22,6 +22,7 @@ import {
 } from "@/components/client/themed";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClientHistoryDetail } from "@/hooks/supabase/use-client-profile";
+import { useClientCurrency } from "@/providers/client-currency-provider";
 import { useClientTenant } from "@/providers/client-tenant-provider";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -58,23 +59,14 @@ function formatTime(value: string) {
   });
 }
 
-function formatMoney(value: number | null, currency: string | null) {
-  if (value == null) return "Sin pago registrado";
-  try {
-    return new Intl.NumberFormat("es-EC", {
-      style: "currency",
-      currency: currency || "USD",
-    }).format(value);
-  } catch {
-    return `${currency || "USD"} ${value.toFixed(2)}`;
-  }
-}
-
 export default function ClientHistoryDetailPage() {
   const params = useParams();
   const appointmentId = params.id as string;
   const { tenantSlug } = useClientTenant();
   const { isBarber } = useClientTheme();
+  const { formatPrice } = useClientCurrency();
+  const formatMoney = (value: number | null, currency: string | null) =>
+    value == null ? "Sin pago registrado" : formatPrice(value, currency);
   const { appointment, isLoading, error } = useClientHistoryDetail(
     tenantSlug,
     appointmentId,

@@ -44,6 +44,7 @@ import {
 import { clientServicesService } from "@/lib/services/client-services";
 import { cn } from "@/lib/utils";
 import { buildAppointmentIcs, downloadIcs } from "@/lib/utils/ics";
+import { useClientCurrency } from "@/providers/client-currency-provider";
 import { useClientTenant } from "@/providers/client-tenant-provider";
 
 type Step = "select_slot" | "confirm" | "success";
@@ -109,16 +110,13 @@ function formatLongDate(value: string): string {
   });
 }
 
-function formatPrice(price: number, currency: string | null): string {
-  return `${currency ?? "USD"} ${price.toFixed(2)}`;
-}
-
 export default function ClientBookingPage() {
   const params = useParams();
   const router = useRouter();
   const serviceId = params.id as string;
   const { tenantSlug } = useClientTenant();
   const { isBarber } = useClientTheme();
+  const { formatPrice } = useClientCurrency();
 
   const { service, defaultBranchId, branches, isLoading } = useClientService(
     tenantSlug,

@@ -29,6 +29,16 @@ export interface UpdateProfilePayload {
   preferred_branch_id?: string | null;
   preferred_specialist_id?: string | null;
   marketing_consent?: boolean;
+  notify_email?: boolean;
+  notify_sms?: boolean;
+  notify_whatsapp?: boolean;
+}
+
+export interface ClientExchangeRate {
+  from_currency: string;
+  to_currency: string;
+  rate: number;
+  valid_from: string;
 }
 
 export interface ClientHistoryAppointment {
@@ -163,6 +173,28 @@ class ClientProfileService {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? "Error al actualizar perfil");
     return data.customer as Customer;
+  }
+
+  async getExchangeRates(
+    tenantSlug: string,
+  ): Promise<{ rates: ClientExchangeRate[] }> {
+    const res = await fetch(
+      this.withTenant("/api/client/exchange-rates", tenantSlug),
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Error al cargar tasas");
+    return data as { rates: ClientExchangeRate[] };
+  }
+
+  async deleteAccount(tenantSlug: string): Promise<void> {
+    const res = await fetch(
+      this.withTenant("/api/client/account", tenantSlug),
+      { method: "DELETE" },
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error ?? "Error al eliminar la cuenta");
+    }
   }
 
   async uploadAvatar(tenantSlug: string, file: File): Promise<Customer> {

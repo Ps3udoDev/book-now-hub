@@ -7,15 +7,12 @@ import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { displayStyle, useClientTheme } from "@/components/client/themed";
 import type { ClientServiceListItem } from "@/lib/services/client-services";
+import { useClientCurrency } from "@/providers/client-currency-provider";
 
 interface ServiceCardProps {
   service: ClientServiceListItem;
   tenantSlug: string;
   variant?: "grid" | "row";
-}
-
-function formatPrice(price: number, currency: string | null): string {
-  return `${currency ?? "USD"} ${price.toFixed(2)}`;
 }
 
 function ServiceImage({
@@ -52,6 +49,7 @@ export function ServiceCard({
   variant = "grid",
 }: ServiceCardProps) {
   const { isBarber } = useClientTheme();
+  const { formatPrice } = useClientCurrency();
   const href = `/c/${tenantSlug}/servicios/${service.id}`;
 
   if (variant === "row") {

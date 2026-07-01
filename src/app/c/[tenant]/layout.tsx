@@ -16,6 +16,7 @@ import {
   getClientAppThemeStyle,
 } from "@/features/client-app/templates";
 import { createBrowserSB } from "@/lib/supabase/client";
+import { ClientCurrencyProvider } from "@/providers/client-currency-provider";
 import { ClientTenantProvider } from "@/providers/client-tenant-provider";
 
 const PUBLIC_SUBPATHS = [
@@ -178,19 +179,21 @@ export default function ClientAppLayout({ children }: { children: ReactNode }) {
 
   return (
     <ClientTenantProvider tenantSlug={tenantSlug}>
-      <ClientThemeProvider settings={tenantStatus?.settings}>
-        <div
-          className="min-h-screen bg-[var(--client-bg)] text-[var(--client-fg)]"
-          style={{
-            ...getClientAppThemeStyle(tenantStatus?.settings),
-            fontFamily: "var(--client-font-body)",
-          }}
-        >
-          <link rel="stylesheet" href={getClientAppFontHref()} />
-          {children}
-          <ClientBottomNav tenantSlug={tenantSlug} />
-        </div>
-      </ClientThemeProvider>
+      <ClientCurrencyProvider>
+        <ClientThemeProvider settings={tenantStatus?.settings}>
+          <div
+            className="min-h-screen bg-[var(--client-bg)] text-[var(--client-fg)]"
+            style={{
+              ...getClientAppThemeStyle(tenantStatus?.settings),
+              fontFamily: "var(--client-font-body)",
+            }}
+          >
+            <link rel="stylesheet" href={getClientAppFontHref()} />
+            {children}
+            <ClientBottomNav tenantSlug={tenantSlug} />
+          </div>
+        </ClientThemeProvider>
+      </ClientCurrencyProvider>
     </ClientTenantProvider>
   );
 }
