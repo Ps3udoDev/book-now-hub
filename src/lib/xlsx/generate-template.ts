@@ -44,6 +44,19 @@ const exampleData: Record<string, Record<string, unknown>> = {
     tags: "VIP, frecuente",
     notes: "Prefiere citas en la mañana",
   },
+  products: {
+    name: "Shampoo hidratante 500ml",
+    price: 12.5,
+    currency_iso: "USD",
+    sku: "SH-001",
+    category: "Cuidado capilar",
+    brand: "L'Oréal",
+    stock_quantity: 24,
+    min_stock_alert: 5,
+    branch: "",
+    is_active: true,
+    description: "Shampoo para cabello seco",
+  },
 };
 
 export function generateTemplate(config: XlsxTemplateConfig): void {
@@ -53,9 +66,7 @@ export function generateTemplate(config: XlsxTemplateConfig): void {
   const headers = config.columns.map((col) => col.header);
 
   // Fila de descripciones/notas
-  const descriptions = config.columns.map(
-    (col) => col.description || ""
-  );
+  const descriptions = config.columns.map((col) => col.description || "");
 
   // Fila de ejemplo
   const example = exampleData[config.entity] || {};

@@ -12,7 +12,7 @@ export interface XlsxColumnDef {
 }
 
 export interface XlsxTemplateConfig {
-  entity: "services" | "specialists" | "customers";
+  entity: "services" | "specialists" | "customers" | "products";
   sheetName: string;
   columns: XlsxColumnDef[];
 }

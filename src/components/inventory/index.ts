@@ -1,3 +1,4 @@
+export { ExportProductsDialog } from "./export-products-dialog";
 export * from "./product-card";
-export * from "./product-form";
-export * from "./product-image-uploader";
+export { ProductFormModal } from "./product-form-modal";
+export { ProductImagePanel } from "./product-image-panel";

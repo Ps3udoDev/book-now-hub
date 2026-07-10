@@ -1,16 +1,20 @@
 // src/templates/xlsx/index.ts
-export type { XlsxColumnDef, XlsxTemplateConfig, ParsedRow } from "./types";
+
+export { customersTemplate } from "./customers-template";
+export { productsTemplate } from "./products-template";
 export { servicesTemplate } from "./services-template";
 export { specialistsTemplate } from "./specialists-template";
-export { customersTemplate } from "./customers-template";
+export type { ParsedRow, XlsxColumnDef, XlsxTemplateConfig } from "./types";
 
-import type { XlsxTemplateConfig } from "./types";
+import { customersTemplate } from "./customers-template";
+import { productsTemplate } from "./products-template";
 import { servicesTemplate } from "./services-template";
 import { specialistsTemplate } from "./specialists-template";
-import { customersTemplate } from "./customers-template";
+import type { XlsxTemplateConfig } from "./types";
 
 export const templateConfigs: Record<string, XlsxTemplateConfig> = {
   services: servicesTemplate,
   specialists: specialistsTemplate,
   customers: customersTemplate,
+  products: productsTemplate,
 };

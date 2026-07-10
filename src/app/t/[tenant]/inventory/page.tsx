@@ -14,7 +14,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ProductCard } from "@/components/inventory";
+import { BulkImportButton } from "@/components/bulk-import";
+import {
+  ExportProductsDialog,
+  ProductCard,
+  ProductFormModal,
+} from "@/components/inventory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useBranches } from "@/hooks/supabase/use-branches";
 import { useProductCategories } from "@/hooks/supabase/use-product-categories";
 import {
   type ProductApiItem,
@@ -65,6 +71,21 @@ export default function InventoryPage() {
   );
 
   const { categories } = useProductCategories(tenant?.id || null);
+  const { branches } = useBranches(tenant?.id || null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductApiItem | null>(
+    null,
+  );
+
+  const openCreate = () => {
+    setEditingProduct(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (product: ProductApiItem) => {
+    setEditingProduct(product);
+    setFormOpen(true);
+  };
 
   const refresh = async () => {
     await mutate();
@@ -151,11 +172,24 @@ export default function InventoryPage() {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
-          <Button asChild>
-            <Link href={`/t/${tenantSlug}/inventory/new`}>
-              <Plus className="mr-2 h-4 w-4" />
-              Nuevo producto
-            </Link>
+          {tenant?.id && (
+            <>
+              <BulkImportButton
+                entity="products"
+                tenantId={tenant.id}
+                onImportComplete={refresh}
+              />
+              <ExportProductsDialog
+                tenantId={tenant.id}
+                tenantSlug={tenantSlug}
+                categories={categories.map((category) => category.name)}
+                branches={branches}
+              />
+            </>
+          )}
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuevo producto
           </Button>
         </div>
       </div>
@@ -228,7 +262,7 @@ export default function InventoryPage() {
             <ProductCard
               key={product.id}
               product={product}
-              tenantSlug={tenantSlug}
+              onEdit={openEdit}
               onDelete={handleDelete}
               onToggleActive={handleToggleActive}
             />
@@ -241,11 +275,9 @@ export default function InventoryPage() {
           <p className="mb-4 text-muted-foreground">
             Crea tu primer producto para empezar a trabajar el inventario.
           </p>
-          <Button asChild>
-            <Link href={`/t/${tenantSlug}/inventory/new`}>
-              <Plus className="mr-2 h-4 w-4" />
-              Crear producto
-            </Link>
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Crear producto
           </Button>
         </div>
       )}
@@ -275,6 +307,20 @@ export default function InventoryPage() {
           </Button>
         </div>
       ) : null}
+
+      {tenant?.id && (
+        <ProductFormModal
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          tenantId={tenant.id}
+          branches={branches}
+          categories={categories.map((category) => category.name)}
+          product={editingProduct}
+          onSaved={() => {
+            refresh();
+          }}
+        />
+      )}
     </div>
   );
 }

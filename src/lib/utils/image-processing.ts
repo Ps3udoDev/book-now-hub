@@ -10,7 +10,10 @@ interface ResizeImageOptions {
   quality?: number;
 }
 
-function loadImage(file: File): Promise<HTMLImageElement> {
+// Fuente decodificada lista para dibujar en canvas.
+type DecodedImage = ImageBitmap | HTMLImageElement;
+
+function loadImageElement(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const imageUrl = URL.createObjectURL(file);
     const image = new Image();
@@ -22,11 +25,23 @@ function loadImage(file: File): Promise<HTMLImageElement> {
 
     image.onerror = () => {
       URL.revokeObjectURL(imageUrl);
-      reject(new Error("No se pudo leer la imagen seleccionada"));
+      reject(new Error("El navegador no pudo decodificar la imagen"));
     };
 
     image.src = imageUrl;
   });
+}
+
+// Intenta createImageBitmap (más formatos, más rápido) y cae a <img>.
+async function decodeImage(file: File): Promise<DecodedImage> {
+  if (typeof createImageBitmap === "function") {
+    try {
+      return await createImageBitmap(file);
+    } catch {
+      // Algunos navegadores fallan con ciertos formatos: probar vía <img>.
+    }
+  }
+  return loadImageElement(file);
 }
 
 function calculateContainSize(
@@ -72,7 +87,7 @@ export async function resizeImageToWebP(
     throw new Error("resizeImageToWebP solo puede ejecutarse en el navegador");
   }
 
-  const image = await loadImage(file);
+  const image = await decodeImage(file);
   const size = calculateContainSize(
     image.width,
     image.height,
@@ -91,16 +106,19 @@ export async function resizeImageToWebP(
 
   context.drawImage(image, 0, 0, size.width, size.height);
 
+  if (typeof ImageBitmap !== "undefined" && image instanceof ImageBitmap) {
+    // Liberar memoria del bitmap decodificado una vez dibujado.
+    image.close();
+  }
+
   const baseName = (options.fileName || file.name).replace(/\.[^.]+$/, "");
 
-  return canvasToWebP(
-    canvas,
-    `${baseName}.webp`,
-    options.quality ?? 0.9,
-  );
+  return canvasToWebP(canvas, `${baseName}.webp`, options.quality ?? 0.9);
 }
 
-export async function generateProductImageSet(file: File): Promise<ProcessedImageSet> {
+export async function generateProductImageSet(
+  file: File,
+): Promise<ProcessedImageSet> {
   const original = await resizeImageToWebP(file, {
     maxWidth: 800,
     maxHeight: 800,

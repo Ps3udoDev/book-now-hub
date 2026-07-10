@@ -1,6 +1,6 @@
 // src/lib/xlsx/parse-upload.ts
 import * as XLSX from "xlsx";
-import type { XlsxTemplateConfig, ParsedRow } from "@/templates/xlsx";
+import type { ParsedRow, XlsxTemplateConfig } from "@/templates/xlsx";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -22,7 +22,7 @@ function formatExcelDate(value: unknown): string | null {
     const date = XLSX.SSF.parse_date_code(value);
     if (date) {
       const y = date.y.toString().padStart(4, "0");
-      const m = (date.m).toString().padStart(2, "0");
+      const m = date.m.toString().padStart(2, "0");
       const d = date.d.toString().padStart(2, "0");
       return `${y}-${m}-${d}`;
     }
@@ -45,7 +45,7 @@ function formatExcelDate(value: unknown): string | null {
 
 export async function parseUpload(
   file: File,
-  config: XlsxTemplateConfig
+  config: XlsxTemplateConfig,
 ): Promise<ParsedRow[]> {
   const arrayBuffer = await file.arrayBuffer();
   const wb = XLSX.read(arrayBuffer, { type: "array" });
@@ -74,10 +74,13 @@ export async function parseUpload(
   // Detectar si la primera fila de datos es la fila de descripciones (la fila guía)
   const firstRow = rawData[0];
   const firstRowValues = Object.values(firstRow).map((v) =>
-    String(v).toLowerCase()
+    String(v).toLowerCase(),
   );
   const isDescriptionRow = firstRowValues.some(
-    (v) => v.includes("obligatorio") || v.includes("formato") || v.includes("separad")
+    (v) =>
+      v.includes("obligatorio") ||
+      v.includes("formato") ||
+      v.includes("separad"),
   );
 
   const dataRows = isDescriptionRow ? rawData.slice(1) : rawData;
@@ -103,7 +106,10 @@ export async function parseUpload(
       }
 
       // Validar campos requeridos
-      if (col.required && (value === "" || value === null || value === undefined)) {
+      if (
+        col.required &&
+        (value === "" || value === null || value === undefined)
+      ) {
         errors.push(`"${col.header}" es obligatorio`);
         data[col.key] = "";
         continue;
@@ -141,7 +147,7 @@ export async function parseUpload(
           const strVal = String(value).trim().toLowerCase();
           if (col.enumValues && !col.enumValues.includes(strVal)) {
             errors.push(
-              `"${col.header}" debe ser: ${col.enumValues.join(", ")}`
+              `"${col.header}" debe ser: ${col.enumValues.join(", ")}`,
             );
             data[col.key] = value;
           } else {
@@ -180,6 +186,17 @@ export async function parseUpload(
         isDuplicate = true;
       }
       seenNames.add(name);
+    }
+
+    if (config.entity === "products") {
+      // Dedupe por SKU si existe; si no, por nombre.
+      const sku = String(data.sku || "").toLowerCase();
+      const name = String(data.name || "").toLowerCase();
+      const dedupeKey = sku || name;
+      if (dedupeKey && seenNames.has(dedupeKey)) {
+        isDuplicate = true;
+      }
+      if (dedupeKey) seenNames.add(dedupeKey);
     }
 
     if (config.entity === "specialists" || config.entity === "customers") {

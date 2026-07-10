@@ -1,33 +1,33 @@
 // src/components/bulk-import/bulk-import-modal.tsx
 "use client";
 
+import { AlertTriangle, CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { useState } from "react";
-import { Loader2, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
-
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import type { XlsxTemplateConfig, ParsedRow } from "@/templates/xlsx";
-import { servicesService } from "@/lib/services/services";
-import { specialistsService } from "@/lib/services/specialists";
+import { useBranches } from "@/hooks/supabase/use-branches";
+import type { CreateCustomerData } from "@/lib/services/customers";
 import { customersService } from "@/lib/services/customers";
 import type { CreateServiceData } from "@/lib/services/services";
+import { servicesService } from "@/lib/services/services";
 import type { CreateSpecialistData } from "@/lib/services/specialists";
-import type { CreateCustomerData } from "@/lib/services/customers";
+import { specialistsService } from "@/lib/services/specialists";
+import type { ParsedRow, XlsxTemplateConfig } from "@/templates/xlsx";
 
 interface BulkImportModalProps {
   open: boolean;
   onClose: () => void;
-  entity: "services" | "specialists" | "customers";
+  entity: "services" | "specialists" | "customers" | "products";
   tenantId: string;
   parsedRows: ParsedRow[];
   setParsedRows: (rows: ParsedRow[]) => void;
@@ -39,6 +39,7 @@ const entityLabels = {
   services: "servicios",
   specialists: "especialistas",
   customers: "clientes",
+  products: "productos",
 };
 
 export function BulkImportModal({
@@ -52,8 +53,10 @@ export function BulkImportModal({
   onImportComplete,
 }: BulkImportModalProps) {
   const [selectedRows, setSelectedRows] = useState<Set<number>>(
-    () => new Set(parsedRows.map((_, i) => i))
+    () => new Set(parsedRows.map((_, i) => i)),
   );
+  // Sucursales: solo se cargan cuando la entidad las necesita (products).
+  const { branches } = useBranches(entity === "products" ? tenantId : null);
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<{
     success: number;
@@ -62,16 +65,16 @@ export function BulkImportModal({
 
   // Reiniciar selección cuando cambian los rows
   const validRows = parsedRows.filter(
-    (row) => row.errors.length === 0 && !row.isDuplicate
+    (row) => row.errors.length === 0 && !row.isDuplicate,
   );
   const errorRows = parsedRows.filter((row) => row.errors.length > 0);
   const duplicateRows = parsedRows.filter(
-    (row) => row.isDuplicate && row.errors.length === 0
+    (row) => row.isDuplicate && row.errors.length === 0,
   );
 
   const selectedValidCount = parsedRows.filter(
     (row, i) =>
-      selectedRows.has(i) && row.errors.length === 0 && !row.isDuplicate
+      selectedRows.has(i) && row.errors.length === 0 && !row.isDuplicate,
   ).length;
 
   const handleToggleRow = (index: number) => {
@@ -92,11 +95,7 @@ export function BulkImportModal({
     }
   };
 
-  const handleCellEdit = (
-    rowIndex: number,
-    key: string,
-    value: string
-  ) => {
+  const handleCellEdit = (rowIndex: number, key: string, value: string) => {
     const updated = [...parsedRows];
     const row = { ...updated[rowIndex] };
     row.data = { ...row.data, [key]: value };
@@ -115,9 +114,7 @@ export function BulkImportModal({
       if (!isEmpty && col.type === "enum" && col.enumValues) {
         const strVal = String(cellValue).trim().toLowerCase();
         if (!col.enumValues.includes(strVal)) {
-          errors.push(
-            `"${col.header}" debe ser: ${col.enumValues.join(", ")}`
-          );
+          errors.push(`"${col.header}" debe ser: ${col.enumValues.join(", ")}`);
         }
       }
 
@@ -147,7 +144,7 @@ export function BulkImportModal({
 
     const rowsToImport = parsedRows.filter(
       (row, i) =>
-        selectedRows.has(i) && row.errors.length === 0 && !row.isDuplicate
+        selectedRows.has(i) && row.errors.length === 0 && !row.isDuplicate,
     );
 
     let success = 0;
@@ -158,7 +155,7 @@ export function BulkImportModal({
     for (let i = 0; i < rowsToImport.length; i += batchSize) {
       const batch = rowsToImport.slice(i, i + batchSize);
       const results = await Promise.allSettled(
-        batch.map((row) => createEntity(row.data))
+        batch.map((row) => createEntity(row.data)),
       );
 
       for (const result of results) {
@@ -174,14 +171,10 @@ export function BulkImportModal({
     setImportResult({ success, failed });
 
     if (failed === 0) {
-      toast.success(
-        `${success} ${entityLabels[entity]} creados exitosamente`
-      );
+      toast.success(`${success} ${entityLabels[entity]} creados exitosamente`);
       onImportComplete();
     } else {
-      toast.warning(
-        `${success} creados, ${failed} fallaron`
-      );
+      toast.warning(`${success} creados, ${failed} fallaron`);
       if (success > 0) {
         onImportComplete();
       }
@@ -240,7 +233,7 @@ export function BulkImportModal({
           bio: data.bio ? String(data.bio) : undefined,
           commission_type: data.commission_type
             ? (String(
-                data.commission_type
+                data.commission_type,
               ) as CreateSpecialistData["commission_type"])
             : undefined,
           commission_percentage: data.commission_percentage
@@ -289,6 +282,57 @@ export function BulkImportModal({
         };
         return customersService.createCustomer(customerData);
       }
+      case "products": {
+        // Resolver la sucursal por nombre; vacío → sucursal principal.
+        const branchName = String(data.branch || "")
+          .trim()
+          .toLowerCase();
+        const branch = branchName
+          ? branches.find((b) => b.name.trim().toLowerCase() === branchName)
+          : branches.find((b) => b.is_main) || branches[0];
+
+        if (!branch) {
+          throw new Error(
+            branchName
+              ? `Sucursal "${data.branch}" no encontrada`
+              : "El tenant no tiene sucursales",
+          );
+        }
+
+        const response = await fetch("/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            tenant_id: tenantId,
+            branch_id: branch.id,
+            name: String(data.name),
+            price: Number(data.price),
+            currency_iso: data.currency_iso
+              ? String(data.currency_iso)
+              : undefined,
+            sku: data.sku ? String(data.sku) : undefined,
+            category: data.category ? String(data.category) : undefined,
+            brand: data.brand ? String(data.brand) : undefined,
+            stock_quantity: data.stock_quantity
+              ? Number(data.stock_quantity)
+              : undefined,
+            min_stock_alert: data.min_stock_alert
+              ? Number(data.min_stock_alert)
+              : undefined,
+            is_active:
+              data.is_active !== null ? Boolean(data.is_active) : undefined,
+            description: data.description
+              ? String(data.description)
+              : undefined,
+          }),
+        });
+        const json = await response.json();
+        if (!response.ok) {
+          throw new Error(json.error || "No se pudo crear el producto");
+        }
+        return json;
+      }
     }
   };
 
@@ -296,9 +340,7 @@ export function BulkImportModal({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>
-            Importar {entityLabels[entity]}
-          </DialogTitle>
+          <DialogTitle>Importar {entityLabels[entity]}</DialogTitle>
           <DialogDescription>
             Revisa los datos antes de importar. Puedes editar celdas haciendo
             clic en ellas.
@@ -307,9 +349,7 @@ export function BulkImportModal({
 
         {/* Resumen */}
         <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary">
-            {parsedRows.length} registros
-          </Badge>
+          <Badge variant="secondary">{parsedRows.length} registros</Badge>
           {errorRows.length > 0 && (
             <Badge variant="destructive">
               <XCircle className="h-3 w-3 mr-1" />
@@ -341,9 +381,7 @@ export function BulkImportModal({
                     onCheckedChange={handleToggleAll}
                   />
                 </th>
-                <th className="p-2 text-left text-muted-foreground w-10">
-                  #
-                </th>
+                <th className="p-2 text-left text-muted-foreground w-10">#</th>
                 {templateConfig.columns.map((col) => (
                   <th
                     key={col.key}
@@ -355,9 +393,7 @@ export function BulkImportModal({
                     )}
                   </th>
                 ))}
-                <th className="p-2 text-left text-muted-foreground">
-                  Estado
-                </th>
+                <th className="p-2 text-left text-muted-foreground">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -387,7 +423,7 @@ export function BulkImportModal({
                     {templateConfig.columns.map((col) => {
                       const value = row.data[col.key];
                       const cellError = row.errors.find((e) =>
-                        e.includes(col.header)
+                        e.includes(col.header),
                       );
 
                       return (
@@ -405,11 +441,7 @@ export function BulkImportModal({
                                   : ""
                               }
                               onChange={(e) =>
-                                handleCellEdit(
-                                  rowIdx,
-                                  col.key,
-                                  e.target.value
-                                )
+                                handleCellEdit(rowIdx, col.key, e.target.value)
                               }
                             />
                             {cellError && (

@@ -1,8 +1,14 @@
 "use client";
 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Package,
+  Pencil,
+  Power,
+  Trash2,
+} from "lucide-react";
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { ChevronLeft, ChevronRight, Package, Pencil, Power, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,14 +23,14 @@ import { storageService } from "@/lib/services/storage";
 
 interface ProductCardProps {
   product: ProductApiItem;
-  tenantSlug: string;
+  onEdit: (product: ProductApiItem) => void;
   onToggleActive: (product: ProductApiItem) => void;
   onDelete: (product: ProductApiItem) => void;
 }
 
 export function ProductCard({
   product,
-  tenantSlug,
+  onEdit,
   onToggleActive,
   onDelete,
 }: ProductCardProps) {
@@ -106,7 +112,9 @@ export function ProductCard({
                   type="button"
                   onClick={() => setCurrentImageIndex(index)}
                   className={`h-2 w-2 rounded-full transition ${
-                    index === currentImageIndex ? "bg-primary" : "bg-muted-foreground/40"
+                    index === currentImageIndex
+                      ? "bg-primary"
+                      : "bg-muted-foreground/40"
                   }`}
                 />
               ))}
@@ -116,7 +124,9 @@ export function ProductCard({
 
         <div className="flex flex-[0_0_20%] flex-col justify-between">
           <CardHeader className="space-y-1 pb-2">
-            <CardTitle className="line-clamp-1 text-base">{product.name}</CardTitle>
+            <CardTitle className="line-clamp-1 text-base">
+              {product.name}
+            </CardTitle>
             <p className="line-clamp-1 text-sm text-muted-foreground">
               {product.brand || product.category || "Sin categoría"}
             </p>
@@ -136,17 +146,23 @@ export function ProductCard({
         </div>
       </div>
       <CardFooter className="flex items-center justify-between gap-2 border-t pt-4">
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/t/${tenantSlug}/inventory/${product.id}`}>
-            <Pencil className="mr-2 h-4 w-4" />
-            Editar
-          </Link>
+        <Button variant="outline" size="sm" onClick={() => onEdit(product)}>
+          <Pencil className="mr-2 h-4 w-4" />
+          Editar
         </Button>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => onToggleActive(product)}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onToggleActive(product)}
+          >
             <Power className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={() => onDelete(product)}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onDelete(product)}
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

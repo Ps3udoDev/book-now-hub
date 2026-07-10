@@ -1,19 +1,19 @@
 // src/components/bulk-import/bulk-import-button.tsx
 "use client";
 
-import { useRef, useState } from "react";
 import { Download, Upload } from "lucide-react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { generateTemplate } from "@/lib/xlsx/generate-template";
 import { parseUpload } from "@/lib/xlsx/parse-upload";
-import { templateConfigs } from "@/templates/xlsx";
 import type { ParsedRow } from "@/templates/xlsx";
+import { templateConfigs } from "@/templates/xlsx";
 import { BulkImportModal } from "./bulk-import-modal";
 
 interface BulkImportButtonProps {
-  entity: "services" | "specialists" | "customers";
+  entity: "services" | "specialists" | "customers" | "products";
   tenantId: string;
   onImportComplete: () => void;
 }

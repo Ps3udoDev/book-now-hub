@@ -19,52 +19,107 @@ export interface PersistedProductImage {
   sort_order: number | null;
 }
 
+export interface ProductImageUploadFailure {
+  client_id: string;
+  file_name: string;
+  reason: string;
+}
+
+export interface UploadDraftImagesResult {
+  persisted: Map<string, PersistedProductImage>;
+  failures: ProductImageUploadFailure[];
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Error desconocido";
+}
+
+/**
+ * Sube las imágenes nuevas de un producto. Nunca lanza por una imagen
+ * individual: intenta convertir a WebP y, si el navegador no puede
+ * decodificar el archivo (ej. HEIC), sube el original tal cual (sin
+ * thumbnail). Devuelve las persistidas y las que fallaron con su motivo.
+ */
 export async function uploadDraftProductImages(params: {
   tenantId: string;
   productId: string;
   drafts: ProductImageDraft[];
-}) {
+}): Promise<UploadDraftImagesResult> {
   const uploads = params.drafts.filter((draft) => draft.file);
-  if (!uploads.length) return new Map<string, PersistedProductImage>();
-
-  const payload = [];
+  const failures: ProductImageUploadFailure[] = [];
+  const payload: Array<{
+    client_id: string;
+    storage_path: string;
+    thumbnail_path: string | null;
+    is_primary: boolean;
+    sort_order: number;
+  }> = [];
 
   for (let index = 0; index < uploads.length; index += 1) {
     const draft = uploads[index];
     if (!draft.file) continue;
 
-    const imageSet = await generateProductImageSet(draft.file);
-    const originalPath = storageService.buildProductImagePath(
-      params.tenantId,
-      params.productId,
-      "webp",
-      "original",
-    );
-    const thumbnailPath = storageService.buildProductImagePath(
-      params.tenantId,
-      params.productId,
-      "webp",
-      "thumbnail",
-    );
+    try {
+      let originalFile = draft.file;
+      let thumbnailFile: File | null = null;
+      let extension = draft.file.name.split(".").pop()?.toLowerCase() || "bin";
 
-    await storageService.uploadImage(imageSet.original, originalPath, {
-      bucket: "product-images",
-      contentType: "image/webp",
-      upsert: true,
-    });
-    await storageService.uploadImage(imageSet.thumbnail, thumbnailPath, {
-      bucket: "product-images",
-      contentType: "image/webp",
-      upsert: true,
-    });
+      try {
+        const imageSet = await generateProductImageSet(draft.file);
+        originalFile = imageSet.original;
+        thumbnailFile = imageSet.thumbnail;
+        extension = "webp";
+      } catch {
+        // No decodificable en este navegador (ej. HEIC): subir el
+        // archivo original sin conversión ni thumbnail.
+      }
 
-    payload.push({
-      client_id: draft.client_id,
-      storage_path: originalPath,
-      thumbnail_path: thumbnailPath,
-      is_primary: false,
-      sort_order: index,
-    });
+      const originalPath = storageService.buildProductImagePath(
+        params.tenantId,
+        params.productId,
+        extension,
+        "original",
+      );
+
+      await storageService.uploadImage(originalFile, originalPath, {
+        bucket: "product-images",
+        contentType: originalFile.type || undefined,
+        upsert: true,
+      });
+
+      let thumbnailPath: string | null = null;
+      if (thumbnailFile) {
+        thumbnailPath = storageService.buildProductImagePath(
+          params.tenantId,
+          params.productId,
+          "webp",
+          "thumbnail",
+        );
+        await storageService.uploadImage(thumbnailFile, thumbnailPath, {
+          bucket: "product-images",
+          contentType: "image/webp",
+          upsert: true,
+        });
+      }
+
+      payload.push({
+        client_id: draft.client_id,
+        storage_path: originalPath,
+        thumbnail_path: thumbnailPath,
+        is_primary: false,
+        sort_order: index,
+      });
+    } catch (error) {
+      failures.push({
+        client_id: draft.client_id,
+        file_name: draft.file.name,
+        reason: errorMessage(error),
+      });
+    }
+  }
+
+  if (!payload.length) {
+    return { persisted: new Map(), failures };
   }
 
   const response = await fetch(`/api/products/${params.productId}/images`, {
@@ -72,28 +127,39 @@ export async function uploadDraftProductImages(params: {
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     body: JSON.stringify({
-      images: payload.map(({ storage_path, thumbnail_path, is_primary, sort_order }) => ({
-        storage_path,
-        thumbnail_path,
-        is_primary,
-        sort_order,
-      })),
+      images: payload.map(
+        ({ storage_path, thumbnail_path, is_primary, sort_order }) => ({
+          storage_path,
+          thumbnail_path,
+          is_primary,
+          sort_order,
+        }),
+      ),
     }),
   });
   const json = await response.json();
 
   if (!response.ok) {
-    throw new Error(json.error || "No se pudieron registrar las imágenes");
+    // El registro en BD falló para todo el lote: reportar cada imagen.
+    for (const item of payload) {
+      const draft = uploads.find((u) => u.client_id === item.client_id);
+      failures.push({
+        client_id: item.client_id,
+        file_name: draft?.file?.name || item.storage_path,
+        reason: json.error || "No se pudieron registrar las imágenes",
+      });
+    }
+    return { persisted: new Map(), failures };
   }
 
-  const map = new Map<string, PersistedProductImage>();
+  const persisted = new Map<string, PersistedProductImage>();
   for (let index = 0; index < (json.images || []).length; index += 1) {
     const createdImage = json.images[index];
     const source = payload[index];
     if (source) {
-      map.set(source.client_id, createdImage);
+      persisted.set(source.client_id, createdImage);
     }
   }
 
-  return map;
+  return { persisted, failures };
 }
