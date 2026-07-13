@@ -80,8 +80,8 @@ interface TenantSnapshot {
   acceptsMarketing: number;
   topCities: { city: string; count: number }[];                 // top 5
   topServices: { name: string; count: number }[];               // top 5 por citas
-  avgTicket: number;
-  openScheduleSlotsNext7d: number;                              // huecos de agenda
+  avgTicket: number;                                            // avg(total_spent) de clientes con visitas
+  upcomingAppointments7d: number;                              // citas agendadas próximos 7 días (proxy de carga de agenda)
   segmentFields: SegmentFieldSummary[];                          // whitelist con label/operadores/opciones
 }
 ```
@@ -141,7 +141,7 @@ Si tras el filtro quedan 0 propuestas, la UI muestra un estado vacío honesto ("
 
 ## 6. Seed de demo
 
-Script `database/seed-demo-ai.sql` (idempotente, parametrizado por `tenant_id` demo) que inserta/actualiza ~40 `customers` con textura garantizada:
+Script `database/seed-demo-ai.sql` (idempotente) que puebla el tenant **Elvis Studio** (resuelto por `slug`/`nombre`, no hardcodear el UUID) con ~40 `customers` con textura garantizada:
 - ~10 con `last_visit_at` > 90 días (dormidos).
 - ~8 con `birth_date` en el mes actual (cumpleaños).
 - Gasto (`total_spent`) y visitas variados; algunos con `tags` VIP; mezcla de `city` y `how_found_us`; mayoría con `accepts_marketing = true`.
