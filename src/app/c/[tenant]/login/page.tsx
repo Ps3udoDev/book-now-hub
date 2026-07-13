@@ -28,7 +28,26 @@ export default function ClientLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [authMode, setAuthMode] = useState<"password" | "magic">("password");
+  const [magicSent, setMagicSent] = useState(false);
+  const [magicLoading, setMagicLoading] = useState(false);
   const { settings } = usePublicClientAppSettings(tenantSlug);
+
+  const handleMagicLink = async (event: FormEvent) => {
+    event.preventDefault();
+    setMagicLoading(true);
+    try {
+      const redirectTo = `${window.location.origin}/auth/callback?tenant=${tenantSlug}&next=/c/${tenantSlug}`;
+      await clientAuthService.sendMagicLink(email, redirectTo);
+    } catch (err) {
+      // No revelar si la cuenta existe: signInWithOtp con shouldCreateUser:false
+      // devuelve error para emails inexistentes. Mostramos siempre el mensaje neutro.
+      console.error("magic link:", err);
+    } finally {
+      setMagicLoading(false);
+      setMagicSent(true);
+    }
+  };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -72,9 +91,45 @@ export default function ClientLoginPage() {
       />
 
       <form
-        onSubmit={handleSubmit}
+        onSubmit={authMode === "magic" ? handleMagicLink : handleSubmit}
         className="flex flex-1 flex-col gap-3.5 px-6 pb-8 pt-6"
       >
+        <div
+          className="grid grid-cols-2 gap-1 border border-[var(--client-border)] bg-[var(--client-surface)] p-1"
+          style={{ borderRadius: "var(--client-rad-md)" }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode("password");
+              setMagicSent(false);
+            }}
+            className={`py-2 text-[13px] font-semibold transition ${
+              authMode === "password"
+                ? "bg-[var(--client-primary)] text-[var(--client-primary-fg)]"
+                : "text-[var(--client-fg-muted)]"
+            }`}
+            style={{ borderRadius: "var(--client-rad-sm)" }}
+          >
+            Contraseña
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode("magic");
+              setMagicSent(false);
+            }}
+            className={`py-2 text-[13px] font-semibold transition ${
+              authMode === "magic"
+                ? "bg-[var(--client-primary)] text-[var(--client-primary-fg)]"
+                : "text-[var(--client-fg-muted)]"
+            }`}
+            style={{ borderRadius: "var(--client-rad-sm)" }}
+          >
+            Enlace mágico
+          </button>
+        </div>
+
         <ClientField icon={<Mail className="h-[18px] w-[18px]" />}>
           <input
             id="email"
@@ -88,51 +143,80 @@ export default function ClientLoginPage() {
             disabled={loading}
           />
         </ClientField>
-        <ClientField icon={<Lock className="h-[18px] w-[18px]" />}>
-          <input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            autoComplete="current-password"
-            required
-            placeholder="Contraseña"
-            className={clientInputClass}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            disabled={loading}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword((current) => !current)}
-            className="p-1 text-[var(--client-fg-muted)]"
-            aria-label={
-              showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-            }
+        {authMode === "password" && (
+          <>
+            <ClientField icon={<Lock className="h-[18px] w-[18px]" />}>
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                placeholder="Contraseña"
+                className={clientInputClass}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                className="p-1 text-[var(--client-fg-muted)]"
+                aria-label={
+                  showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                }
+              >
+                {showPassword ? (
+                  <EyeOff className="h-[18px] w-[18px]" />
+                ) : (
+                  <Eye className="h-[18px] w-[18px]" />
+                )}
+              </button>
+            </ClientField>
+
+            <Link
+              href={`/c/${tenantSlug}/forgot-password`}
+              className="self-end text-[13px] font-medium text-[var(--client-fg-muted)] hover:text-[var(--client-fg)]"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </>
+        )}
+
+        {authMode === "magic" && magicSent ? (
+          <div
+            className="border border-[var(--client-border)] bg-[var(--client-surface)] p-4 text-sm text-[var(--client-fg)]"
+            style={{ borderRadius: "var(--client-rad-md)" }}
           >
-            {showPassword ? (
-              <EyeOff className="h-[18px] w-[18px]" />
+            Si la cuenta existe, recibirás un correo en breve.
+          </div>
+        ) : authMode === "magic" ? (
+          <ClientButton
+            type="button"
+            onClick={handleMagicLink}
+            disabled={magicLoading}
+            className="h-[52px]"
+          >
+            {magicLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Enviando…
+              </>
             ) : (
-              <Eye className="h-[18px] w-[18px]" />
+              "Enviar enlace mágico"
             )}
-          </button>
-        </ClientField>
-
-        <Link
-          href={`/c/${tenantSlug}/forgot-password`}
-          className="self-end text-[13px] font-medium text-[var(--client-fg-muted)] hover:text-[var(--client-fg)]"
-        >
-          ¿Olvidaste tu contraseña?
-        </Link>
-
-        <ClientButton type="submit" disabled={loading} className="h-[52px]">
-          {loading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Iniciando sesión…
-            </>
-          ) : (
-            "Iniciar sesión"
-          )}
-        </ClientButton>
+          </ClientButton>
+        ) : (
+          <ClientButton type="submit" disabled={loading} className="h-[52px]">
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Iniciando sesión…
+              </>
+            ) : (
+              "Iniciar sesión"
+            )}
+          </ClientButton>
+        )}
 
         {(settings?.show_google_login_preview ?? true) ? (
           <>

@@ -1,16 +1,17 @@
 // src/app/t/[tenant]/layout.tsx
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
-import { useParams, usePathname, useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/auth-store";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { TenantSidebar } from "@/components/tenant/tenant-sidebar";
-import { TenantProvider } from "@/providers/tenant-provider";
-import { TenantHeader, TenantThemeApplier } from "@/components/tenant";
-import { Loader2, AlertCircle, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AlertCircle, Loader2, LogOut } from "lucide-react";
 import Link from "next/link";
+import { useParams, usePathname, useRouter } from "next/navigation";
+import { type ReactNode, useEffect, useState } from "react";
+import { TenantHeader, TenantThemeApplier } from "@/components/tenant";
+import { ModuleRouteGuard } from "@/components/tenant/module-route-guard";
+import { TenantSidebar } from "@/components/tenant/tenant-sidebar";
+import { Button } from "@/components/ui/button";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { TenantProvider } from "@/providers/tenant-provider";
 
 interface TenantLayoutProps {
   children: ReactNode;
@@ -22,14 +23,8 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
   const router = useRouter();
   const tenantSlug = params.tenant as string;
 
-  const {
-    isAuthenticated,
-    isTenantUser,
-    tenant,
-    user,
-    hydrateTenant,
-    logout,
-  } = useAuthStore();
+  const { isAuthenticated, isTenantUser, tenant, user, hydrateTenant, logout } =
+    useAuthStore();
 
   const [isValidating, setIsValidating] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
@@ -40,10 +35,11 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
     `/t/${tenantSlug}/login`,
     `/t/${tenantSlug}/register`,
     `/t/${tenantSlug}/forgot-password`,
-    `/t/${tenantSlug}/productos`,
+    `/t/${tenantSlug}/products`,
   ];
   const isPublicPage = publicPagePrefixes.some(
-    (publicPath) => pathname === publicPath || pathname.startsWith(`${publicPath}/`),
+    (publicPath) =>
+      pathname === publicPath || pathname.startsWith(`${publicPath}/`),
   );
 
   // 1. Hook de verificación de acceso
@@ -68,9 +64,13 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
   }, [tenantSlug, isPublicPage, hydrateTenant, router]);
 
   // Condición de error de acceso
-  const showAccessDenied = !isValidating && !isPublicPage && (
-    !hasAccess || !isAuthenticated || !isTenantUser || tenant?.slug !== tenantSlug
-  );
+  const showAccessDenied =
+    !isValidating &&
+    !isPublicPage &&
+    (!hasAccess ||
+      !isAuthenticated ||
+      !isTenantUser ||
+      tenant?.slug !== tenantSlug);
 
   // 2. Hook de Timeout (MOVIDO AQUÍ - NIVEL SUPERIOR) ✅
   // Solo activamos el timeout si estamos en estado de "Access Denied"
@@ -95,11 +95,7 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
 
   // A. Páginas públicas
   if (isPublicPage) {
-    return (
-      <TenantProvider tenantSlug={tenantSlug}>
-        {children}
-      </TenantProvider>
-    );
+    return <TenantProvider tenantSlug={tenantSlug}>{children}</TenantProvider>;
   }
 
   // B. Loading
@@ -125,12 +121,13 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-950/50 flex items-center justify-center">
                 <AlertCircle className="w-8 h-8 text-amber-600 dark:text-amber-400" />
               </div>
-              <h1 className="text-xl font-semibold mb-2">Acceso no disponible</h1>
+              <h1 className="text-xl font-semibold mb-2">
+                Acceso no disponible
+              </h1>
               <p className="text-muted-foreground mb-6">
                 {isAuthenticated
                   ? `Tu sesión actual (${user?.email}) no tiene acceso a esta empresa.`
-                  : "Necesitas iniciar sesión para acceder a esta empresa."
-                }
+                  : "Necesitas iniciar sesión para acceder a esta empresa."}
               </p>
               <div className="flex flex-col gap-3">
                 <Link href={`/t/${tenantSlug}/login`}>
@@ -151,7 +148,10 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
                   </Button>
                 )}
                 <Link href="/">
-                  <Button variant="ghost" className="w-full text-muted-foreground">
+                  <Button
+                    variant="ghost"
+                    className="w-full text-muted-foreground"
+                  >
                     Volver al inicio
                   </Button>
                 </Link>
@@ -179,6 +179,7 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
   return (
     <TenantProvider tenantSlug={tenantSlug}>
       <TenantThemeApplier />
+      <ModuleRouteGuard tenantSlug={tenantSlug} />
       <SidebarProvider>
         <TenantSidebar onLogout={handleLogout} />
         <SidebarInset>
@@ -208,6 +209,7 @@ function generateBreadcrumbs(pathname: string, tenantSlug: string) {
     inventory: "Inventario",
     ecommerce: "Ecommerce",
     cafeteria: "Cafetería",
+    campaigns: "Campañas",
     pos: "Punto de Venta",
     reports: "Reportes",
     settings: "Configuración",

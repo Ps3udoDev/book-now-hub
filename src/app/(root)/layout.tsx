@@ -1,30 +1,33 @@
 // src/app/(root)/layout.tsx
 "use client";
 
-import { type ReactNode, useEffect, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
-
+import { type ReactNode, useEffect, useMemo } from "react";
+import { AppHeader, AppSidebar } from "@/components/shared";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar, AppHeader } from "@/components/shared";
 
 interface RootLayoutProps {
   children: ReactNode;
 }
 
+// Rutas de auth que se renderizan sin sidebar ni guard (deslogueado).
+// Debe coincidir con adminAuthPaths del middleware.
+const PUBLIC_AUTH_PATHS = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+];
+
 export default function RootLayout({ children }: RootLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const isLogin = pathname === "/login";
+  const isPublicAuthPage = PUBLIC_AUTH_PATHS.includes(pathname);
 
-  const {
-    isAuthenticated,
-    isGlobalAdmin,
-    logout,
-    hydrateGlobal,
-    initialized,
-  } = useAuthStore();
+  const { isAuthenticated, isGlobalAdmin, logout, hydrateGlobal, initialized } =
+    useAuthStore();
 
   // 1) Hidratar auth al montar (SIEMPRE)
   useEffect(() => {
@@ -33,13 +36,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
     }
   }, [initialized, hydrateGlobal]);
 
-  // 2) Redirigir a login si no está autenticado (PERO solo si NO es login)
+  // 2) Redirigir a login si no está autenticado (PERO solo si NO es página de auth)
   useEffect(() => {
-    if (isLogin) return;
+    if (isPublicAuthPage) return;
     if (initialized && !isAuthenticated) {
       router.replace("/login");
     }
-  }, [isLogin, initialized, isAuthenticated, router]);
+  }, [isPublicAuthPage, initialized, isAuthenticated, router]);
 
   const handleLogout = async () => {
     await logout();
@@ -50,7 +53,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
   const breadcrumbs = useMemo(() => generateBreadcrumbs(pathname), [pathname]);
 
   // ✅ Ahora sí: returns condicionales (sin hooks después)
-  if (isLogin) {
+  if (isPublicAuthPage) {
     return <>{children}</>;
   }
 

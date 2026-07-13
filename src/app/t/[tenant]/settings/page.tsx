@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   Smartphone,
   User,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -42,7 +43,7 @@ const settingsSections = [
   {
     title: "Monedas",
     description: "Configura tasas de cambio para VES, COP y USD",
-    href: "monedas",
+    href: "currencies",
     icon: Coins,
     available: true,
   },
@@ -70,6 +71,14 @@ const settingsSections = [
     available: true,
   },
   {
+    title: "Liquidación de comisiones",
+    description: "Liquida comisiones por especialista y exporta el detalle",
+    href: "commissions/settlement",
+    icon: Wallet,
+    available: true,
+    adminOnly: true,
+  },
+  {
     title: "Notificaciones",
     description: "Configura emails, SMS y alertas",
     href: "notifications",
@@ -81,14 +90,19 @@ const settingsSections = [
     description: "Actualiza tu perfil y seguridad",
     href: "account",
     icon: User,
-    available: false,
+    available: true,
   },
 ];
 
 export default function SettingsPage() {
   const params = useParams();
   const tenantSlug = params.tenant as string;
-  const { tenant } = useAuthStore();
+  const { tenant, tenantUser } = useAuthStore();
+  const isAdminOrOwner = ["owner", "admin"].includes(tenantUser?.role ?? "");
+  const visibleSections = settingsSections.filter(
+    (section) =>
+      !("adminOnly" in section && section.adminOnly) || isAdminOrOwner,
+  );
 
   return (
     <div className="space-y-6">
@@ -102,7 +116,7 @@ export default function SettingsPage() {
 
       {/* Cards de navegación */}
       <div className="grid gap-4 md:grid-cols-2">
-        {settingsSections.map((section) => (
+        {visibleSections.map((section) => (
           <Link
             key={section.href}
             href={

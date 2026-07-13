@@ -6,12 +6,11 @@ import {
   ClipboardList,
   Coffee,
   CreditCard,
-  History,
   LayoutDashboard,
   LayoutGrid,
-  Lock,
   LogOut,
   type LucideIcon,
+  Megaphone,
   Package,
   PercentCircle,
   Scissors,
@@ -19,7 +18,6 @@ import {
   ShoppingBag,
   UserCog,
   Users,
-  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -35,9 +33,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useAuthStore } from "@/lib/stores/auth-store";
 import { useActiveBranches } from "@/hooks/supabase/use-branches";
 import { useCafeteriaQrWorkstations } from "@/hooks/supabase/use-cafeteria-qr";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import { useTenant } from "@/providers/tenant-provider";
 
 const moduleIcons: Record<string, LucideIcon> = {
@@ -51,6 +49,7 @@ const moduleIcons: Record<string, LucideIcon> = {
   ecommerce: ShoppingBag,
   pos: CreditCard,
   cafeteria: Coffee,
+  campaigns: Megaphone,
   reports: BarChart3,
 };
 
@@ -64,6 +63,7 @@ const implementedModuleSlugs = new Set([
   "inventory",
   "ecommerce",
   "cafeteria",
+  "campaigns",
 ]);
 
 type SidebarItem = {
@@ -85,10 +85,6 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
 
   const tenantSlug = tenant?.slug || "";
   const basePath = `/t/${tenantSlug}`;
-  const isAdminOrOwner = ["owner", "admin"].includes(tenantUser?.role ?? "");
-  const canManageInventory = ["owner", "admin", "manager"].includes(
-    tenantUser?.role ?? "",
-  );
   const currentBranchId = branches[0]?.id ?? null;
   const { workstations: cafeteriaStations } = useCafeteriaQrWorkstations(
     tenant?.id ?? null,
@@ -104,12 +100,15 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
     },
   ];
 
-  const moduleItems: SidebarItem[] = modules.map((module) => ({
-    title: module.name,
-    url: `${basePath}/${module.slug}`,
-    icon: moduleIcons[module.slug] || Scissors,
-    available: implementedModuleSlugs.has(module.slug),
-  }));
+  const moduleItems: SidebarItem[] = modules
+    // El ecommerce se configura desde Settings, no se muestra como ítem de nav.
+    .filter((module) => module.slug !== "ecommerce")
+    .map((module) => ({
+      title: module.name,
+      url: `${basePath}/${module.slug}`,
+      icon: moduleIcons[module.slug] || Scissors,
+      available: implementedModuleSlugs.has(module.slug),
+    }));
 
   const operationItems: SidebarItem[] = [
     {
@@ -120,78 +119,28 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
     },
     {
       title: "Caja",
-      url: `${basePath}/caja`,
+      url: `${basePath}/cash-register`,
       icon: CreditCard,
       available: true,
     },
     {
-      title: "Apertura de caja",
-      url: `${basePath}/caja/apertura`,
-      icon: Wallet,
-      available: true,
-    },
-    {
-      title: "Cierre de caja",
-      url: `${basePath}/caja/cierre`,
-      icon: Lock,
-      available: true,
-    },
-    {
-      title: "Historial de cierres",
-      url: `${basePath}/caja/cierres`,
-      icon: History,
-      available: true,
-    },
-    {
       title: "Comisiones",
-      url: `${basePath}/comisiones`,
+      url: `${basePath}/commissions`,
       icon: PercentCircle,
       available: true,
     },
     {
       title: "Mis comisiones",
-      url: `${basePath}/mis-comisiones`,
+      url: `${basePath}/my-commissions`,
       icon: PercentCircle,
       available: true,
     },
     {
       title: "Mis productos",
-      url: `${basePath}/mis-productos`,
+      url: `${basePath}/my-products`,
       icon: Package,
       available: true,
     },
-    {
-      title: "Menú cafetería",
-      url: `${basePath}/cafeteria/menu`,
-      icon: Coffee,
-      available: true,
-    },
-    {
-      title: "Cocina cafetería",
-      url: `${basePath}/cafeteria/cocina`,
-      icon: Coffee,
-      available: true,
-    },
-    ...(canManageInventory
-      ? [
-          {
-            title: "Movimientos inv.",
-            url: `${basePath}/inventory/movements`,
-            icon: History,
-            available: true,
-          },
-        ]
-      : []),
-    ...(isAdminOrOwner
-      ? [
-          {
-            title: "Liquidación",
-            url: `${basePath}/settings/comisiones/liquidacion`,
-            icon: Wallet,
-            available: true,
-          },
-        ]
-      : []),
   ];
 
   const configItems: SidebarItem[] = [
@@ -201,19 +150,15 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
       icon: Settings,
       available: true,
     },
-    {
-      title: "Settings cafetería",
-      url: `${basePath}/settings/cafeteria`,
-      icon: Coffee,
-      available: true,
-    },
   ];
 
   const cafeteriaStationItems: SidebarItem[] = cafeteriaStations
-    .filter((station) => station.cafeteria_qr_enabled && station.cafeteria_qr_slug)
+    .filter(
+      (station) => station.cafeteria_qr_enabled && station.cafeteria_qr_slug,
+    )
     .map((station) => ({
       title: station.name,
-      url: `${basePath}/cafeteria/estaciones/${station.id}`,
+      url: `${basePath}/cafeteria/stations/${station.id}`,
       icon: Coffee,
       available: true,
     }));
@@ -241,7 +186,9 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
           isActive={item.available && isActive(item.url)}
           aria-disabled={!item.available}
           tooltip={!item.available ? "Página no disponible" : undefined}
-          className={!item.available ? "cursor-not-allowed opacity-50" : undefined}
+          className={
+            !item.available ? "cursor-not-allowed opacity-50" : undefined
+          }
         >
           {item.available ? (
             <Link href={item.url}>{content}</Link>
@@ -310,7 +257,9 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
           <SidebarGroup>
             <SidebarGroupLabel>Cafetería QR</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>{cafeteriaStationItems.map(renderSidebarItem)}</SidebarMenu>
+              <SidebarMenu>
+                {cafeteriaStationItems.map(renderSidebarItem)}
+              </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}

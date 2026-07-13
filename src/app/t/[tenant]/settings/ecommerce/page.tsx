@@ -234,7 +234,7 @@ const DEFAULT_FORM: EcommerceFormState = {
   is_enabled: true,
   is_public: true,
   template_slug: "beauty-editorial",
-  public_path: "productos",
+  public_path: "products",
   brand_name: "",
   logo_url: "",
   hero_title: "Descubre tu proximo favorito",

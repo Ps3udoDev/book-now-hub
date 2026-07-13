@@ -103,6 +103,63 @@ class TenantsService {
   }
 
   /**
+   * Obtener el estado (is_enabled) de cada módulo del tenant.
+   * Devuelve un mapa module_id → is_enabled (sólo módulos con fila).
+   */
+  async getTenantModuleStates(
+    tenantId: string,
+  ): Promise<Record<string, boolean>> {
+    const { data, error } = await this.supabase
+      .from("tenant_modules")
+      .select("module_id, is_enabled")
+      .eq("tenant_id", tenantId);
+
+    if (error) throw error;
+
+    const states: Record<string, boolean> = {};
+    for (const row of data ?? []) {
+      states[row.module_id] = row.is_enabled ?? false;
+    }
+    return states;
+  }
+
+  /**
+   * Activar/desactivar un módulo de un tenant (escritura vía API route).
+   */
+  async setModuleEnabled(
+    tenantId: string,
+    moduleId: string,
+    enabled: boolean,
+  ): Promise<void> {
+    const res = await fetch(`/api/tenants/${tenantId}/modules`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moduleId, enabled }),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      throw new Error((json as { error?: string }).error || "Error al guardar");
+    }
+  }
+
+  /**
+   * Obtener un tenant por id (lectura admin vía vista pública).
+   */
+  async getTenantById(id: string): Promise<PublicTenant | null> {
+    const { data, error } = await this.supabase
+      .from("v_tenants_public")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") return null;
+      throw error;
+    }
+    return data as PublicTenant;
+  }
+
+  /**
    * Asignar módulos a un tenant
    */
   async assignModulesToTenant(

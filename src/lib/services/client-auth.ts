@@ -114,6 +114,19 @@ class ClientAuthService {
   }
 
   /**
+   * Envia un magic link al cliente (login sin contraseña). El callback
+   * (/auth/callback?tenant=<slug>) vincula el customer si hace falta.
+   * Restringido a cuentas existentes.
+   */
+  async sendMagicLink(email: string, emailRedirectTo: string) {
+    const { error } = await this.supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo, shouldCreateUser: false },
+    });
+    if (error) throw error;
+  }
+
+  /**
    * Reenvia el correo de verificacion de email.
    */
   async resendVerification(email: string) {

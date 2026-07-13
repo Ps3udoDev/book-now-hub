@@ -67,7 +67,7 @@ export default function OrdersPage() {
             <RefreshCw className="h-4 w-4" />
           </Button>
           <Button asChild>
-            <Link href={`/t/${tenantSlug}/orders/nueva`}>
+            <Link href={`/t/${tenantSlug}/orders/new`}>
               <Plus className="h-4 w-4 mr-1.5" />
               Nueva comanda
             </Link>
@@ -112,7 +112,7 @@ export default function OrdersPage() {
           </p>
           {statusFilter === "all" && (
             <Button className="mt-4" asChild>
-              <Link href={`/t/${tenantSlug}/orders/nueva`}>
+              <Link href={`/t/${tenantSlug}/orders/new`}>
                 <Plus className="h-4 w-4 mr-1.5" />
                 Crear primera comanda
               </Link>

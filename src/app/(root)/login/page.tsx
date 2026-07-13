@@ -1,21 +1,16 @@
 // src/app/(root)/login/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle, Loader2, LogOut, Mail } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { type FormEvent, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Loader2, LogOut, AlertCircle } from "lucide-react";
-
-import { useAuthStore } from "@/lib/stores/auth-store";
-import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 import { ThemeToggle } from "@/components/shared";
-
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -24,7 +19,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { authService } from "@/lib/services/auth";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { type LoginFormData, loginSchema } from "@/lib/validations/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,7 +36,7 @@ export default function LoginPage() {
     isAuthenticated,
     mode,
     user,
-    clearError
+    clearError,
   } = useAuthStore();
 
   const [isChecking, setIsChecking] = useState(true);
@@ -50,6 +49,27 @@ export default function LoginPage() {
       password: "",
     },
   });
+
+  const [authMode, setAuthMode] = useState<"password" | "magic">("password");
+  const [magicEmail, setMagicEmail] = useState("");
+  const [magicLoading, setMagicLoading] = useState(false);
+  const [magicSent, setMagicSent] = useState(false);
+
+  const handleMagicLink = async (event: FormEvent) => {
+    event.preventDefault();
+    setMagicLoading(true);
+    try {
+      const redirectTo = `${window.location.origin}/auth/callback?next=/tenants`;
+      await authService.sendMagicLink(magicEmail, redirectTo);
+    } catch (err) {
+      // No revelar si la cuenta existe: signInWithOtp con shouldCreateUser:false
+      // devuelve error para emails inexistentes. Mostramos siempre el mensaje neutro.
+      console.error("magic link:", err);
+    } finally {
+      setMagicLoading(false);
+      setMagicSent(true);
+    }
+  };
 
   // Verificar si ya está autenticado como global admin
   useEffect(() => {
@@ -121,13 +141,13 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">BN</span>
+              <span className="text-primary-foreground font-bold text-lg">
+                BN
+              </span>
             </div>
             <span className="font-bold text-xl">Book Now Hub</span>
           </Link>
-          <p className="text-muted-foreground mt-2">
-            Panel de administración
-          </p>
+          <p className="text-muted-foreground mt-2">Panel de administración</p>
         </div>
 
         {/* Aviso de sesión activa de otro contexto */}
@@ -140,8 +160,9 @@ export default function LoginPage() {
                   Sesión activa de tenant
                 </p>
                 <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                  Estás logueado como <strong className="truncate">{user?.email}</strong>
-                  {" "}en una cuenta de empresa. Para acceder al panel de administración,
+                  Estás logueado como{" "}
+                  <strong className="truncate">{user?.email}</strong> en una
+                  cuenta de empresa. Para acceder al panel de administración,
                   necesitas cerrar esa sesión primero.
                 </p>
                 <Button
@@ -161,69 +182,147 @@ export default function LoginPage() {
         {/* Card */}
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Iniciar sesión</CardTitle>
+            <CardTitle className="text-2xl text-center">
+              Iniciar sesión
+            </CardTitle>
             <CardDescription className="text-center">
               Ingresa tus credenciales de administrador
             </CardDescription>
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {/* Error global */}
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+            <div className="mb-4 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode("password");
+                  setMagicSent(false);
+                }}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  authMode === "password"
+                    ? "bg-background shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Contraseña
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode("magic");
+                  setMagicSent(false);
+                }}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  authMode === "magic"
+                    ? "bg-background shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Enlace mágico
+              </button>
+            </div>
 
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@tudominio.com"
-                  autoComplete="email"
-                  disabled={loading}
-                  {...form.register("email")}
-                />
-                {form.formState.errors.email && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.email.message}
-                  </p>
+            {authMode === "password" && (
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
+                {/* Error global */}
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
                 )}
-              </div>
 
-              {/* Password */}
-              <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  disabled={loading}
-                  {...form.register("password")}
-                />
-                {form.formState.errors.password && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.password.message}
-                  </p>
-                )}
-              </div>
+                {/* Email */}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="admin@tudominio.com"
+                    autoComplete="email"
+                    disabled={loading}
+                    {...form.register("email")}
+                  />
+                  {form.formState.errors.email && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.email.message}
+                    </p>
+                  )}
+                </div>
 
-              {/* Submit */}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Iniciando sesión...
-                  </>
-                ) : (
-                  "Iniciar sesión"
-                )}
-              </Button>
-            </form>
+                {/* Password */}
+                <div className="space-y-2">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    disabled={loading}
+                    {...form.register("password")}
+                  />
+                  {form.formState.errors.password && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.password.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Submit */}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Iniciando sesión...
+                    </>
+                  ) : (
+                    "Iniciar sesión"
+                  )}
+                </Button>
+              </form>
+            )}
+
+            {authMode === "magic" &&
+              (magicSent ? (
+                <div className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+                  Si la cuenta existe, recibirás un correo en breve.
+                </div>
+              ) : (
+                <form onSubmit={handleMagicLink} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="magic-email">Email</Label>
+                    <Input
+                      id="magic-email"
+                      type="email"
+                      placeholder="admin@tudominio.com"
+                      autoComplete="email"
+                      required
+                      disabled={magicLoading}
+                      value={magicEmail}
+                      onChange={(event) => setMagicEmail(event.target.value)}
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={magicLoading}
+                  >
+                    {magicLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="mr-2 h-4 w-4" />
+                        Enviar enlace mágico
+                      </>
+                    )}
+                  </Button>
+                </form>
+              ))}
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4">

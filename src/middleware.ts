@@ -19,6 +19,7 @@ const ADMIN_ROUTES = [
   "/login",
   "/register",
   "/forgot-password",
+  "/reset-password",
   "/tenants",
   "/modules",
   "/templates",
@@ -143,7 +144,8 @@ export async function middleware(request: NextRequest) {
       "/login",
       "/register",
       "/forgot-password",
-      "/productos",
+      "/reset-password",
+      "/products",
     ];
     const isPublicTenantPath = tenantPublicPaths.some(
       (publicPath) =>
@@ -221,7 +223,12 @@ export async function middleware(request: NextRequest) {
   // 3. RUTAS DE ADMIN (/tenants, /modules, etc.)
   // ============================================
   if (isAdminRoute(pathname)) {
-    const adminAuthPaths = ["/login", "/register", "/forgot-password"];
+    const adminAuthPaths = [
+      "/login",
+      "/register",
+      "/forgot-password",
+      "/reset-password",
+    ];
     const isAdminAuthPath = adminAuthPaths.includes(pathname);
 
     if (isAdminAuthPath) {
