@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { StatusDonut } from "@/components/dashboard/status-donut";
+import { TopProductsChart } from "@/components/dashboard/top-products-chart";
 import { TopServicesChart } from "@/components/dashboard/top-services-chart";
 import { UpcomingAppointments } from "@/components/dashboard/upcoming-appointments";
 import {
@@ -14,6 +15,7 @@ import {
   useRevenueLast7Days,
   useStatusBreakdown,
   useTodayAppointments,
+  useTopProducts,
   useTopServices,
 } from "@/hooks/supabase/use-dashboard";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -28,6 +30,7 @@ export default function TenantDashboardPage() {
   const { revenue } = useRevenueLast7Days(tenantId);
   const { slices } = useStatusBreakdown(tenantId);
   const { services } = useTopServices(tenantId);
+  const { products: topProducts } = useTopProducts(tenantId);
 
   // Entrada escalonada de las tarjetas al montar
   useEffect(() => {
@@ -100,11 +103,13 @@ export default function TenantDashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <TopServicesChart data={services} />
-        <UpcomingAppointments
-          appointments={appointments}
-          isLoading={loadingAppts}
-        />
+        <TopProductsChart data={topProducts} />
       </div>
+
+      <UpcomingAppointments
+        appointments={appointments}
+        isLoading={loadingAppts}
+      />
     </div>
   );
 }

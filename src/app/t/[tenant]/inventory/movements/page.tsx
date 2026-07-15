@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import {
   Download,
   Loader2,
   PackagePlus,
   RefreshCw,
+  ShoppingCart,
   SlidersHorizontal,
   Wrench,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { RegisterSalesDialog } from "@/components/inventory/register-sales-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -103,7 +105,9 @@ export default function InventoryMovementsPage() {
     tenantUser?.role ?? "",
   );
 
-  const { products, isLoading: productsLoading } = useProducts(tenant?.id || null);
+  const { products, isLoading: productsLoading } = useProducts(
+    tenant?.id || null,
+  );
   const { specialists, isLoading: specialistsLoading } = useActiveSpecialists(
     tenant?.id || null,
   );
@@ -123,6 +127,7 @@ export default function InventoryMovementsPage() {
     dateTo: "",
   });
   const [entryDialogOpen, setEntryDialogOpen] = useState(false);
+  const [salesDialogOpen, setSalesDialogOpen] = useState(false);
   const [adjustmentDialogOpen, setAdjustmentDialogOpen] = useState(false);
   const [submittingEntry, setSubmittingEntry] = useState(false);
   const [submittingAdjustment, setSubmittingAdjustment] = useState(false);
@@ -144,15 +149,22 @@ export default function InventoryMovementsPage() {
     try {
       const params = new URLSearchParams({ tenant_id: tenant.id });
 
-      if (filters.movementType !== "all") params.set("movement_type", filters.movementType);
-      if (filters.specialistId !== "all") params.set("specialist_id", filters.specialistId);
-      if (filters.productId !== "all") params.set("product_id", filters.productId);
-      if (filters.dateFrom) params.set("date_from", `${filters.dateFrom}T00:00:00`);
+      if (filters.movementType !== "all")
+        params.set("movement_type", filters.movementType);
+      if (filters.specialistId !== "all")
+        params.set("specialist_id", filters.specialistId);
+      if (filters.productId !== "all")
+        params.set("product_id", filters.productId);
+      if (filters.dateFrom)
+        params.set("date_from", `${filters.dateFrom}T00:00:00`);
       if (filters.dateTo) params.set("date_to", `${filters.dateTo}T23:59:59`);
 
-      const response = await fetch(`/api/inventory/movements?${params.toString()}`, {
-        credentials: "include",
-      });
+      const response = await fetch(
+        `/api/inventory/movements?${params.toString()}`,
+        {
+          credentials: "include",
+        },
+      );
       const json = await response.json();
 
       if (!response.ok) {
@@ -161,7 +173,9 @@ export default function InventoryMovementsPage() {
 
       setMovements(json.movements || []);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error cargando movimientos");
+      toast.error(
+        error instanceof Error ? error.message : "Error cargando movimientos",
+      );
     } finally {
       setLoading(false);
     }
@@ -176,7 +190,8 @@ export default function InventoryMovementsPage() {
       movements.reduce(
         (acc, movement) => {
           acc.total += 1;
-          if (movement.movement_type === "entry") acc.entries += movement.quantity;
+          if (movement.movement_type === "entry")
+            acc.entries += movement.quantity;
           if (movement.movement_type === "adjustment") acc.adjustments += 1;
           if (movement.movement_type === "specialist_withdrawal") {
             acc.withdrawals += movement.quantity;
@@ -197,7 +212,10 @@ export default function InventoryMovementsPage() {
 
   const handleExport = () => {
     const csv = exportInventoryMovementsToCSV(movements);
-    downloadCSV(csv, `inventario-movimientos-${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadCSV(
+      csv,
+      `inventario-movimientos-${new Date().toISOString().slice(0, 10)}.csv`,
+    );
   };
 
   const handleEntrySubmit = async () => {
@@ -236,7 +254,9 @@ export default function InventoryMovementsPage() {
       setEntryForm({ productId: "", quantity: "1", reason: "" });
       loadMovements();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error registrando entrada");
+      toast.error(
+        error instanceof Error ? error.message : "Error registrando entrada",
+      );
     } finally {
       setSubmittingEntry(false);
     }
@@ -279,7 +299,9 @@ export default function InventoryMovementsPage() {
       setAdjustmentForm({ productId: "", newQuantity: "0", reason: "" });
       loadMovements();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error registrando ajuste");
+      toast.error(
+        error instanceof Error ? error.message : "Error registrando ajuste",
+      );
     } finally {
       setSubmittingAdjustment(false);
     }
@@ -306,15 +328,26 @@ export default function InventoryMovementsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button onClick={() => setSalesDialogOpen(true)}>
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Registrar ventas
+          </Button>
           <Button variant="outline" onClick={() => setEntryDialogOpen(true)}>
             <PackagePlus className="mr-2 h-4 w-4" />
             Registrar entrada
           </Button>
-          <Button variant="outline" onClick={() => setAdjustmentDialogOpen(true)}>
+          <Button
+            variant="outline"
+            onClick={() => setAdjustmentDialogOpen(true)}
+          >
             <Wrench className="mr-2 h-4 w-4" />
             Ajuste de inventario
           </Button>
-          <Button variant="outline" onClick={handleExport} disabled={movements.length === 0}>
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            disabled={movements.length === 0}
+          >
             <Download className="mr-2 h-4 w-4" />
             Exportar CSV
           </Button>
@@ -324,7 +357,9 @@ export default function InventoryMovementsPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Movimientos</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">
+              Movimientos
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold">{totals.total}</p>
@@ -332,10 +367,14 @@ export default function InventoryMovementsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Entradas</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">
+              Entradas
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold text-emerald-600">{totals.entries}</p>
+            <p className="text-2xl font-semibold text-emerald-600">
+              {totals.entries}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -345,15 +384,21 @@ export default function InventoryMovementsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold text-rose-600">{totals.withdrawals}</p>
+            <p className="text-2xl font-semibold text-rose-600">
+              {totals.withdrawals}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Ajustes</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">
+              Ajustes
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold text-amber-600">{totals.adjustments}</p>
+            <p className="text-2xl font-semibold text-amber-600">
+              {totals.adjustments}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -439,7 +484,10 @@ export default function InventoryMovementsPage() {
               type="date"
               value={filters.dateFrom}
               onChange={(event) =>
-                setFilters((current) => ({ ...current, dateFrom: event.target.value }))
+                setFilters((current) => ({
+                  ...current,
+                  dateFrom: event.target.value,
+                }))
               }
             />
           </div>
@@ -450,7 +498,10 @@ export default function InventoryMovementsPage() {
               type="date"
               value={filters.dateTo}
               onChange={(event) =>
-                setFilters((current) => ({ ...current, dateTo: event.target.value }))
+                setFilters((current) => ({
+                  ...current,
+                  dateTo: event.target.value,
+                }))
               }
             />
           </div>
@@ -509,16 +560,24 @@ export default function InventoryMovementsPage() {
                         : "-"}
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium">{movement.product?.name || "Producto"}</div>
+                      <div className="font-medium">
+                        {movement.product?.name || "Producto"}
+                      </div>
                       <div className="text-xs text-muted-foreground">
-                        {movement.product?.sku || movement.branch?.name || "Sin referencia"}
+                        {movement.product?.sku ||
+                          movement.branch?.name ||
+                          "Sin referencia"}
                       </div>
                     </TableCell>
-                    <TableCell className={getMovementVariant(movement.movement_type)}>
+                    <TableCell
+                      className={getMovementVariant(movement.movement_type)}
+                    >
                       {formatMovementType(movement.movement_type)}
                     </TableCell>
                     <TableCell>{movement.quantity}</TableCell>
-                    <TableCell>{movement.specialist?.full_name || "-"}</TableCell>
+                    <TableCell>
+                      {movement.specialist?.full_name || "-"}
+                    </TableCell>
                     <TableCell className="max-w-[320px] whitespace-normal text-sm text-muted-foreground">
                       {movement.reason || "-"}
                     </TableCell>
@@ -567,7 +626,10 @@ export default function InventoryMovementsPage() {
                 step="1"
                 value={entryForm.quantity}
                 onChange={(event) =>
-                  setEntryForm((current) => ({ ...current, quantity: event.target.value }))
+                  setEntryForm((current) => ({
+                    ...current,
+                    quantity: event.target.value,
+                  }))
                 }
               />
             </div>
@@ -578,7 +640,10 @@ export default function InventoryMovementsPage() {
                 placeholder="Compra, reposicion, ingreso por ajuste operativo..."
                 value={entryForm.reason}
                 onChange={(event) =>
-                  setEntryForm((current) => ({ ...current, reason: event.target.value }))
+                  setEntryForm((current) => ({
+                    ...current,
+                    reason: event.target.value,
+                  }))
                 }
               />
             </div>
@@ -588,14 +653,19 @@ export default function InventoryMovementsPage() {
               Cancelar
             </Button>
             <Button onClick={handleEntrySubmit} disabled={submittingEntry}>
-              {submittingEntry && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {submittingEntry && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Guardar entrada
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={adjustmentDialogOpen} onOpenChange={setAdjustmentDialogOpen}>
+      <Dialog
+        open={adjustmentDialogOpen}
+        onOpenChange={setAdjustmentDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Ajuste de inventario</DialogTitle>
@@ -609,7 +679,10 @@ export default function InventoryMovementsPage() {
               <Select
                 value={adjustmentForm.productId}
                 onValueChange={(value) =>
-                  setAdjustmentForm((current) => ({ ...current, productId: value }))
+                  setAdjustmentForm((current) => ({
+                    ...current,
+                    productId: value,
+                  }))
                 }
               >
                 <SelectTrigger>
@@ -640,7 +713,8 @@ export default function InventoryMovementsPage() {
               />
               {selectedAdjustmentProduct && (
                 <p className="text-xs text-muted-foreground">
-                  Stock actual: {selectedAdjustmentProduct.stock_summary?.calculated_stock ??
+                  Stock actual:{" "}
+                  {selectedAdjustmentProduct.stock_summary?.calculated_stock ??
                     selectedAdjustmentProduct.stock_quantity}
                 </p>
               )}
@@ -652,16 +726,25 @@ export default function InventoryMovementsPage() {
                 placeholder="Merma, conteo fisico, correccion de sistema..."
                 value={adjustmentForm.reason}
                 onChange={(event) =>
-                  setAdjustmentForm((current) => ({ ...current, reason: event.target.value }))
+                  setAdjustmentForm((current) => ({
+                    ...current,
+                    reason: event.target.value,
+                  }))
                 }
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAdjustmentDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setAdjustmentDialogOpen(false)}
+            >
               Cancelar
             </Button>
-            <Button onClick={handleAdjustmentSubmit} disabled={submittingAdjustment}>
+            <Button
+              onClick={handleAdjustmentSubmit}
+              disabled={submittingAdjustment}
+            >
               {submittingAdjustment && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
@@ -670,6 +753,15 @@ export default function InventoryMovementsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {tenant?.id && (
+        <RegisterSalesDialog
+          open={salesDialogOpen}
+          onOpenChange={setSalesDialogOpen}
+          tenantId={tenant.id}
+          onSaved={loadMovements}
+        />
+      )}
     </div>
   );
 }

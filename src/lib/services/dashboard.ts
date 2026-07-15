@@ -1,6 +1,12 @@
 // src/lib/services/dashboard.ts
 // Capa de datos del dashboard del tenant. Lecturas vía createBrowserSB.
 import { createBrowserSB } from "@/lib/supabase/client";
+import {
+  buildRateMap,
+  getRateMultiplier,
+  type RateInput,
+  type RateMap,
+} from "@/lib/utils/client-currency";
 
 export interface DashboardKpis {
   appointmentsToday: number;
@@ -34,6 +40,13 @@ export interface TopService {
   service_id: string;
   name: string;
   count: number;
+}
+
+export interface TopProduct {
+  product_id: string;
+  name: string;
+  units: number;
+  revenue: number; // en moneda base
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -73,6 +86,43 @@ function startOfMonthIso(): string {
 class DashboardService {
   private supabase = createBrowserSB();
 
+  private async getRateContext(
+    tenantId: string,
+  ): Promise<{ rateMap: RateMap; baseCode: string | null }> {
+    const [ratesRes, baseRes] = await Promise.all([
+      this.supabase
+        .from("exchange_rates")
+        .select("from_currency, to_currency, rate")
+        .eq("tenant_id", tenantId)
+        .is("valid_until", null),
+      this.supabase
+        .from("currencies")
+        .select("code")
+        .eq("is_base_currency", true)
+        .maybeSingle(),
+    ]);
+
+    const rateMap = buildRateMap((ratesRes.data ?? []) as RateInput[]);
+    const baseCode = (baseRes.data as { code: string } | null)?.code ?? null;
+    return { rateMap, baseCode };
+  }
+
+  /** Convierte un monto a la moneda base. Devuelve null si no hay tasa conectable. */
+  private toBase(
+    amount: number,
+    from: string,
+    ctx: { rateMap: RateMap; baseCode: string | null },
+  ): number | null {
+    if (!ctx.baseCode) return null;
+    const mult = getRateMultiplier(
+      from,
+      ctx.baseCode,
+      ctx.rateMap,
+      ctx.baseCode,
+    );
+    return mult === null ? null : amount * mult;
+  }
+
   /** 4 KPIs principales. */
   async getKpis(tenantId: string): Promise<DashboardKpis> {
     const todayStart = startOfTodayIso();
@@ -105,10 +155,29 @@ class DashboardService {
         .lte("paid_at", todayEnd),
     ]);
 
-    const revenueToday = (invRes.data ?? []).reduce(
+    let revenueToday = (invRes.data ?? []).reduce(
       (sum, row) => sum + (row.amount_local ?? 0),
       0,
     );
+
+    // Ventas de productos de hoy, convertidas a moneda base y sumadas al KPI.
+    const [ctx, salesRes] = await Promise.all([
+      this.getRateContext(tenantId),
+      this.supabase
+        .from("product_sales")
+        .select("total, currency_iso")
+        .eq("tenant_id", tenantId)
+        .gte("sold_at", todayStart)
+        .lte("sold_at", todayEnd),
+    ]);
+
+    for (const row of (salesRes.data ?? []) as {
+      total: number | null;
+      currency_iso: string;
+    }[]) {
+      const converted = this.toBase(row.total ?? 0, row.currency_iso, ctx);
+      if (converted !== null) revenueToday += converted;
+    }
 
     return {
       appointmentsToday: apptRes.count ?? 0,
@@ -186,6 +255,27 @@ class DashboardService {
       }
     }
 
+    // Sumar ventas de productos por día (convertidas a moneda base).
+    const ctx = await this.getRateContext(tenantId);
+    const { data: salesData } = await this.supabase
+      .from("product_sales")
+      .select("total, currency_iso, sold_at")
+      .eq("tenant_id", tenantId)
+      .gte("sold_at", from.toISOString());
+
+    for (const row of (salesData ?? []) as {
+      total: number | null;
+      currency_iso: string;
+      sold_at: string;
+    }[]) {
+      const key = ymd(new Date(row.sold_at));
+      if (!buckets.has(key)) continue;
+      const converted = this.toBase(row.total ?? 0, row.currency_iso, ctx);
+      if (converted !== null) {
+        buckets.set(key, (buckets.get(key) ?? 0) + converted);
+      }
+    }
+
     return days.map((d) => {
       const key = ymd(d);
       return {
@@ -245,6 +335,41 @@ class DashboardService {
       .map(([service_id, { name, count }]) => ({ service_id, name, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
+  }
+
+  /** Top 5 productos del mes por unidades e ingreso (base). */
+  async getTopProducts(tenantId: string): Promise<TopProduct[]> {
+    const ctx = await this.getRateContext(tenantId);
+    const { data, error } = await this.supabase
+      .from("product_sales")
+      .select(
+        "product_id, quantity, total, currency_iso, product:products!product_sales_product_id_fkey(name)",
+      )
+      .eq("tenant_id", tenantId)
+      .gte("sold_at", startOfMonthIso());
+
+    if (error) throw error;
+
+    const acc = new Map<string, TopProduct>();
+    // biome-ignore lint/suspicious/noExplicitAny: join anidado
+    for (const row of (data ?? []) as any[]) {
+      if (!row.product_id) continue;
+      const name = row.product?.name ?? "Producto";
+      const entry =
+        acc.get(row.product_id) ??
+        ({
+          product_id: row.product_id,
+          name,
+          units: 0,
+          revenue: 0,
+        } as TopProduct);
+      entry.units += row.quantity ?? 0;
+      const converted = this.toBase(row.total ?? 0, row.currency_iso, ctx);
+      if (converted !== null) entry.revenue += converted;
+      acc.set(row.product_id, entry);
+    }
+
+    return [...acc.values()].sort((a, b) => b.units - a.units).slice(0, 5);
   }
 }
 

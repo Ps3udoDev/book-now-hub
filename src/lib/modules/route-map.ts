@@ -4,8 +4,9 @@
 // las rutas sin mapeo y las de módulos core siempre pasan.
 
 export const ROUTE_MODULE_MAP: Record<string, string> = {
-  campaigns: "campaigns",
+  "ai-assistant": "ai-assistant",
   cafeteria: "cafeteria",
+  campaigns: "campaigns",
   ecommerce: "ecommerce",
 };
 

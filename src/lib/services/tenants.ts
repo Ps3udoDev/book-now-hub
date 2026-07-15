@@ -131,10 +131,14 @@ class TenantsService {
     moduleId: string,
     enabled: boolean,
   ): Promise<void> {
-    const res = await fetch(`/api/tenants/${tenantId}/modules`, {
+    const res = await fetch("/api/admin/tenant-modules", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ moduleId, enabled }),
+      body: JSON.stringify({
+        tenant_id: tenantId,
+        module_id: moduleId,
+        is_enabled: enabled,
+      }),
     });
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));

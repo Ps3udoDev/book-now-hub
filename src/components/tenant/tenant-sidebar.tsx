@@ -16,6 +16,7 @@ import {
   Scissors,
   Settings,
   ShoppingBag,
+  Sparkles,
   UserCog,
   Users,
 } from "lucide-react";
@@ -39,31 +40,33 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 import { useTenant } from "@/providers/tenant-provider";
 
 const moduleIcons: Record<string, LucideIcon> = {
-  dashboard: LayoutDashboard,
-  services: Scissors,
+  "ai-assistant": Sparkles,
   appointments: Calendar,
-  customers: Users,
-  specialists: UserCog,
-  workstations: LayoutGrid,
-  inventory: Package,
-  ecommerce: ShoppingBag,
-  pos: CreditCard,
   cafeteria: Coffee,
   campaigns: Megaphone,
+  customers: Users,
+  dashboard: LayoutDashboard,
+  ecommerce: ShoppingBag,
+  inventory: Package,
+  pos: CreditCard,
   reports: BarChart3,
+  services: Scissors,
+  specialists: UserCog,
+  workstations: LayoutGrid,
 };
 
 const implementedModuleSlugs = new Set([
-  "dashboard",
-  "services",
+  "ai-assistant",
   "appointments",
-  "customers",
-  "specialists",
-  "workstations",
-  "inventory",
-  "ecommerce",
   "cafeteria",
   "campaigns",
+  "customers",
+  "dashboard",
+  "ecommerce",
+  "inventory",
+  "services",
+  "specialists",
+  "workstations",
 ]);
 
 type SidebarItem = {

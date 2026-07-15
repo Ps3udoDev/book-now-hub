@@ -6,6 +6,7 @@ import {
   dashboardService,
   type RevenuePoint,
   type StatusSlice,
+  type TopProduct,
   type TopService,
 } from "@/lib/services/dashboard";
 
@@ -62,4 +63,13 @@ export function useTopServices(tenantId: string | null) {
     OPTS,
   );
   return { services: data || [], isLoading, error: error?.message || null };
+}
+
+export function useTopProducts(tenantId: string | null) {
+  const { data, error, isLoading } = useSWR<TopProduct[]>(
+    tenantId ? `dashboard:topproducts:${tenantId}` : null,
+    () => (tenantId ? dashboardService.getTopProducts(tenantId) : []),
+    OPTS,
+  );
+  return { products: data || [], isLoading, error: error?.message || null };
 }

@@ -3175,6 +3175,115 @@ export type Database = {
           },
         ]
       }
+      product_sales: {
+        Row: {
+          branch_id: string
+          created_at: string
+          created_by: string | null
+          currency_iso: string
+          id: string
+          movement_id: string | null
+          product_id: string
+          quantity: number
+          sold_at: string
+          tenant_id: string
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          created_by?: string | null
+          currency_iso: string
+          id?: string
+          movement_id?: string | null
+          product_id: string
+          quantity: number
+          sold_at?: string
+          tenant_id: string
+          total: number
+          unit_price: number
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency_iso?: string
+          id?: string
+          movement_id?: string | null
+          product_id?: string
+          quantity?: number
+          sold_at?: string
+          tenant_id?: string
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_sales_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_sales_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_movements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_ecommerce_products_public"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_low_stock_alerts"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_summary"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_sales_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_sales_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_ecommerce_storefront_public"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "product_sales_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           branch_id: string

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -9,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -16,23 +18,49 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { TopService } from "@/lib/services/dashboard";
+import type { TopProduct } from "@/lib/services/dashboard";
 
-interface TopServicesChartProps {
-  data: TopService[];
+interface TopProductsChartProps {
+  data: TopProduct[];
 }
 
-export function TopServicesChart({ data }: TopServicesChartProps) {
+type Metric = "units" | "revenue";
+
+export function TopProductsChart({ data }: TopProductsChartProps) {
+  const [metric, setMetric] = useState<Metric>("units");
+
   return (
     <Card className="dashboard-stagger">
-      <CardHeader>
-        <CardTitle>Top servicios</CardTitle>
-        <CardDescription>Por número de citas del mes</CardDescription>
+      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+        <div>
+          <CardTitle>Top productos vendidos</CardTitle>
+          <CardDescription>
+            {metric === "units"
+              ? "Por unidades del mes"
+              : "Por ingreso del mes"}
+          </CardDescription>
+        </div>
+        <div className="flex gap-1">
+          <Button
+            size="sm"
+            variant={metric === "units" ? "default" : "outline"}
+            onClick={() => setMetric("units")}
+          >
+            Unidades
+          </Button>
+          <Button
+            size="sm"
+            variant={metric === "revenue" ? "default" : "outline"}
+            onClick={() => setMetric("revenue")}
+          >
+            Ingreso
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
           <p className="py-16 text-center text-sm text-muted-foreground">
-            Sin datos este mes.
+            Sin ventas este mes.
           </p>
         ) : (
           <div className="h-64 w-full">
@@ -52,7 +80,7 @@ export function TopServicesChart({ data }: TopServicesChartProps) {
                   tickLine={false}
                   axisLine={false}
                   fontSize={12}
-                  allowDecimals={false}
+                  allowDecimals={metric === "revenue"}
                   tick={{ fill: "var(--muted-foreground)" }}
                 />
                 <YAxis
@@ -67,8 +95,10 @@ export function TopServicesChart({ data }: TopServicesChartProps) {
                 <Tooltip
                   cursor={{ fill: "var(--muted)", opacity: 0.4 }}
                   formatter={(value: unknown) => [
-                    `${Number(value)} citas`,
-                    "Citas",
+                    metric === "units"
+                      ? `${Number(value)} uds`
+                      : `${Number(value).toLocaleString("es", { maximumFractionDigits: 2 })}`,
+                    metric === "units" ? "Unidades" : "Ingreso",
                   ]}
                   contentStyle={{
                     borderRadius: "0.5rem",
@@ -79,7 +109,7 @@ export function TopServicesChart({ data }: TopServicesChartProps) {
                   }}
                 />
                 <Bar
-                  dataKey="count"
+                  dataKey={metric}
                   fill="var(--primary)"
                   radius={[0, 4, 4, 0]}
                   animationDuration={800}

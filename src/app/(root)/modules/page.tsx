@@ -4,6 +4,7 @@
 import { getModuleIcon } from "@/lib/modules/module-icon";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { Module } from "@/types";
+import { TenantModuleManager } from "./tenant-module-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,8 @@ export default async function ModulesPage() {
           total).
         </p>
       </div>
+
+      <TenantModuleManager modules={modules} />
 
       {categories.map((cat) => (
         <div key={cat}>
