@@ -85,3 +85,39 @@ export function useTenantBySlug(tenantSlug: string | null) {
     mutate,
   };
 }
+
+/**
+ * Hook para obtener un tenant por id (panel admin)
+ */
+export function useTenantById(tenantId: string | null) {
+  const { data, error, isLoading, mutate } = useSWR<PublicTenant | null>(
+    tenantId ? `tenant:id:${tenantId}` : null,
+    () => (tenantId ? tenantsService.getTenantById(tenantId) : null),
+    { revalidateOnFocus: false, dedupingInterval: 30000 },
+  );
+
+  return {
+    tenant: data || null,
+    isLoading,
+    error: error?.message || null,
+    mutate,
+  };
+}
+
+/**
+ * Hook para obtener el estado is_enabled de los módulos de un tenant
+ */
+export function useTenantModuleStates(tenantId: string | null) {
+  const { data, error, isLoading, mutate } = useSWR<Record<string, boolean>>(
+    tenantId ? `tenant:module-states:${tenantId}` : null,
+    () => (tenantId ? tenantsService.getTenantModuleStates(tenantId) : {}),
+    { revalidateOnFocus: false, dedupingInterval: 10000 },
+  );
+
+  return {
+    states: data || {},
+    isLoading,
+    error: error?.message || null,
+    mutate,
+  };
+}

@@ -372,7 +372,7 @@ function ProductCard({
 }) {
   const template = getEcommerceTemplate(storefront.template_slug);
   const imageUrl = getProductImageUrl(product);
-  const href = `/t/${tenantSlug}/productos/${product.product_id}`;
+  const href = `/t/${tenantSlug}/products/${product.product_id}`;
 
   if (template.layout === "neo") {
     return (
@@ -1634,7 +1634,7 @@ export function EcommerceProductDetailView({
       onOpenCart={onOpenCart}
     >
       <Button variant="ghost" asChild className="mb-6">
-        <Link href={`/t/${tenantSlug}/productos`}>Volver al catalogo</Link>
+        <Link href={`/t/${tenantSlug}/products`}>Volver al catalogo</Link>
       </Button>
 
       <section
@@ -1770,7 +1770,7 @@ export function EcommerceProductDetailView({
 
           <div className="mt-8 border-t border-black/10 pt-6">
             <Link
-              href={`/t/${tenantSlug}/productos`}
+              href={`/t/${tenantSlug}/products`}
               className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-foreground"
             >
               Seguir explorando

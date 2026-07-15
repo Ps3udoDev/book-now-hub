@@ -1,14 +1,18 @@
 "use client";
 
 import {
+  ChefHat,
   Clock3,
   Coffee,
   Minus,
   PercentCircle,
   Plus,
   ReceiptText,
+  Settings,
   ShoppingBag,
+  UtensilsCrossed,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -32,21 +36,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { useActiveBranches } from "@/hooks/supabase/use-branches";
 import { useCafeOrder, useCafeOrders } from "@/hooks/supabase/use-cafe-orders";
 import { usePublicMenu } from "@/hooks/supabase/use-menu";
-import type { Customer, Profile } from "@/types";
-import type { MenuItemWithImages } from "@/lib/services/menu";
 import { cafeOrdersService } from "@/lib/services/cafe-orders";
-import { createBrowserSB } from "@/lib/supabase/client";
+import type { MenuItemWithImages } from "@/lib/services/menu";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { createBrowserSB } from "@/lib/supabase/client";
 import {
   getCafeOrderStatusClassName,
   getCafeOrderStatusLabel,
   getMenuItemImageUrl,
 } from "@/lib/utils/cafeteria";
+import type { Customer, Profile } from "@/types";
 
 type CartItem = {
   item: MenuItemWithImages;
@@ -58,13 +67,21 @@ type CafeteriaMode = "client" | "specialist" | null;
 
 export default function CafeteriaPage() {
   const { tenant, tenantUser, user } = useAuthStore();
+  const basePath = `/t/${tenant?.slug ?? ""}`;
+  const canManageCafeteria = ["owner", "admin", "manager"].includes(
+    tenantUser?.role ?? "",
+  );
   const { branches } = useActiveBranches(tenant?.id ?? null);
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [specialistProfile, setSpecialistProfile] = useState<Profile | null>(null);
+  const [specialistProfile, setSpecialistProfile] = useState<Profile | null>(
+    null,
+  );
   const [identityLoading, setIdentityLoading] = useState(true);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
-  const [selectedItem, setSelectedItem] = useState<MenuItemWithImages | null>(null);
+  const [selectedItem, setSelectedItem] = useState<MenuItemWithImages | null>(
+    null,
+  );
   const [detailOpen, setDetailOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [itemQuantity, setItemQuantity] = useState(1);
@@ -115,7 +132,9 @@ export default function CafeteriaPage() {
       }
 
       setCustomer(customerRes.data || null);
-      setSpecialistProfile(profileRes.data?.is_specialist ? profileRes.data : null);
+      setSpecialistProfile(
+        profileRes.data?.is_specialist ? profileRes.data : null,
+      );
       setIdentityLoading(false);
     }
 
@@ -128,10 +147,11 @@ export default function CafeteriaPage() {
       ? "specialist"
       : null;
 
-  const { menu, isLoading: loadingMenu, mutate: mutateMenu } = usePublicMenu(
-    tenant?.id ?? null,
-    selectedBranchId,
-  );
+  const {
+    menu,
+    isLoading: loadingMenu,
+    mutate: mutateMenu,
+  } = usePublicMenu(tenant?.id ?? null, selectedBranchId);
 
   useEffect(() => {
     if (!activeCategoryId && menu[0]?.id) {
@@ -150,7 +170,9 @@ export default function CafeteriaPage() {
       tenant_id: tenant?.id ?? undefined,
       client_id: mode === "client" ? (customer?.id ?? undefined) : undefined,
       specialist_id:
-        mode === "specialist" ? (specialistProfile?.id ?? undefined) : undefined,
+        mode === "specialist"
+          ? (specialistProfile?.id ?? undefined)
+          : undefined,
       order_type: mode === "specialist" ? ("specialist" as const) : undefined,
       from: startOfDay,
     }),
@@ -164,8 +186,9 @@ export default function CafeteriaPage() {
 
   const currentTrackedOrderId =
     latestOrderId ||
-    orders.find((order) => ["pending", "preparing", "ready"].includes(order.status))
-      ?.id ||
+    orders.find((order) =>
+      ["pending", "preparing", "ready"].includes(order.status),
+    )?.id ||
     orders[0]?.id ||
     null;
 
@@ -313,8 +336,8 @@ export default function CafeteriaPage() {
         <Coffee className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
         <h1 className="text-2xl font-semibold">Sin acceso de cafetería</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Este usuario no está vinculado ni a un cliente ni a un especialista del
-          tenant actual.
+          Este usuario no está vinculado ni a un cliente ni a un especialista
+          del tenant actual.
         </p>
       </div>
     );
@@ -337,7 +360,9 @@ export default function CafeteriaPage() {
               {isSpecialistMode ? "Cafetería especialista" : "Cafetería"}
             </Badge>
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight">{pageTitle}</h1>
+              <h1 className="text-3xl font-semibold tracking-tight">
+                {pageTitle}
+              </h1>
               <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
                 {pageDescription}
               </p>
@@ -365,6 +390,29 @@ export default function CafeteriaPage() {
             </Button>
           </div>
         </div>
+
+        {canManageCafeteria ? (
+          <div className="mt-6 flex flex-wrap gap-2 border-t border-black/5 pt-4">
+            <Button asChild variant="ghost" size="sm">
+              <Link href={`${basePath}/cafeteria/menu`}>
+                <UtensilsCrossed className="mr-2 h-4 w-4" />
+                Gestionar menú
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href={`${basePath}/cafeteria/kitchen`}>
+                <ChefHat className="mr-2 h-4 w-4" />
+                Cocina
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href={`${basePath}/settings/cafeteria`}>
+                <Settings className="mr-2 h-4 w-4" />
+                Configuración cafetería
+              </Link>
+            </Button>
+          </div>
+        ) : null}
       </section>
 
       {trackedOrder ? (
@@ -374,7 +422,9 @@ export default function CafeteriaPage() {
               <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 Pedido actual
               </p>
-              <h2 className="text-2xl font-semibold">#{trackedOrder.order_number}</h2>
+              <h2 className="text-2xl font-semibold">
+                #{trackedOrder.order_number}
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {trackedOrder.items.length} item(s) · Total $
                 {Number(trackedOrder.total).toFixed(2)}
@@ -459,7 +509,9 @@ export default function CafeteriaPage() {
                           {item.description || "Sin descripción"}
                         </p>
                       </div>
-                      <Badge variant="secondary">${Number(item.price).toFixed(2)}</Badge>
+                      <Badge variant="secondary">
+                        ${Number(item.price).toFixed(2)}
+                      </Badge>
                     </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
@@ -496,7 +548,9 @@ export default function CafeteriaPage() {
                 <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold">Pedido #{order.order_number}</p>
+                      <p className="font-semibold">
+                        Pedido #{order.order_number}
+                      </p>
                       <Badge
                         variant="outline"
                         className={getCafeOrderStatusClassName(order.status)}
@@ -514,7 +568,9 @@ export default function CafeteriaPage() {
                     </p>
                   </div>
                   <div className="text-sm">
-                    <p className="font-semibold">${Number(order.total).toFixed(2)}</p>
+                    <p className="font-semibold">
+                      ${Number(order.total).toFixed(2)}
+                    </p>
                     <p className="text-muted-foreground">
                       {new Date(order.created_at).toLocaleTimeString([], {
                         hour: "2-digit",
@@ -571,7 +627,8 @@ export default function CafeteriaPage() {
                       ${Number(selectedItem.price).toFixed(2)}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Preparación estimada: {selectedItem.preparation_time_minutes} min
+                      Preparación estimada:{" "}
+                      {selectedItem.preparation_time_minutes} min
                     </p>
                   </div>
 
@@ -582,14 +639,18 @@ export default function CafeteriaPage() {
                         type="button"
                         variant="outline"
                         size="icon"
-                        onClick={() => setItemQuantity((current) => Math.max(1, current - 1))}
+                        onClick={() =>
+                          setItemQuantity((current) => Math.max(1, current - 1))
+                        }
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
                       <Input
                         value={String(itemQuantity)}
                         onChange={(event) =>
-                          setItemQuantity(Math.max(1, Number(event.target.value) || 1))
+                          setItemQuantity(
+                            Math.max(1, Number(event.target.value) || 1),
+                          )
                         }
                         className="w-24 text-center"
                       />
@@ -597,7 +658,9 @@ export default function CafeteriaPage() {
                         type="button"
                         variant="outline"
                         size="icon"
-                        onClick={() => setItemQuantity((current) => current + 1)}
+                        onClick={() =>
+                          setItemQuantity((current) => current + 1)
+                        }
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
@@ -669,7 +732,10 @@ export default function CafeteriaPage() {
                         </div>
                         <div className="text-right">
                           <p className="font-semibold">
-                            ${(Number(entry.item.price) * entry.quantity).toFixed(2)}
+                            $
+                            {(
+                              Number(entry.item.price) * entry.quantity
+                            ).toFixed(2)}
                           </p>
                           <button
                             type="button"
@@ -708,8 +774,8 @@ export default function CafeteriaPage() {
                             Cargar a mis comisiones
                           </Label>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Si lo activas, al entregar el pedido se registrará como
-                            consumo descontable de tu liquidación.
+                            Si lo activas, al entregar el pedido se registrará
+                            como consumo descontable de tu liquidación.
                           </p>
                         </div>
                       </div>
@@ -722,7 +788,9 @@ export default function CafeteriaPage() {
             <div className="mt-6 space-y-4 border-t pt-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Total</span>
-                <span className="text-xl font-semibold">${cartTotal.toFixed(2)}</span>
+                <span className="text-xl font-semibold">
+                  ${cartTotal.toFixed(2)}
+                </span>
               </div>
               <Button
                 type="button"

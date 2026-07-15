@@ -1,15 +1,16 @@
 // src/app/t/[tenant]/login/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { AlertCircle, Loader2, LogOut, Mail } from "lucide-react";
 import Link from "next/link";
-import { useAuthStore } from "@/lib/stores/auth-store";
-import { useTenantBySlug } from "@/hooks/supabase/use-tenant";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, LogOut, AlertCircle } from "lucide-react";
+import { useTenantBySlug } from "@/hooks/supabase/use-tenant";
+import { authService } from "@/lib/services/auth";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 export default function TenantLoginPage() {
   const params = useParams();
@@ -17,7 +18,11 @@ export default function TenantLoginPage() {
   const tenantSlug = params.tenant as string;
 
   // Cargar datos del tenant
-  const { tenant, isLoading: tenantLoading, error: tenantError } = useTenantBySlug(tenantSlug);
+  const {
+    tenant,
+    isLoading: tenantLoading,
+    error: tenantError,
+  } = useTenantBySlug(tenantSlug);
 
   // Auth store
   const {
@@ -38,6 +43,27 @@ export default function TenantLoginPage() {
   const [password, setPassword] = useState("");
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [hasAccessToTenant, setHasAccessToTenant] = useState(false);
+
+  const [authMode, setAuthMode] = useState<"password" | "magic">("password");
+  const [magicEmail, setMagicEmail] = useState("");
+  const [magicLoading, setMagicLoading] = useState(false);
+  const [magicSent, setMagicSent] = useState(false);
+
+  const handleMagicLink = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setMagicLoading(true);
+    try {
+      const redirectTo = `${window.location.origin}/auth/callback?next=/t/${tenantSlug}/dashboard`;
+      await authService.sendMagicLink(magicEmail, redirectTo);
+    } catch (err) {
+      // No revelar si la cuenta existe: signInWithOtp con shouldCreateUser:false
+      // devuelve error para emails inexistentes. Mostramos siempre el mensaje neutro.
+      console.error("magic link:", err);
+    } finally {
+      setMagicLoading(false);
+      setMagicSent(true);
+    }
+  };
 
   // Verificar si el usuario actual tiene acceso a este tenant
   useEffect(() => {
@@ -104,7 +130,9 @@ export default function TenantLoginPage() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
               <AlertCircle className="w-8 h-8 text-destructive" />
             </div>
-            <h1 className="text-xl font-semibold mb-2">Empresa no encontrada</h1>
+            <h1 className="text-xl font-semibold mb-2">
+              Empresa no encontrada
+            </h1>
             <p className="text-muted-foreground mb-6">
               No existe una empresa con el identificador "{tenantSlug}".
             </p>
@@ -118,7 +146,8 @@ export default function TenantLoginPage() {
   }
 
   // Usuario tiene sesión pero NO pertenece a este tenant
-  const hasSessionButNoAccess = isAuthenticated && !hasAccessToTenant && !checkingAccess;
+  const hasSessionButNoAccess =
+    isAuthenticated && !hasAccessToTenant && !checkingAccess;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
@@ -155,9 +184,10 @@ export default function TenantLoginPage() {
                     Sesión activa detectada
                   </p>
                   <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                    Estás logueado como <strong className="truncate">{user?.email}</strong>
-                    {mode === "global" && " (Administrador de la plataforma)"}
-                    , pero esta cuenta no tiene acceso a {tenant.name}.
+                    Estás logueado como{" "}
+                    <strong className="truncate">{user?.email}</strong>
+                    {mode === "global" && " (Administrador de la plataforma)"},
+                    pero esta cuenta no tiene acceso a {tenant.name}.
                   </p>
                   <Button
                     variant="outline"
@@ -173,51 +203,124 @@ export default function TenantLoginPage() {
             </div>
           )}
 
+          <div className="mb-4 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode("password");
+                setMagicSent(false);
+              }}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                authMode === "password"
+                  ? "bg-background shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Contraseña
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode("magic");
+                setMagicSent(false);
+              }}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                authMode === "magic"
+                  ? "bg-background shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Enlace mágico
+            </button>
+          </div>
+
           {/* Formulario */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo electrónico</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="tu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={authLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={authLoading}
-              />
-            </div>
-
-            {authError && (
-              <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
-                {authError}
+          {authMode === "password" && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Correo electrónico</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="tu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={authLoading}
+                />
               </div>
-            )}
 
-            <Button type="submit" className="w-full" disabled={authLoading}>
-              {authLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Ingresando...
-                </>
-              ) : (
-                "Iniciar sesión"
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={authLoading}
+                />
+              </div>
+
+              {authError && (
+                <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+                  {authError}
+                </div>
               )}
-            </Button>
-          </form>
+
+              <Button type="submit" className="w-full" disabled={authLoading}>
+                {authLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Ingresando...
+                  </>
+                ) : (
+                  "Iniciar sesión"
+                )}
+              </Button>
+            </form>
+          )}
+
+          {authMode === "magic" &&
+            (magicSent ? (
+              <div className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+                Si la cuenta existe, recibirás un correo en breve.
+              </div>
+            ) : (
+              <form onSubmit={handleMagicLink} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="magic-email">Correo electrónico</Label>
+                  <Input
+                    id="magic-email"
+                    type="email"
+                    placeholder="tu@email.com"
+                    autoComplete="email"
+                    required
+                    disabled={magicLoading}
+                    value={magicEmail}
+                    onChange={(event) => setMagicEmail(event.target.value)}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={magicLoading}
+                >
+                  {magicLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Enviar enlace mágico
+                    </>
+                  )}
+                </Button>
+              </form>
+            ))}
 
           {/* Links adicionales */}
           <div className="mt-6 text-center text-sm">

@@ -6,40 +6,61 @@ import type { Module } from "@/types";
  * Hook para obtener módulos activos con SWR
  */
 export function useActiveModules() {
-    const { data, error, isLoading, mutate } = useSWR<Module[]>(
-        "modules:active",
-        () => modulesService.getActiveModules(),
-        {
-            revalidateOnFocus: false,
-            dedupingInterval: 60000, // 1 minuto
-        }
-    );
+  const { data, error, isLoading, mutate } = useSWR<Module[]>(
+    "modules:active",
+    () => modulesService.getActiveModules(),
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000, // 1 minuto
+    },
+  );
 
-    return {
-        modules: data || [],
-        isLoading,
-        error: error?.message || null,
-        mutate,
-    };
+  return {
+    modules: data || [],
+    isLoading,
+    error: error?.message || null,
+    mutate,
+  };
+}
+
+/**
+ * Hook para obtener TODOS los módulos (cualquier estado) con SWR
+ */
+export function useAllModules() {
+  const { data, error, isLoading, mutate } = useSWR<Module[]>(
+    "modules:all",
+    () => modulesService.list(),
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    },
+  );
+
+  return {
+    modules: data || [],
+    isLoading,
+    error: error?.message || null,
+    mutate,
+  };
 }
 
 /**
  * Hook para obtener módulos core con SWR
  */
 export function useCoreModules() {
-    const { data, error, isLoading, mutate } = useSWR<Module[]>(
-        "modules:core",
-        () => modulesService.getCoreModules(),
-        {
-            revalidateOnFocus: false,
-            dedupingInterval: 60000,
-        }
-    );
+  const { data, error, isLoading, mutate } = useSWR<Module[]>(
+    "modules:core",
+    () => modulesService.getCoreModules(),
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    },
+  );
 
-    return {
-        modules: data || [],
-        isLoading,
-        error: error?.message || null,
-        mutate,
-    };
+  return {
+    modules: data || [],
+    isLoading,
+    error: error?.message || null,
+    mutate,
+  };
 }

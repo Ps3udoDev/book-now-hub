@@ -1,4 +1,4 @@
-import type { Database } from "./supabase";
+import type { Database, Json } from "./supabase";
 
 export type Tables = Database["public"]["Tables"];
 export type InsertTables = Tables[keyof Tables]["Insert"];
@@ -106,6 +106,102 @@ export type MenuItemImage = Tables["menu_item_images"]["Row"];
 export type CafeOrder = Tables["cafe_orders"]["Row"];
 export type CafeOrderItem = Tables["cafe_order_items"]["Row"];
 
+export type ProductSale = Tables["product_sales"]["Row"];
+
+// Campañas + Segmentación (Fase 4)
+export type CustomerSegment = Tables["customer_segments"]["Row"];
+export type Campaign = Tables["campaigns"]["Row"];
+export type CampaignRecipient = Tables["campaign_recipients"]["Row"];
+
+export type CampaignType =
+  | "reactivation"
+  | "last_minute"
+  | "transformation"
+  | "birthday"
+  | "custom";
+export type CampaignChannel = "whatsapp" | "email" | "sms";
+export type CampaignStatus =
+  | "draft"
+  | "ready"
+  | "queued"
+  | "sent"
+  | "cancelled";
+export type RecipientStatus = "queued" | "sent" | "failed" | "skipped";
+
+/** Estadísticas agregadas de una campaña (columna stats jsonb) */
+export interface CampaignStats {
+  total?: number;
+  queued?: number;
+  sent?: number;
+  failed?: number;
+  skipped?: number;
+}
+
+/** Operadores soportados por el motor de segmentación */
+export type SegmentOperator =
+  | "eq"
+  | "ne"
+  | "gte"
+  | "lte"
+  | "in"
+  | "not_in"
+  | "contains"
+  | "contains_any"
+  | "between";
+
+/** Una condición individual dentro de las reglas de un segmento */
+export interface SegmentCondition {
+  field: string;
+  operator: SegmentOperator;
+  value: string | number | boolean | Array<string | number>;
+}
+
+/** Estructura de la columna rules (jsonb) de customer_segments */
+export interface SegmentRules {
+  match: "all" | "any";
+  conditions: SegmentCondition[];
+}
+
+/** Resumen de un campo segmentable para el prompt de IA. */
+export interface SegmentFieldSummary {
+  key: string;
+  label: string;
+  type: string;
+  operators: SegmentOperator[];
+  options?: { value: string; label: string }[];
+  hint?: string;
+}
+
+/** Resumen agregado del tenant que se envía al LLM (sin PII). */
+export interface TenantSnapshot {
+  currency: string;
+  totalActiveCustomers: number;
+  inactivity: { d30: number; d60: number; d90: number };
+  birthdaysThisMonth: number;
+  acceptsMarketing: number;
+  topCities: { city: string; count: number }[];
+  topServices: { name: string; count: number }[];
+  avgTicket: number;
+  upcomingAppointments7d: number;
+  segmentFields: SegmentFieldSummary[];
+}
+
+/** Propuesta de campaña generada por el LLM (antes del grounding). */
+export interface AiProposal {
+  title: string;
+  rationale: string;
+  campaign_type: CampaignType;
+  channel: CampaignChannel;
+  rules: SegmentRules;
+  message_template: string;
+}
+
+/** Propuesta con conteo real del motor + muestra (tras grounding). */
+export interface GroundedProposal extends AiProposal {
+  realCount: number;
+  sample: { id: string; full_name: string; phone: string | null }[];
+}
+
 export interface LayoutConfig {
   sidebar: {
     position: "left" | "right";
@@ -163,4 +259,4 @@ export interface TenantModuleWithModule extends TenantModule {
   module: Module;
 }
 
-export type { Database };
+export type { Database, Json };

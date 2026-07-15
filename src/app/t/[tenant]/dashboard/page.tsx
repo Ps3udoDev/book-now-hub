@@ -1,54 +1,54 @@
 // src/app/t/[tenant]/dashboard/page.tsx
 "use client";
 
+import { animate, stagger } from "animejs";
+import { Calendar, DollarSign, Scissors, Users } from "lucide-react";
+import { useEffect } from "react";
+import { KpiCard } from "@/components/dashboard/kpi-card";
+import { RevenueChart } from "@/components/dashboard/revenue-chart";
+import { StatusDonut } from "@/components/dashboard/status-donut";
+import { TopProductsChart } from "@/components/dashboard/top-products-chart";
+import { TopServicesChart } from "@/components/dashboard/top-services-chart";
+import { UpcomingAppointments } from "@/components/dashboard/upcoming-appointments";
+import {
+  useDashboardKpis,
+  useRevenueLast7Days,
+  useStatusBreakdown,
+  useTodayAppointments,
+  useTopProducts,
+  useTopServices,
+} from "@/hooks/supabase/use-dashboard";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { useTenant } from "@/providers/tenant-provider";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Users, Scissors, DollarSign } from "lucide-react";
 
 export default function TenantDashboardPage() {
   const { tenant, tenantUser } = useAuthStore();
-  const { modules } = useTenant();
+  const tenantId = tenant?.id ?? null;
 
-  // Stats de ejemplo (en producción vendrían de la API)
-  const stats = [
-    {
-      title: "Citas Hoy",
-      value: "12",
-      description: "3 pendientes",
-      icon: Calendar,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100",
-    },
-    {
-      title: "Clientes",
-      value: "248",
-      description: "+12 este mes",
-      icon: Users,
-      color: "text-green-600",
-      bgColor: "bg-green-100",
-    },
-    {
-      title: "Servicios",
-      value: "18",
-      description: "activos",
-      icon: Scissors,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100",
-    },
-    {
-      title: "Ingresos Hoy",
-      value: "$450",
-      description: "+15% vs ayer",
-      icon: DollarSign,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-100",
-    },
-  ];
+  const { kpis } = useDashboardKpis(tenantId);
+  const { appointments, isLoading: loadingAppts } =
+    useTodayAppointments(tenantId);
+  const { revenue } = useRevenueLast7Days(tenantId);
+  const { slices } = useStatusBreakdown(tenantId);
+  const { services } = useTopServices(tenantId);
+  const { products: topProducts } = useTopProducts(tenantId);
+
+  // Entrada escalonada de las tarjetas al montar
+  useEffect(() => {
+    animate(".dashboard-stagger", {
+      opacity: [0, 1],
+      translateY: [12, 0],
+      delay: stagger(70),
+      duration: 500,
+      ease: "out(3)",
+    });
+  }, []);
+
+  const formatMoney = (n: number) =>
+    `$${n.toLocaleString("es", { maximumFractionDigits: 0 })}`;
 
   return (
     <div className="space-y-6">
-      {/* Header de bienvenida */}
+      {/* Bienvenida */}
       <div>
         <h1 className="text-2xl font-bold">
           ¡Hola, {tenantUser?.full_name?.split(" ")[0] || "Usuario"}!
@@ -58,76 +58,58 @@ export default function TenantDashboardPage() {
         </p>
       </div>
 
-      {/* Stats Grid */}
+      {/* KPIs */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">{stat.description}</p>
-            </CardContent>
-          </Card>
-        ))}
+        <KpiCard
+          title="Citas hoy"
+          value={kpis?.appointmentsToday ?? 0}
+          description="programadas para hoy"
+          icon={Calendar}
+          iconColor="text-blue-600 dark:text-blue-400"
+          iconBg="bg-blue-100 dark:bg-blue-950/50"
+        />
+        <KpiCard
+          title="Clientes"
+          value={kpis?.totalCustomers ?? 0}
+          description="activos"
+          icon={Users}
+          iconColor="text-green-600 dark:text-green-400"
+          iconBg="bg-green-100 dark:bg-green-950/50"
+        />
+        <KpiCard
+          title="Servicios"
+          value={kpis?.activeServices ?? 0}
+          description="activos"
+          icon={Scissors}
+          iconColor="text-purple-600 dark:text-purple-400"
+          iconBg="bg-purple-100 dark:bg-purple-950/50"
+        />
+        <KpiCard
+          title="Ingresos hoy"
+          value={kpis?.revenueToday ?? 0}
+          description="facturas pagadas"
+          icon={DollarSign}
+          iconColor="text-emerald-600 dark:text-emerald-400"
+          iconBg="bg-emerald-100 dark:bg-emerald-950/50"
+          format={formatMoney}
+        />
       </div>
 
-      {/* Módulos activos */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Módulos Activos</CardTitle>
-          <CardDescription>
-            Funcionalidades habilitadas para tu empresa
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {modules.length > 0 ? (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {modules.map((module) => (
-                <div
-                  key={module.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                >
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Scissors className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{module.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {module.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-8">
-              No hay módulos configurados aún.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      {/* Gráficos */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <RevenueChart data={revenue} />
+        <StatusDonut data={slices} />
+      </div>
 
-      {/* Próximas citas (placeholder) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Próximas Citas</CardTitle>
-          <CardDescription>Citas programadas para hoy</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>Las citas aparecerán aquí</p>
-            <p className="text-sm">Una vez implementes el módulo de agendamiento</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <TopServicesChart data={services} />
+        <TopProductsChart data={topProducts} />
+      </div>
+
+      <UpcomingAppointments
+        appointments={appointments}
+        isLoading={loadingAppts}
+      />
     </div>
   );
 }

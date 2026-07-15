@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  ExternalLink,
+  Loader2,
+  Printer,
+  QrCode,
+  RefreshCcw,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ExternalLink, Loader2, Printer, QrCode, RefreshCcw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,9 +26,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useActiveBranches } from "@/hooks/supabase/use-branches";
 import { useCafeteriaQrWorkstations } from "@/hooks/supabase/use-cafeteria-qr";
-import { useAuthStore } from "@/lib/stores/auth-store";
-import { buildPublicCafeteriaQrPath, slugifyWorkstationQr } from "@/lib/utils/cafeteria-qr";
 import { workstationsService } from "@/lib/services/workstations";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import {
+  buildPublicCafeteriaQrPath,
+  slugifyWorkstationQr,
+} from "@/lib/utils/cafeteria-qr";
 
 export default function CafeteriaSettingsPage() {
   const params = useParams();
@@ -57,7 +66,9 @@ export default function CafeteriaSettingsPage() {
   }, [workstations]);
 
   const activeCount = useMemo(
-    () => workstations.filter((workstation) => workstation.cafeteria_qr_enabled).length,
+    () =>
+      workstations.filter((workstation) => workstation.cafeteria_qr_enabled)
+        .length,
     [workstations],
   );
 
@@ -161,7 +172,10 @@ export default function CafeteriaSettingsPage() {
           {workstations.map((workstation) => {
             const draft = slugDrafts[workstation.id] ?? "";
             const qrPath = workstation.cafeteria_qr_slug
-              ? buildPublicCafeteriaQrPath(tenantSlug, workstation.cafeteria_qr_slug)
+              ? buildPublicCafeteriaQrPath(
+                  tenantSlug,
+                  workstation.cafeteria_qr_slug,
+                )
               : null;
 
             return (
@@ -169,14 +183,25 @@ export default function CafeteriaSettingsPage() {
                 <CardHeader className="space-y-3">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <CardTitle className="text-lg">{workstation.name}</CardTitle>
+                      <CardTitle className="text-lg">
+                        {workstation.name}
+                      </CardTitle>
                       <p className="text-sm text-muted-foreground">
                         {workstation.code || "Sin código"} ·{" "}
-                        {workstation.current_specialist_name || "Sin especialista inferido"}
+                        {workstation.current_specialist_name ||
+                          "Sin especialista inferido"}
                       </p>
                     </div>
-                    <Badge variant={workstation.cafeteria_qr_enabled ? "default" : "secondary"}>
-                      {workstation.cafeteria_qr_enabled ? "QR activo" : "QR inactivo"}
+                    <Badge
+                      variant={
+                        workstation.cafeteria_qr_enabled
+                          ? "default"
+                          : "secondary"
+                      }
+                    >
+                      {workstation.cafeteria_qr_enabled
+                        ? "QR activo"
+                        : "QR inactivo"}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -185,7 +210,8 @@ export default function CafeteriaSettingsPage() {
                     <div>
                       <p className="font-medium">Habilitar acceso QR</p>
                       <p className="text-sm text-muted-foreground">
-                        Activa un enlace público directo al menú desde esta estación.
+                        Activa un enlace público directo al menú desde esta
+                        estación.
                       </p>
                     </div>
                     <Switch
@@ -198,7 +224,9 @@ export default function CafeteriaSettingsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor={`qr-slug-${workstation.id}`}>Slug público</Label>
+                    <Label htmlFor={`qr-slug-${workstation.id}`}>
+                      Slug público
+                    </Label>
                     <div className="flex gap-2">
                       <Input
                         id={`qr-slug-${workstation.id}`}
@@ -206,7 +234,9 @@ export default function CafeteriaSettingsPage() {
                         onChange={(event) =>
                           setSlugDrafts((current) => ({
                             ...current,
-                            [workstation.id]: slugifyWorkstationQr(event.target.value),
+                            [workstation.id]: slugifyWorkstationQr(
+                              event.target.value,
+                            ),
                           }))
                         }
                         placeholder={slugifyWorkstationQr(workstation.name)}
@@ -230,7 +260,9 @@ export default function CafeteriaSettingsPage() {
                       variant="outline"
                       disabled={!workstation.cafeteria_qr_enabled}
                     >
-                      <Link href={`/t/${tenantSlug}/cafeteria/estaciones/${workstation.id}`}>
+                      <Link
+                        href={`/t/${tenantSlug}/cafeteria/stations/${workstation.id}`}
+                      >
                         <QrCode className="mr-2 h-4 w-4" />
                         Ver QR
                       </Link>
@@ -241,7 +273,7 @@ export default function CafeteriaSettingsPage() {
                       disabled={!workstation.cafeteria_qr_enabled}
                     >
                       <Link
-                        href={`/t/${tenantSlug}/cafeteria/estaciones/${workstation.id}?print=1`}
+                        href={`/t/${tenantSlug}/cafeteria/stations/${workstation.id}?print=1`}
                       >
                         <Printer className="mr-2 h-4 w-4" />
                         Imprimir
