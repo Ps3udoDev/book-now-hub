@@ -52,9 +52,11 @@ export default function MyProductsPage() {
   const { specialist, isLoading: specialistLoading } = useSpecialist(
     user?.id || null,
   );
+  // Sin page_size explícito la API pagina a 20 y el selector sólo mostraría
+  // los últimos productos creados.
   const { products, isLoading: productsLoading } = useProducts(
     tenant?.id || null,
-    { branchId: specialist?.branch_id || undefined },
+    { branchId: specialist?.branch_id || undefined, pageSize: 1000 },
   );
 
   const activeProducts = useMemo(

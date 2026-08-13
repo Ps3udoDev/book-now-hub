@@ -65,7 +65,13 @@ export async function GET(request: NextRequest) {
       query = query.eq("is_active", isActive === "true");
     }
     if (search) {
-      query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);
+      // PostgREST usa , . ( ) como sintaxis dentro de .or(), así que el patrón
+      // debe ir entrecomillado y con sus escapes; sin esto una coma en el
+      // término de búsqueda rompía el filtro completo.
+      const term = search.replace(/["\\]/g, "\\$&");
+      query = query.or(
+        `name.ilike."%${term}%",sku.ilike."%${term}%",category.ilike."%${term}%"`,
+      );
     }
 
     const { data: products, error, count } = await query;

@@ -72,8 +72,11 @@ export function OrderItemsEditor({
   const { services, isLoading: loadingServices } = useActiveServices(
     tenantId ?? null,
   );
+  // Sin page_size explícito la API pagina a 20 y el selector sólo mostraría
+  // los últimos productos creados.
   const { products, isLoading: loadingProducts } = useProducts(
     tenantId ?? null,
+    { pageSize: 1000 },
   );
 
   const {

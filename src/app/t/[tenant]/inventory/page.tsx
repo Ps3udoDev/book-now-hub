@@ -91,6 +91,18 @@ export default function InventoryPage() {
     await mutate();
   };
 
+  const hasActiveFilters =
+    searchDebounced.trim() !== "" ||
+    categoryFilter !== "all" ||
+    statusFilter !== "all";
+
+  const clearFilters = () => {
+    setSearch("");
+    setCategoryFilter("all");
+    setStatusFilter("all");
+    setPage(1);
+  };
+
   const handleDelete = async (product: ProductApiItem) => {
     if (
       !confirm(
@@ -133,22 +145,6 @@ export default function InventoryPage() {
     );
     refresh();
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-lg bg-destructive/10 p-4 text-destructive">
-        Error cargando inventario: {error}
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -256,7 +252,18 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {products.length > 0 ? (
+      {/* El estado de carga se renderiza aquí y no como early return: si
+          desmontamos el buscador en cada revalidación, el input pierde el foco
+          y no se puede escribir más de un carácter seguido. */}
+      {error ? (
+        <div className="rounded-lg bg-destructive/10 p-4 text-destructive">
+          Error cargando inventario: {error}
+        </div>
+      ) : isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : products.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {products.map((product) => (
             <ProductCard
@@ -271,14 +278,24 @@ export default function InventoryPage() {
       ) : (
         <div className="rounded-lg border bg-muted/20 py-12 text-center">
           <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-          <h3 className="mb-1 text-lg font-semibold">Sin productos</h3>
+          <h3 className="mb-1 text-lg font-semibold">
+            {hasActiveFilters ? "Sin resultados" : "Sin productos"}
+          </h3>
           <p className="mb-4 text-muted-foreground">
-            Crea tu primer producto para empezar a trabajar el inventario.
+            {hasActiveFilters
+              ? "Ningún producto coincide con la búsqueda o los filtros actuales."
+              : "Crea tu primer producto para empezar a trabajar el inventario."}
           </p>
-          <Button onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            Crear producto
-          </Button>
+          {hasActiveFilters ? (
+            <Button variant="outline" onClick={clearFilters}>
+              Limpiar filtros
+            </Button>
+          ) : (
+            <Button onClick={openCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              Crear producto
+            </Button>
+          )}
         </div>
       )}
 

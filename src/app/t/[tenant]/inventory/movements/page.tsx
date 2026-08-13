@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ProductCombobox } from "@/components/inventory/product-combobox";
 import { RegisterSalesDialog } from "@/components/inventory/register-sales-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -105,8 +106,11 @@ export default function InventoryMovementsPage() {
     tenantUser?.role ?? "",
   );
 
+  // Sin page_size explícito la API pagina a 20 y sólo devuelve los últimos
+  // productos creados, así que los selectores no veían todo el catálogo.
   const { products, isLoading: productsLoading } = useProducts(
     tenant?.id || null,
+    { pageSize: 1000, isActive: true },
   );
   const { specialists, isLoading: specialistsLoading } = useActiveSpecialists(
     tenant?.id || null,
@@ -458,24 +462,16 @@ export default function InventoryMovementsPage() {
 
           <div className="space-y-1">
             <Label>Producto</Label>
-            <Select
+            <ProductCombobox
+              products={activeProducts}
               value={filters.productId}
-              onValueChange={(value) =>
+              onChange={(value) =>
                 setFilters((current) => ({ ...current, productId: value }))
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {activeProducts.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              allOption={{ value: "all", label: "Todos" }}
+              placeholder="Todos"
+              isLoading={productsLoading}
+            />
           </div>
 
           <div className="space-y-1">
@@ -600,23 +596,14 @@ export default function InventoryMovementsPage() {
           <div className="space-y-4">
             <div className="space-y-1">
               <Label>Producto</Label>
-              <Select
+              <ProductCombobox
+                products={activeProducts}
                 value={entryForm.productId}
-                onValueChange={(value) =>
+                onChange={(value) =>
                   setEntryForm((current) => ({ ...current, productId: value }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un producto" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeProducts.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                isLoading={productsLoading}
+              />
             </div>
             <div className="space-y-1">
               <Label>Cantidad</Label>
@@ -676,26 +663,27 @@ export default function InventoryMovementsPage() {
           <div className="space-y-4">
             <div className="space-y-1">
               <Label>Producto</Label>
-              <Select
+              <ProductCombobox
+                products={activeProducts}
                 value={adjustmentForm.productId}
-                onValueChange={(value) =>
+                onChange={(value) => {
+                  // Precargamos el stock actual para que el ajuste parta del
+                  // valor real y no de 0 (que vaciaría el inventario).
+                  const picked = activeProducts.find(
+                    (product) => product.id === value,
+                  );
+                  const currentStock =
+                    picked?.stock_summary?.calculated_stock ??
+                    picked?.stock_quantity ??
+                    0;
                   setAdjustmentForm((current) => ({
                     ...current,
                     productId: value,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un producto" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeProducts.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    newQuantity: String(currentStock),
+                  }));
+                }}
+                isLoading={productsLoading}
+              />
             </div>
             <div className="space-y-1">
               <Label>Nueva cantidad</Label>
