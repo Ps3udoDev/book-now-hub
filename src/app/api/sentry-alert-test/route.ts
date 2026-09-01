@@ -46,6 +46,11 @@ export async function GET(request: Request) {
     if (moduleTag) scope.setTag("module", moduleTag);
     scope.setTag("alert_test", "true");
     scope.setLevel(level);
+    // Sentry agrupa las excepciones por STACK TRACE, no por mensaje: sin esto
+    // todos los eventos de esta ruta caen en un unico issue (mismo `throw`,
+    // misma linea) y la regla "A new issue is created" solo dispara la
+    // primera vez. Con el fingerprint, cada `msg` distinto = issue distinto.
+    scope.setFingerprint(["sentry-alert-test", message]);
     return Sentry.captureException(new SentryAlertTestError(message));
   });
 
