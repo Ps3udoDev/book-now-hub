@@ -40,15 +40,34 @@ function secretosIguales(a: string, b: string): boolean {
  * Sentry firma el cuerpo con HMAC-SHA256 usando el Client Secret de la
  * integracion. Apps Script no podia leer ese header; aqui si.
  */
-function firmaValida(rawBody: string, firma: string | null): boolean {
+function firmaValida(rawBody: string, headers: Headers): boolean {
   const secret = process.env.SENTRY_CHAT_CLIENT_SECRET;
   if (!secret) return true; // verificacion opcional: sin secret, no se exige
-  if (!firma) return false;
+
+  const firma = headers.get("sentry-hook-signature");
   const esperada = crypto
     .createHmac("sha256", secret)
     .update(rawBody, "utf8")
     .digest("hex");
-  return secretosIguales(esperada, firma);
+  const ok = firma !== null && secretosIguales(esperada, firma);
+
+  if (!ok) {
+    // Diagnostico: NO imprime el secreto ni la firma completa, solo lo justo
+    // para distinguir "header ausente" de "secreto equivocado" de "secreto con
+    // espacios/salto de linea pegado de mas". Borrar cuando el QA pase.
+    console.warn("[sentry-chat] diagnostico de firma", {
+      recurso: headers.get("sentry-hook-resource"),
+      requestId: headers.get("request-id"),
+      firmaRecibida: firma
+        ? `${firma.slice(0, 8)}...(${firma.length})`
+        : "AUSENTE",
+      firmaEsperada: `${esperada.slice(0, 8)}...(${esperada.length})`,
+      secretLen: secret.length,
+      secretLenSinEspacios: secret.trim().length,
+      bodyLen: rawBody.length,
+    });
+  }
+  return ok;
 }
 
 /** Los tags de Sentry llegan como pares [["environment","production"], ...]. */
@@ -216,7 +235,7 @@ export async function POST(request: Request) {
     }
 
     const rawBody = await request.text();
-    if (!firmaValida(rawBody, request.headers.get("sentry-hook-signature"))) {
+    if (!firmaValida(rawBody, request.headers)) {
       console.warn("[sentry-chat] firma invalida");
       return Response.json({ ok: false, error: "firma invalida" });
     }
