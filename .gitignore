@@ -48,3 +48,5 @@ CLAUDE.md
 /mejoras
 /scripts
 docs/
+# Sentry Config File
+.env.sentry-build-plugin
