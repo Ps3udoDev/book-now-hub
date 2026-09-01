@@ -7,6 +7,10 @@ import {
     type GlobalAuthContext,
     type TenantAuthContext,
 } from "@/lib/services/auth";
+import {
+    captureAuthError,
+    ExpectedAuthError,
+} from "@/lib/monitoring/auth-errors";
 
 
 type AuthMode = "global" | "tenant" | null;
@@ -97,6 +101,10 @@ export const useAuthStore = create<AuthStore>()(
                     });
                     return true;
                 } catch (error) {
+                    captureAuthError(error, {
+                        flow: "hydrate-global",
+                        surface: "admin",
+                    });
                     const message =
                         error instanceof Error ? error.message : "Error al cargar sesión";
                     set({ error: message, loading: false, initialized: true });
@@ -132,6 +140,11 @@ export const useAuthStore = create<AuthStore>()(
                     });
                     return true;
                 } catch (error) {
+                    captureAuthError(error, {
+                        flow: "hydrate-tenant",
+                        surface: "tenant",
+                        tenantSlug,
+                    });
                     const message =
                         error instanceof Error ? error.message : "Error al cargar sesión";
                     set({ error: message, loading: false, initialized: true });
@@ -147,7 +160,8 @@ export const useAuthStore = create<AuthStore>()(
 
                     if (!ctx) {
                         await authService.signOut();
-                        throw new Error(
+                        // Error de negocio esperado: no alerta.
+                        throw new ExpectedAuthError(
                             "No tienes permisos para acceder al panel de administración"
                         );
                     }
@@ -165,6 +179,10 @@ export const useAuthStore = create<AuthStore>()(
                         loading: false,
                     });
                 } catch (error) {
+                    captureAuthError(error, {
+                        flow: "login-global",
+                        surface: "admin",
+                    });
                     const message =
                         error instanceof Error ? error.message : "Credenciales inválidas";
                     set({ error: message, loading: false });
@@ -184,7 +202,8 @@ export const useAuthStore = create<AuthStore>()(
 
                     if (!ctx) {
                         await authService.signOut();
-                        throw new Error("No tienes acceso a esta empresa");
+                        // Error de negocio esperado: no alerta.
+                        throw new ExpectedAuthError("No tienes acceso a esta empresa");
                     }
 
                     set({
@@ -200,6 +219,11 @@ export const useAuthStore = create<AuthStore>()(
                         loading: false,
                     });
                 } catch (error) {
+                    captureAuthError(error, {
+                        flow: "login-tenant",
+                        surface: "tenant",
+                        tenantSlug,
+                    });
                     const message =
                         error instanceof Error ? error.message : "Credenciales inválidas";
                     set({ error: message, loading: false });
@@ -216,6 +240,7 @@ export const useAuthStore = create<AuthStore>()(
                         initialized: true,
                     });
                 } catch (error) {
+                    captureAuthError(error, { flow: "logout" });
                     const message =
                         error instanceof Error ? error.message : "Error al cerrar sesión";
                     set({ error: message, loading: false });

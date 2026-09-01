@@ -8,6 +8,7 @@
 // que existe un customer vinculado en ese tenant.
 // El parametro `next` define la URL final (default: home del cliente del tenant).
 import { type NextRequest, NextResponse } from "next/server";
+import { captureAuthError } from "@/lib/monitoring/auth-errors";
 import { ensureClientCustomer } from "@/lib/services/client-customer";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createServerSB } from "@/lib/supabase/server";
@@ -27,6 +28,15 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error || !data.session?.user) {
+    // Los links expirados/reusados llegan como 4xx y se descartan;
+    // solo alerta si Supabase fallo de verdad.
+    captureAuthError(
+      error ?? new Error("Sesion vacia tras exchangeCodeForSession"),
+      {
+        flow: "auth-callback",
+        tenantSlug,
+      },
+    );
     return NextResponse.redirect(
       new URL(
         `/?error=${encodeURIComponent(error?.message ?? "auth_failed")}`,
@@ -56,12 +66,19 @@ export async function GET(request: NextRequest) {
         user.email ||
         "Cliente";
 
-      await ensureClientCustomer({
-        tenantId: tenant.id,
-        userId: user.id,
-        email: user.email ?? null,
-        fullName,
-      });
+      try {
+        await ensureClientCustomer({
+          tenantId: tenant.id,
+          userId: user.id,
+          email: user.email ?? null,
+          fullName,
+        });
+      } catch (linkError) {
+        // El usuario ya se autentico; que falle el vinculo del customer es
+        // una falla de acceso real y debe alertar.
+        captureAuthError(linkError, { flow: "auth-callback", tenantSlug });
+        throw linkError;
+      }
     }
   }
 

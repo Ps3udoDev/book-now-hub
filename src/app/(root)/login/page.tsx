@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { captureAuthError } from "@/lib/monitoring/auth-errors";
 import { authService } from "@/lib/services/auth";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { type LoginFormData, loginSchema } from "@/lib/validations/auth";
@@ -64,6 +65,8 @@ export default function LoginPage() {
     } catch (err) {
       // No revelar si la cuenta existe: signInWithOtp con shouldCreateUser:false
       // devuelve error para emails inexistentes. Mostramos siempre el mensaje neutro.
+      // A Sentry solo llega si fue una falla real de infraestructura.
+      captureAuthError(err, { flow: "magic-link", surface: "admin" });
       console.error("magic link:", err);
     } finally {
       setMagicLoading(false);

@@ -12,7 +12,14 @@ const AUTH_PUBLIC_PREFIXES = ["/auth/callback", "/auth/confirm"];
 const PUBLIC_API_PREFIXES = [
   "/api/client/tenant-status",
   "/api/client/auth/register",
+  // QA temporal de las alertas Sentry -> Google Chat. Protegido por ALERT_TEST_KEY.
+  "/api/sentry-alert-test",
 ];
+
+// Ruta tunel del SDK de Sentry (next.config.ts -> tunnelRoute). Debe quedar
+// fuera del middleware: si la protegemos, los errores de cliente en paginas
+// sin sesion (landing, /login, registro) se redirigen a /login y se pierden.
+const SENTRY_TUNNEL_PREFIX = "/monitoring";
 
 // Rutas de ADMIN (root console) - sin /t/
 const ADMIN_ROUTES = [
@@ -82,6 +89,11 @@ function getClientSubPath(pathname: string): string {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // 0. Tunel de Sentry - nunca autenticar ni redirigir
+  if (pathname.startsWith(SENTRY_TUNNEL_PREFIX)) {
+    return NextResponse.next();
+  }
 
   // 1. Rutas públicas - pasar directo
   if (PUBLIC_ROUTES.includes(pathname)) {

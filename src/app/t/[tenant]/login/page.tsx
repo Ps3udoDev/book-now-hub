@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTenantBySlug } from "@/hooks/supabase/use-tenant";
+import { captureAuthError } from "@/lib/monitoring/auth-errors";
 import { authService } from "@/lib/services/auth";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
@@ -58,6 +59,12 @@ export default function TenantLoginPage() {
     } catch (err) {
       // No revelar si la cuenta existe: signInWithOtp con shouldCreateUser:false
       // devuelve error para emails inexistentes. Mostramos siempre el mensaje neutro.
+      // A Sentry solo llega si fue una falla real de infraestructura.
+      captureAuthError(err, {
+        flow: "magic-link",
+        surface: "tenant",
+        tenantSlug,
+      });
       console.error("magic link:", err);
     } finally {
       setMagicLoading(false);

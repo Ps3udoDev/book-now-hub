@@ -16,6 +16,7 @@ import {
   clientInputClass,
 } from "@/components/client/themed";
 import { usePublicClientAppSettings } from "@/hooks/supabase/use-client-app-settings";
+import { captureAuthError } from "@/lib/monitoring/auth-errors";
 import { clientAuthService } from "@/lib/services/client-auth";
 
 export default function ClientLoginPage() {
@@ -42,6 +43,12 @@ export default function ClientLoginPage() {
     } catch (err) {
       // No revelar si la cuenta existe: signInWithOtp con shouldCreateUser:false
       // devuelve error para emails inexistentes. Mostramos siempre el mensaje neutro.
+      // A Sentry solo llega si fue una falla real de infraestructura.
+      captureAuthError(err, {
+        flow: "magic-link",
+        surface: "client",
+        tenantSlug,
+      });
       console.error("magic link:", err);
     } finally {
       setMagicLoading(false);
@@ -56,6 +63,11 @@ export default function ClientLoginPage() {
       await clientAuthService.signInWithPassword(email, password);
       router.replace(`/c/${tenantSlug}`);
     } catch (error) {
+      captureAuthError(error, {
+        flow: "login-client",
+        surface: "client",
+        tenantSlug,
+      });
       toast.error(
         error instanceof Error ? error.message : "No se pudo iniciar sesión",
       );
@@ -73,6 +85,11 @@ export default function ClientLoginPage() {
     try {
       await clientAuthService.signInWithGoogle(tenantSlug, `/c/${tenantSlug}`);
     } catch (error) {
+      captureAuthError(error, {
+        flow: "oauth-google",
+        surface: "client",
+        tenantSlug,
+      });
       toast.error(
         error instanceof Error
           ? error.message
