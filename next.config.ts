@@ -1,4 +1,4 @@
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -16,6 +16,15 @@ export default withSentryConfig(nextConfig, {
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
+
+  // Por defecto el plugin LANZA si falla la creacion del release o la subida de
+  // sourcemaps, y eso tumba el build entero. Una caida transitoria de la API de
+  // Sentry (504) no debe impedir un deploy a produccion: avisamos y seguimos.
+  // Costo: ese deploy queda sin sourcemaps y los stack traces salen minificados.
+  errorHandler: (err) => {
+    console.warn("[sentry] fallo la subida de sourcemaps, el build continua");
+    console.warn(err);
+  },
 
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
