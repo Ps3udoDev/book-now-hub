@@ -14,6 +14,8 @@ const PUBLIC_API_PREFIXES = [
   "/api/client/auth/register",
   // QA temporal de las alertas Sentry -> Google Chat. Protegido por ALERT_TEST_KEY.
   "/api/sentry-alert-test",
+  // Webhook entrante de Sentry: no se autentica con sesion, valida ?token=.
+  "/api/sentry-chat",
 ];
 
 // Ruta tunel del SDK de Sentry (next.config.ts -> tunnelRoute). Debe quedar
