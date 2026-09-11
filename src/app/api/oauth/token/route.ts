@@ -9,6 +9,9 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
+const DEFAULT_PKCE_VERIFIER =
+  "booknow_chatgpt_pkce_verifier_secure_secret_string_1234567890";
+
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -17,14 +20,35 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.text();
+  let body = await req.text();
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
     "https://rrnysepngbycvuciodoj.supabase.co";
 
+  const contentType =
+    req.headers.get("content-type") || "application/x-www-form-urlencoded";
+
+  // Inyectar code_verifier si el cliente no lo incluye en el body
+  if (contentType.includes("application/x-www-form-urlencoded")) {
+    const params = new URLSearchParams(body);
+    if (!params.get("code_verifier")) {
+      params.set("code_verifier", DEFAULT_PKCE_VERIFIER);
+      body = params.toString();
+    }
+  } else if (contentType.includes("application/json")) {
+    try {
+      const json = JSON.parse(body);
+      if (!json.code_verifier) {
+        json.code_verifier = DEFAULT_PKCE_VERIFIER;
+        body = JSON.stringify(json);
+      }
+    } catch {
+      // Dejar body original
+    }
+  }
+
   const forwardHeaders: Record<string, string> = {
-    "Content-Type":
-      req.headers.get("content-type") || "application/x-www-form-urlencoded",
+    "Content-Type": contentType,
   };
 
   // Reenviar header Authorization para compatibilidad con client_secret_basic (HTTP Basic Auth)
