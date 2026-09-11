@@ -64,9 +64,33 @@ export async function resolveMcpContext(
       .limit(1)
       .maybeSingle();
 
-    if (fallbackConn) {
-      connection = fallbackConn;
-    } else {
+    if (fallbackConn?.oauth_client_id === "mcp-client") {
+      // Reparar registros creados por la versión anterior del consentimiento,
+      // que guardaba un identificador genérico al ignorar la respuesta OAuth.
+      const { data: migratedConn, error: migrationError } = await mcpDb
+        .from("mcp_connections")
+        .upsert(
+          {
+            auth_user_id: verified.sub,
+            tenant_id: fallbackConn.tenant_id,
+            oauth_client_id: verified.clientId,
+            client_name: "OAuth Client",
+            scopes: verified.scopes,
+            status: "active",
+            revoked_at: null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "tenant_id,auth_user_id,oauth_client_id" },
+        )
+        .select("id, tenant_id, auth_user_id, oauth_client_id, scopes, status")
+        .single();
+
+      if (!migrationError && migratedConn) {
+        connection = migratedConn;
+      }
+    }
+
+    if (!connection) {
       // 1b. Si no tiene conexión previa, resolver tenant activo desde tenant_users
       let targetTenantId = verified.tenantId;
 

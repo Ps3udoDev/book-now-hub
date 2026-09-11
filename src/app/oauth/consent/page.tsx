@@ -74,6 +74,7 @@ function ConsentForm() {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
 
   const [clientDetails, setClientDetails] = useState<ClientDetails | null>(
     null,
@@ -98,11 +99,13 @@ function ConsentForm() {
     } = await supabase.auth.getUser();
 
     if (!user) {
+      setUserEmail("");
       setNeedsLogin(true);
       setLoading(false);
       return;
     }
 
+    setUserEmail(user.email || "");
     setNeedsLogin(false);
 
     // 2. Obtener detalles de la autorización OAuth
@@ -111,11 +114,17 @@ function ConsentForm() {
         oauth?: {
           getAuthorizationDetails: (id: string) => Promise<{
             data?: {
+              authorization_id?: string;
+              redirect_url?: string;
               client?: {
+                name?: string;
+                id?: string;
+                uri?: string;
                 client_name?: string;
                 client_id?: string;
                 client_uri?: string;
               };
+              scope?: string;
               scopes?: string[];
             };
             error?: Error | null;
@@ -135,21 +144,56 @@ function ConsentForm() {
           return;
         }
 
-        if (details) {
-          setClientDetails({
-            name: details.client?.client_name || "Cliente MCP",
-            id: details.client?.client_id || "mcp-client",
-            uri: details.client?.client_uri,
-          });
-          setScopes(details.scopes || []);
+        if (!details) {
+          setErrorMessage("La solicitud de autorización no es válida.");
+          setLoading(false);
+          return;
         }
+
+        // Si ya existe consentimiento, Supabase consume la nueva solicitud y
+        // devuelve directamente la callback. No se debe aprobar una segunda vez.
+        if (details.redirect_url) {
+          window.location.replace(details.redirect_url);
+          return;
+        }
+
+        if (!details.authorization_id) {
+          setErrorMessage(
+            "La solicitud OAuth ya no está pendiente. Inicia nuevamente la conexión desde ChatGPT.",
+          );
+          setLoading(false);
+          return;
+        }
+
+        setClientDetails({
+          name:
+            details.client?.name ||
+            details.client?.client_name ||
+            "Cliente MCP",
+          id: details.client?.id || details.client?.client_id || "mcp-client",
+          uri: details.client?.uri || details.client?.client_uri,
+        });
+        setScopes(
+          details.scope
+            ? details.scope.split(" ").filter(Boolean)
+            : details.scopes || [],
+        );
+      } else {
+        setErrorMessage(
+          "El servidor OAuth no está disponible en esta versión del cliente.",
+        );
+        setLoading(false);
+        return;
       }
     } catch (err: unknown) {
       console.warn(
         "No se pudo cargar detalles OAuth vía getAuthorizationDetails:",
         err,
       );
-      setClientDetails({ name: "Cliente MCP Externo", id: "mcp-client" });
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrorMessage(`No se pudo validar la solicitud OAuth: ${msg}`);
+      setLoading(false);
+      return;
     }
 
     // 3. Consultar tenants autorizables del usuario (owner, admin, manager)
@@ -228,6 +272,24 @@ function ConsentForm() {
     } finally {
       setLoggingIn(false);
     }
+  }
+
+  async function handleSwitchAccount() {
+    setLoading(true);
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error(`No se pudo cerrar la sesión: ${error.message}`);
+      setLoading(false);
+      return;
+    }
+
+    setClientDetails(null);
+    setScopes([]);
+    setTenants([]);
+    setSelectedTenantId("");
+    setUserEmail("");
+    setNeedsLogin(true);
+    setLoading(false);
   }
 
   async function handleApprove() {
@@ -432,6 +494,24 @@ function ConsentForm() {
             </span>{" "}
             solicita conectarse a tu negocio en BookNow Hub.
           </p>
+        </div>
+
+        {/* Cuenta autenticada */}
+        <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/20 p-3.5 text-xs">
+          <div className="min-w-0">
+            <p className="text-muted-foreground">Cuenta de BookNow Hub</p>
+            <p className="truncate font-medium text-foreground">
+              {userEmail || "Usuario autenticado"}
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={handleSwitchAccount}
+            className="shrink-0 font-medium text-primary hover:underline disabled:opacity-50"
+          >
+            Usar otra cuenta
+          </button>
         </div>
 
         {/* Selector de Tenant */}
