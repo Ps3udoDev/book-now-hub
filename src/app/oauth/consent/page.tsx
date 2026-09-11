@@ -6,10 +6,11 @@ import {
   Building2,
   CheckCircle2,
   Lock,
+  LogIn,
   Shield,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createBrowserSB } from "@/lib/supabase/client";
 
@@ -43,6 +44,22 @@ const SCOPE_DESCRIPTIONS: Record<string, { title: string; desc: string }> = {
     title: "Búsqueda de clientes",
     desc: "Buscar clientes para agendar citas (teléfonos enmascarados).",
   },
+  openid: {
+    title: "Identidad",
+    desc: "Verificar tu usuario autenticado.",
+  },
+  profile: {
+    title: "Perfil",
+    desc: "Acceder a tu nombre y rol en el negocio.",
+  },
+  email: {
+    title: "Correo electrónico",
+    desc: "Identificar tu dirección de correo.",
+  },
+  offline_access: {
+    title: "Acceso continuo",
+    desc: "Mantener la conexión activa mediante refresh tokens.",
+  },
 };
 
 function ConsentForm() {
@@ -53,6 +70,11 @@ function ConsentForm() {
   const [supabase] = useState(() => createBrowserSB());
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [needsLogin, setNeedsLogin] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loggingIn, setLoggingIn] = useState(false);
+
   const [clientDetails, setClientDetails] = useState<ClientDetails | null>(
     null,
   );
@@ -61,122 +83,152 @@ function ConsentForm() {
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function init() {
-      if (!authorizationId) {
-        setErrorMessage(
-          "Falta el identificador de autorización (authorization_id).",
-        );
-        setLoading(false);
-        return;
-      }
-
-      // 1. Verificar sesión
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        const returnUrl = encodeURIComponent(
-          `/oauth/consent?authorization_id=${authorizationId}`,
-        );
-        router.push(`/login?return_to=${returnUrl}`);
-        return;
-      }
-
-      // 2. Obtener detalles de la autorización OAuth
-      try {
-        const authAny = supabase.auth as unknown as {
-          oauth?: {
-            getAuthorizationDetails: (id: string) => Promise<{
-              data?: {
-                client?: {
-                  client_name?: string;
-                  client_id?: string;
-                  client_uri?: string;
-                };
-                scopes?: string[];
-              };
-              error?: Error | null;
-            }>;
-          };
-        };
-
-        if (authAny.oauth?.getAuthorizationDetails) {
-          const { data: details, error: detailsErr } =
-            await authAny.oauth.getAuthorizationDetails(authorizationId);
-
-          if (detailsErr) {
-            setErrorMessage(
-              `Error al consultar detalles de autorización: ${detailsErr.message}`,
-            );
-            setLoading(false);
-            return;
-          }
-
-          if (details) {
-            setClientDetails({
-              name: details.client?.client_name || "Cliente MCP",
-              id: details.client?.client_id || "mcp-client",
-              uri: details.client?.client_uri,
-            });
-            setScopes(details.scopes || []);
-          }
-        }
-      } catch (err: unknown) {
-        console.warn(
-          "No se pudo cargar detalles OAuth vía getAuthorizationDetails:",
-          err,
-        );
-        setClientDetails({ name: "Cliente MCP Externo", id: "mcp-client" });
-      }
-
-      // 3. Consultar tenants autorizables del usuario (owner, admin, manager)
-      const { data: userTenants, error: tErr } = await supabase
-        .from("tenant_users")
-        .select("role, tenant:tenants(id, name, slug, status)")
-        .eq("auth_user_id", user.id)
-        .eq("is_active", true)
-        .in("role", ["owner", "admin", "manager"]);
-
-      if (tErr) {
-        setErrorMessage(`Error cargando tus negocios: ${tErr.message}`);
-        setLoading(false);
-        return;
-      }
-
-      const validTenants: TenantOption[] = [];
-      for (const row of userTenants || []) {
-        const t = row.tenant as {
-          id: string;
-          name: string;
-          slug: string;
-          status: string;
-        } | null;
-        if (t && t.status === "active") {
-          validTenants.push({
-            id: t.id,
-            name: t.name,
-            slug: t.slug,
-            role: String(row.role),
-          });
-        }
-      }
-
-      if (validTenants.length === 0) {
-        setErrorMessage(
-          "No eres administrador ni encargado de ningún negocio activo para conectar a este cliente MCP.",
-        );
-        setLoading(false);
-        return;
-      }
-
-      setTenants(validTenants);
-      setSelectedTenantId(validTenants[0].id);
+  const loadData = useCallback(async () => {
+    if (!authorizationId) {
+      setErrorMessage(
+        "Falta el identificador de autorización (authorization_id).",
+      );
       setLoading(false);
+      return;
     }
 
-    init();
-  }, [authorizationId, router, supabase]);
+    // 1. Verificar sesión
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setNeedsLogin(true);
+      setLoading(false);
+      return;
+    }
+
+    setNeedsLogin(false);
+
+    // 2. Obtener detalles de la autorización OAuth
+    try {
+      const authAny = supabase.auth as unknown as {
+        oauth?: {
+          getAuthorizationDetails: (id: string) => Promise<{
+            data?: {
+              client?: {
+                client_name?: string;
+                client_id?: string;
+                client_uri?: string;
+              };
+              scopes?: string[];
+            };
+            error?: Error | null;
+          }>;
+        };
+      };
+
+      if (authAny.oauth?.getAuthorizationDetails) {
+        const { data: details, error: detailsErr } =
+          await authAny.oauth.getAuthorizationDetails(authorizationId);
+
+        if (detailsErr) {
+          setErrorMessage(
+            `Error al consultar detalles de autorización: ${detailsErr.message}`,
+          );
+          setLoading(false);
+          return;
+        }
+
+        if (details) {
+          setClientDetails({
+            name: details.client?.client_name || "Cliente MCP",
+            id: details.client?.client_id || "mcp-client",
+            uri: details.client?.client_uri,
+          });
+          setScopes(details.scopes || []);
+        }
+      }
+    } catch (err: unknown) {
+      console.warn(
+        "No se pudo cargar detalles OAuth vía getAuthorizationDetails:",
+        err,
+      );
+      setClientDetails({ name: "Cliente MCP Externo", id: "mcp-client" });
+    }
+
+    // 3. Consultar tenants autorizables del usuario (owner, admin, manager)
+    const { data: userTenants, error: tErr } = await supabase
+      .from("tenant_users")
+      .select("role, tenant:tenants(id, name, slug, status)")
+      .eq("auth_user_id", user.id)
+      .eq("is_active", true)
+      .in("role", ["owner", "admin", "manager"]);
+
+    if (tErr) {
+      setErrorMessage(`Error cargando tus negocios: ${tErr.message}`);
+      setLoading(false);
+      return;
+    }
+
+    const validTenants: TenantOption[] = [];
+    for (const row of userTenants || []) {
+      const t = row.tenant as {
+        id: string;
+        name: string;
+        slug: string;
+        status: string;
+      } | null;
+      if (t && t.status === "active") {
+        validTenants.push({
+          id: t.id,
+          name: t.name,
+          slug: t.slug,
+          role: String(row.role),
+        });
+      }
+    }
+
+    if (validTenants.length === 0) {
+      setErrorMessage(
+        "No eres administrador ni encargado de ningún negocio activo para conectar a este cliente MCP.",
+      );
+      setLoading(false);
+      return;
+    }
+
+    setTenants(validTenants);
+    setSelectedTenantId(validTenants[0].id);
+    setLoading(false);
+  }, [authorizationId, supabase]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!loginEmail || !loginPassword) {
+      toast.error("Ingresa tu correo y contraseña.");
+      return;
+    }
+
+    setLoggingIn(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast.success("Sesión iniciada correctamente.");
+      setLoading(true);
+      await loadData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Error al iniciar sesión: ${msg}`);
+    } finally {
+      setLoggingIn(false);
+    }
+  }
 
   async function handleApprove() {
     if (!authorizationId || !selectedTenantId) return;
@@ -272,6 +324,71 @@ function ConsentForm() {
           <p className="text-sm text-muted-foreground">
             Cargando detalles de autorización...
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (needsLogin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">
+        <div className="max-w-md w-full bg-card border rounded-2xl shadow-lg p-6 sm:p-8 space-y-5">
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-2">
+              <LogIn className="w-6 h-6" />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight">Iniciar Sesión</h1>
+            <p className="text-sm text-muted-foreground">
+              Inicia sesión con tu cuenta de BookNow Hub para autorizar la
+              conexión con el cliente MCP.
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="login-email"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                Correo Electrónico
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                required
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="ejemplo@negocio.com"
+                className="w-full p-2.5 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="login-password"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                Contraseña
+              </label>
+              <input
+                id="login-password"
+                type="password"
+                required
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full p-2.5 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loggingIn}
+              className="w-full py-2.5 px-4 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition shadow-sm disabled:opacity-50"
+            >
+              {loggingIn ? "Iniciando sesión..." : "Continuar a Autorización"}
+            </button>
+          </form>
         </div>
       </div>
     );

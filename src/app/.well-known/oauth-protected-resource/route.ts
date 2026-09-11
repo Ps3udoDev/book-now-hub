@@ -13,6 +13,8 @@ export async function GET() {
     scopes_supported: [
       "openid",
       "profile",
+      "email",
+      "offline_access",
       "appointments:read",
       "appointments:write",
       "analytics:read",

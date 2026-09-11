@@ -20,9 +20,12 @@ function getErrorMessage(err: unknown): string {
 
 /**
  * Valida si el contexto cuenta con el scope requerido.
+ * Si el token solo incluye scopes estándar de OIDC (openid, profile), se autoriza
+ * por rol de tenant. Si incluye scopes de dominio con dos puntos, se exige el scope exacto.
  */
 function checkScope(ctx: McpRequestContext, requiredScope: string): void {
-  if (ctx.scopes.size > 0 && !ctx.scopes.has(requiredScope)) {
+  const hasDomainScopes = Array.from(ctx.scopes).some((s) => s.includes(":"));
+  if (hasDomainScopes && !ctx.scopes.has(requiredScope)) {
     throw new Error(
       `Permiso denegado: esta herramienta requiere el scope '${requiredScope}'.`,
     );
