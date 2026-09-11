@@ -10,16 +10,7 @@ export async function GET() {
   const metadata = {
     resource: resourceUrl,
     authorization_servers: [issuerUrl],
-    scopes_supported: [
-      "openid",
-      "profile",
-      "email",
-      "offline_access",
-      "appointments:read",
-      "appointments:write",
-      "analytics:read",
-      "customers:read",
-    ],
+    scopes_supported: ["openid", "profile", "email", "offline_access"],
     bearer_methods_supported: ["header"],
   };
 
