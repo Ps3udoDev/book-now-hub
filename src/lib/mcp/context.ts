@@ -43,7 +43,7 @@ export async function resolveMcpContext(
   }
 
   // 1. Resolver conexión activa en mcp_connections
-  const { data: connection, error: connError } = await mcpDb
+  let { data: connection } = await mcpDb
     .from("mcp_connections")
     .select("id, tenant_id, auth_user_id, oauth_client_id, scopes, status")
     .eq("auth_user_id", verified.sub)
@@ -52,12 +52,85 @@ export async function resolveMcpContext(
     .limit(1)
     .maybeSingle();
 
-  if (connError || !connection) {
-    throw new McpAuthError(
-      "MCP_CONNECTION_NOT_FOUND",
-      "No existe una conexión activa autorizada para este usuario y cliente MCP. Por favor completa el flujo de consentimiento.",
-      403,
-    );
+  // Si no hay registro exacto para este client_id (ej: cliente dinámico como Inspector, ChatGPT o sesión directa):
+  if (!connection) {
+    // 1a. Buscar si el usuario ya tiene una conexión activa previa autorizada
+    const { data: fallbackConn } = await mcpDb
+      .from("mcp_connections")
+      .select("id, tenant_id, auth_user_id, oauth_client_id, scopes, status")
+      .eq("auth_user_id", verified.sub)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (fallbackConn) {
+      connection = fallbackConn;
+    } else {
+      // 1b. Si no tiene conexión previa, resolver tenant activo desde tenant_users
+      let targetTenantId = verified.tenantId;
+
+      if (!targetTenantId) {
+        const { data: memberTenants } = await mcpDb
+          .from("tenant_users")
+          .select("tenant_id")
+          .eq("auth_user_id", verified.sub)
+          .eq("is_active", true)
+          .in("role", ["owner", "admin", "manager"])
+          .limit(1);
+
+        targetTenantId = memberTenants?.[0]?.tenant_id as string | undefined;
+      }
+
+      if (!targetTenantId) {
+        throw new McpAuthError(
+          "MCP_CONNECTION_NOT_FOUND",
+          "No se encontró un negocio activo donde este usuario tenga rol de administrador o encargado. Por favor completa el flujo de consentimiento.",
+          403,
+        );
+      }
+
+      // Registrar automáticamente la conexión activa para este cliente y tenant
+      const { data: newConn, error: insertError } = await mcpDb
+        .from("mcp_connections")
+        .insert({
+          auth_user_id: verified.sub,
+          tenant_id: targetTenantId,
+          oauth_client_id: verified.clientId,
+          client_name:
+            verified.clientId === "unknown_client"
+              ? "Direct Session"
+              : "MCP Client",
+          scopes: verified.scopes,
+          status: "active",
+        })
+        .select("id, tenant_id, auth_user_id, oauth_client_id, scopes, status")
+        .single();
+
+      if (insertError || !newConn) {
+        const { data: retryConn } = await mcpDb
+          .from("mcp_connections")
+          .select(
+            "id, tenant_id, auth_user_id, oauth_client_id, scopes, status",
+          )
+          .eq("auth_user_id", verified.sub)
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!retryConn) {
+          throw new McpAuthError(
+            "MCP_CONNECTION_NOT_FOUND",
+            "No existe una conexión activa autorizada para este usuario y cliente MCP. Por favor completa el flujo de consentimiento.",
+            403,
+          );
+        }
+        connection = retryConn;
+      } else {
+        connection = newConn;
+      }
+    }
   }
 
   if (connection.status !== "active") {

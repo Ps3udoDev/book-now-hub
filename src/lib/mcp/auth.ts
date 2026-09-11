@@ -6,6 +6,7 @@ export interface VerifiedMcpToken {
   scopes: string[];
   issuer: string;
   expiresAt?: number;
+  tenantId?: string;
 }
 
 let cachedJWKS: ReturnType<typeof createRemoteJWKSet> | null = null;
@@ -52,11 +53,14 @@ export async function verifyMcpToken(token: string): Promise<VerifiedMcpToken> {
     scopes = payload.scopes as string[];
   }
 
+  const tenantId = (payload.tenant_id as string) || undefined;
+
   return {
     sub,
     clientId,
     scopes,
     issuer: payload.iss || expectedIssuer,
     expiresAt: payload.exp,
+    tenantId,
   };
 }
