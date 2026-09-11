@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -2472,6 +2472,324 @@ export type Database = {
           },
           {
             foreignKeyName: "invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mcp_appointment_drafts: {
+        Row: {
+          actor_auth_user_id: string
+          branch_id: string
+          confirmed_appointment_id: string | null
+          confirmed_at: string | null
+          connection_id: string
+          created_at: string
+          currency_code: string | null
+          customer_id: string
+          customer_notes: string | null
+          duration_minutes: number
+          ends_at: string
+          estimated_price: number | null
+          expires_at: string
+          id: string
+          idempotency_key: string
+          scheduled_at: string
+          service_id: string
+          service_variant_id: string | null
+          specialist_id: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          actor_auth_user_id: string
+          branch_id: string
+          confirmed_appointment_id?: string | null
+          confirmed_at?: string | null
+          connection_id: string
+          created_at?: string
+          currency_code?: string | null
+          customer_id: string
+          customer_notes?: string | null
+          duration_minutes: number
+          ends_at: string
+          estimated_price?: number | null
+          expires_at: string
+          id?: string
+          idempotency_key: string
+          scheduled_at: string
+          service_id: string
+          service_variant_id?: string | null
+          specialist_id?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          actor_auth_user_id?: string
+          branch_id?: string
+          confirmed_appointment_id?: string | null
+          confirmed_at?: string | null
+          connection_id?: string
+          created_at?: string
+          currency_code?: string | null
+          customer_id?: string
+          customer_notes?: string | null
+          duration_minutes?: number
+          ends_at?: string
+          estimated_price?: number | null
+          expires_at?: string
+          id?: string
+          idempotency_key?: string
+          scheduled_at?: string
+          service_id?: string
+          service_variant_id?: string | null
+          specialist_id?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_appointment_drafts_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_appointment_drafts_confirmed_appointment_id_fkey"
+            columns: ["confirmed_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_appointment_drafts_confirmed_appointment_id_fkey"
+            columns: ["confirmed_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_daily_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_appointment_drafts_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "mcp_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_appointment_drafts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_appointment_drafts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_dashboard"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "mcp_appointment_drafts_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_appointment_drafts_service_variant_id_fkey"
+            columns: ["service_variant_id"]
+            isOneToOne: false
+            referencedRelation: "service_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_appointment_drafts_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_appointment_drafts_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_net_balance"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "mcp_appointment_drafts_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "v_specialist_availability"
+            referencedColumns: ["specialist_id"]
+          },
+          {
+            foreignKeyName: "mcp_appointment_drafts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_appointment_drafts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_ecommerce_storefront_public"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "mcp_appointment_drafts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mcp_connections: {
+        Row: {
+          auth_user_id: string
+          client_name: string | null
+          created_at: string
+          id: string
+          last_used_at: string | null
+          oauth_client_id: string
+          revoked_at: string | null
+          scopes: string[]
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id: string
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          oauth_client_id: string
+          revoked_at?: string | null
+          scopes?: string[]
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          oauth_client_id?: string
+          revoked_at?: string | null
+          scopes?: string[]
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_connections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_connections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_ecommerce_storefront_public"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "mcp_connections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mcp_tool_calls: {
+        Row: {
+          actor_auth_user_id: string
+          arguments_hash: string | null
+          connection_id: string | null
+          created_at: string
+          duration_ms: number | null
+          error_code: string | null
+          id: string
+          oauth_client_id: string
+          request_id: string
+          risk_level: string
+          safe_summary: Json
+          status: string
+          tenant_id: string
+          tool_name: string
+        }
+        Insert: {
+          actor_auth_user_id: string
+          arguments_hash?: string | null
+          connection_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: string | null
+          id?: string
+          oauth_client_id: string
+          request_id: string
+          risk_level?: string
+          safe_summary?: Json
+          status: string
+          tenant_id: string
+          tool_name: string
+        }
+        Update: {
+          actor_auth_user_id?: string
+          arguments_hash?: string | null
+          connection_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: string | null
+          id?: string
+          oauth_client_id?: string
+          request_id?: string
+          risk_level?: string
+          safe_summary?: Json
+          status?: string
+          tenant_id?: string
+          tool_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_tool_calls_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "mcp_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_tool_calls_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcp_tool_calls_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_ecommerce_storefront_public"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "mcp_tool_calls_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "v_tenants_public"
@@ -5649,6 +5967,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      confirm_mcp_appointment_draft: {
+        Args: { p_actor_auth_user_id: string; p_draft_id: string }
+        Returns: Json
+      }
+      current_user_has_tenant_role: {
+        Args: { allowed_roles: string[]; target_tenant_id: string }
+        Returns: boolean
+      }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       find_or_create_cafeteria_customer: {
         Args: {
@@ -5940,12 +6266,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -5969,11 +6295,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -5994,11 +6320,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6019,11 +6345,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6036,11 +6362,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

@@ -108,6 +108,11 @@ export type CafeOrderItem = Tables["cafe_order_items"]["Row"];
 
 export type ProductSale = Tables["product_sales"]["Row"];
 
+// BookNow Business MCP
+export type McpConnection = Tables["mcp_connections"]["Row"];
+export type McpAppointmentDraft = Tables["mcp_appointment_drafts"]["Row"];
+export type McpToolCall = Tables["mcp_tool_calls"]["Row"];
+
 // Campañas + Segmentación (Fase 4)
 export type CustomerSegment = Tables["customer_segments"]["Row"];
 export type Campaign = Tables["campaigns"]["Row"];

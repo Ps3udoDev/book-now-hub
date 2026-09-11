@@ -5,13 +5,19 @@ import { type NextRequest, NextResponse } from "next/server";
 // Landing pública
 const PUBLIC_ROUTES = ["/"];
 
-// Rutas auth de Supabase (callback OAuth, email confirm, password reset)
-const AUTH_PUBLIC_PREFIXES = ["/auth/callback", "/auth/confirm"];
+// Rutas auth de Supabase (callback OAuth, email confirm, password reset, consentimiento OAuth)
+const AUTH_PUBLIC_PREFIXES = [
+  "/auth/callback",
+  "/auth/confirm",
+  "/oauth/consent",
+  "/.well-known",
+];
 
-// Endpoints publicos usados por la app del cliente antes de tener sesion
+// Endpoints publicos usados por la app del cliente o protocolos externos (MCP)
 const PUBLIC_API_PREFIXES = [
   "/api/client/tenant-status",
   "/api/client/auth/register",
+  "/api/mcp",
   // QA temporal de las alertas Sentry -> Google Chat. Protegido por ALERT_TEST_KEY.
   "/api/sentry-alert-test",
   // Webhook entrante de Sentry: no se autentica con sesion, valida ?token=.
