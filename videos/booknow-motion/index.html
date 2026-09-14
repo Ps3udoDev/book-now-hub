@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=720" />
+    <script src="gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: #fdfcfe;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      #title {
+        color: #292738;
+        font-size: 72px;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+      }
+      :root{--ink:#292738;--purple:#7354d2;--soft:#eee8fc;--muted:#625b70;--line:#ded7ed;--white:#fff;--paper:#fdfcfe}
+      #root{color:var(--ink);position:relative}
+      .clip{width:100%;height:100%}
+      .scene{display:flex;flex-direction:column;padding:54px 72px;gap:28px;height:100%}
+      .top,.footer{display:flex;align-items:center;justify-content:space-between}
+      .brand{font-size:29px;font-weight:800;letter-spacing:-1px}.brand span{color:var(--purple)}
+      .eyebrow{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+      .body{display:grid;grid-template-columns:1fr 1.13fr;gap:42px;align-items:center;flex:1}
+      .copy{display:flex;flex-direction:column;gap:22px}h1{font-size:64px;line-height:1.05;letter-spacing:-3px;font-weight:750}h1 span{display:block}.accent{color:var(--purple)}
+      .description{font-size:20px;color:var(--muted);line-height:1.5;max-width:390px}
+      .modules{display:flex;flex-wrap:wrap;gap:10px}.module{border:1px solid var(--line);border-radius:12px;padding:12px 15px;font-size:15px;font-weight:600;background:var(--white)}.module.active{background:var(--purple);color:var(--white)}
+      .app{background:var(--white);border:1px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:0 24px 70px #2927380e}
+      .app-top{background:var(--soft);padding:22px 25px;display:flex;justify-content:space-between;align-items:center}.app-title{font-size:19px;font-weight:700}.app-status{font-size:12px;color:var(--muted)}
+      .app-content{padding:24px;display:flex;flex-direction:column;gap:20px}.app-heading{font-size:27px;font-weight:700;letter-spacing:-1px}
+      .days{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.day{display:flex;flex-direction:column;gap:7px;align-items:center;padding:12px 7px;border-radius:12px;font-size:13px;background:var(--paper);color:var(--muted)}.day b{font-size:20px;color:var(--ink)}.day.selected{background:var(--purple);color:var(--white)}.day.selected b{color:var(--white)}
+      .appointment{display:flex;align-items:center;gap:15px;border:1px solid var(--line);padding:15px;border-radius:12px}.time{font-size:16px;font-weight:700;color:var(--purple)}.service{display:flex;flex-direction:column;gap:4px;font-size:15px;font-weight:600}.service small{font-size:12px;font-weight:400;color:var(--muted)}
+      .confirmed{margin-left:auto;font-size:11px;color:var(--ink);background:var(--soft);padding:7px;border-radius:8px}
+      .footer{font-size:14px;color:var(--muted)}.endline{font-size:18px;font-weight:650;color:var(--purple)}
+      .progress{position:absolute;bottom:0;left:0;height:4px;width:100%;transform-origin:left;background:var(--purple)}
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="booknow"
+      data-start="0"
+      data-duration="8"
+      data-fps="30"
+      data-width="1280"
+      data-height="720"
+    >
+      <div id="main-clip" class="clip" data-start="0" data-duration="8" data-track-index="0"><div class="scene">
+        <div class="top"><div class="brand">Book<span>Now</span></div><div class="eyebrow">Tu negocio. Tu experiencia.</div></div>
+        <div class="body"><div class="copy">
+          <h1><span id="line-one">Tu marca.</span><span id="line-two">Tus reglas.</span><span id="line-three" class="accent">Tu propia app.</span></h1>
+          <p class="description">Una experiencia de reservas hecha a la medida de tu negocio.</p>
+          <div class="modules"><div class="module active">Citas</div><div class="module">WhatsApp</div><div class="module">Módulos</div><div class="module">Tu marca</div></div>
+        </div><div class="app"><div class="app-top"><div class="app-title">Tu espacio</div><div class="app-status">Vista de ejemplo</div></div><div class="app-content">
+          <div class="app-heading">Tu agenda, en orden.</div>
+          <div class="days"><div class="day">LUN<b>14</b></div><div class="day">MAR<b>15</b></div><div class="day selected">MIÉ<b>16</b></div><div class="day">JUE<b>17</b></div><div class="day">VIE<b>18</b></div></div>
+          <div class="appointment" id="booking-one"><div class="time">09:00</div><div class="service">Consulta inicial<small>María · 45 min</small></div><span class="confirmed">Confirmada</span></div>
+          <div class="appointment" id="booking-two"><div class="time">10:30</div><div class="service">Sesión personalizada<small>Daniel · 60 min</small></div></div>
+          <div class="appointment" id="booking-three"><div class="time">12:00</div><div class="service">Tu próximo cliente<small>Todo comienza con una reserva</small></div></div>
+        </div></div></div>
+        <div class="footer"><span>Una plataforma. Posibilidades a tu medida.</span><span class="endline">Imagina tu negocio aquí ↗</span></div>
+      </div></div><div class="progress" data-layout-ignore="true"></div>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo('.brand',{opacity:0,y:12},{opacity:1,y:0,duration:.45,ease:'power3.out'},0);
+      ['#line-one','#line-two','#line-three'].forEach((selector,index)=>tl.fromTo(selector,{opacity:0,y:32},{opacity:1,y:0,duration:.5,ease:'power3.out'},.15+index*.17));
+      tl.fromTo('.description',{opacity:0},{opacity:1,duration:.5},.8);
+      tl.fromTo('.app',{opacity:0,scale:.92,y:20},{opacity:1,scale:1,y:0,duration:.8,ease:'power3.out'},.5);
+      tl.fromTo('.module',{opacity:0,scale:.7},{opacity:1,scale:1,duration:.55,stagger:.12,ease:'power3.out'},1.2);
+      tl.fromTo('#booking-one',{opacity:0,x:18},{opacity:1,x:0,duration:.6,ease:'power3.out'},2);
+      tl.fromTo('#booking-two',{opacity:0,x:18},{opacity:1,x:0,duration:.6,ease:'power3.out'},3);
+      tl.fromTo('#booking-three',{opacity:0,x:18},{opacity:1,x:0,duration:.6,ease:'power3.out'},4);
+      tl.fromTo('.endline',{opacity:0,y:10},{opacity:1,y:0,duration:.6,ease:'power3.out'},5.3);
+      tl.fromTo('.progress',{scaleX:0},{scaleX:1,duration:8,ease:'none'},0);
+      window.__timelines["booknow"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

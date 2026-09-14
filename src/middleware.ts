@@ -3,7 +3,11 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 // Landing pública
-const PUBLIC_ROUTES = ["/"];
+const PUBLIC_ROUTES = [
+  "/",
+  "/landing/booknow-showcase.mp4",
+  "/landing/booknow-captions.vtt",
+];
 
 // Rutas auth de Supabase (callback OAuth, email confirm, password reset, consentimiento OAuth)
 const AUTH_PUBLIC_PREFIXES = [

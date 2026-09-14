@@ -1,0 +1,2230 @@
+.landing {
+  --ink: #292738;
+  --muted: #747180;
+  --purple: #7354d2;
+  --line: #eae8ef;
+  background: #fdfcfe;
+  color: var(--ink);
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 15px;
+  overflow: clip;
+}
+.landing * {
+  box-sizing: border-box;
+}
+.landing a {
+  text-decoration: none;
+}
+.landing button,
+.landing input {
+  font: inherit;
+}
+.landing button,
+.landing summary {
+  cursor: pointer;
+}
+.landing button {
+  touch-action: manipulation;
+}
+.landing :is(a, button, input, summary):focus-visible {
+  outline: 3px solid #9d7fe8;
+  outline-offset: 5px;
+}
+.landing section {
+  scroll-margin-top: 100px;
+}
+.landing h1,
+.landing h2,
+.landing h3,
+.landing p {
+  margin: 0;
+}
+.landing h2 {
+  font-size: clamp(30px, 3.5vw, 45px);
+  font-weight: 550;
+  letter-spacing: -1.9px;
+  line-height: 1.16;
+}
+.landing h1,
+.landing h2,
+.landing h3 {
+  font-family: inherit;
+}
+.skipLink {
+  position: fixed;
+  top: -100px;
+  left: 20px;
+  background: white;
+  z-index: 100;
+  padding: 12px;
+}
+.videoOverlay {
+  position: fixed;
+  inset: 0;
+  background: #292738b8;
+  backdrop-filter: blur(8px);
+  z-index: 60;
+}
+.videoDialog {
+  position: fixed;
+  z-index: 61;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(900px, calc(100% - 32px));
+  max-height: 90dvh;
+  overflow-y: auto;
+  padding: 24px;
+  border-radius: 18px;
+  background: #fdfcfe;
+  color: #292738;
+  box-shadow: 0 30px 100px #1f172955;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+.videoHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.videoHeader h2 {
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 600;
+}
+.videoClose {
+  background: #eee8f6;
+  border: 0;
+  border-radius: 50%;
+  padding: 8px;
+  color: #7354d2;
+  cursor: pointer;
+}
+.videoDescription {
+  margin: 8px 0 20px;
+  color: #747180;
+  font-size: 13px;
+}
+.videoDialog video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #eee8fa;
+  border-radius: 10px;
+}
+.videoDownload {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: #7354d2;
+  font-size: 12px;
+  margin-top: 15px;
+}
+.videoDialog :is(a, button, video):focus-visible {
+  outline: 3px solid #9d7fe8;
+  outline-offset: 4px;
+}
+.skipLink:focus {
+  top: 12px;
+}
+.header {
+  height: 86px;
+  max-width: 1260px;
+  padding: 0 36px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 20;
+  border-bottom: 1px solid var(--line);
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  font-size: 26px;
+  font-weight: 750;
+  letter-spacing: -1.1px;
+  color: var(--ink);
+}
+.brandMark {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  background: var(--purple);
+  color: white;
+  border-radius: 11px;
+  margin-right: 9px;
+  transform: rotate(-6deg);
+}
+.brandDot {
+  color: var(--purple);
+}
+.desktopNav {
+  display: flex;
+  gap: 29px;
+  font-size: 13px;
+  color: #615d70;
+}
+.desktopNav a:hover,
+.login:hover,
+.footer a:hover {
+  color: var(--purple);
+}
+.headerActions {
+  display: flex;
+  gap: 23px;
+  align-items: center;
+  font-size: 12px;
+}
+.login,
+.smallCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.smallCta {
+  background: var(--purple);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: white;
+  font-weight: 550;
+}
+.menuButton {
+  display: none;
+  border: 0;
+  background: transparent;
+  padding: 8px;
+}
+.mobileNav {
+  display: none;
+}
+.hero {
+  padding: 62px 24px 0;
+}
+.heroCopy {
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+.announcement {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  padding: 5px 12px 5px 5px;
+  border: 1px solid #e5def4;
+  border-radius: 30px;
+  background: #fff;
+  color: #686272;
+  font-size: 11px;
+}
+.announcement > span {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 5px 9px;
+  border-radius: 20px;
+  color: #7252b9;
+  background: #f0eafa;
+  font-size: 10px;
+  font-weight: 600;
+}
+.heroCopy h1 {
+  font-size: clamp(45px, 5.8vw, 78px);
+  line-height: 1.045;
+  letter-spacing: -4px;
+  font-weight: 550;
+  margin: 26px auto 23px;
+}
+.heroCopy > p {
+  color: #777280;
+  font-size: 16px;
+  line-height: 1.8;
+}
+.heroActions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 27px 0 17px;
+}
+.primaryButton,
+.secondaryButton {
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 17px;
+  padding: 15px 23px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 550;
+}
+.primaryButton {
+  color: white;
+  background: var(--purple);
+  box-shadow:
+    0 3px 0 #5039a2,
+    0 7px 18px #7354d224;
+  transition: background 180ms;
+}
+.primaryButton:hover,
+.smallCta:hover {
+  background: #6241c0;
+}
+.secondaryButton {
+  background: white;
+  color: #514a61;
+  border-color: #dedbe5;
+  box-shadow: 0 2px 2px #29273806;
+  gap: 9px;
+}
+.secondaryButton:hover {
+  background: #f4f0fb;
+}
+.heroNotes {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  font-size: 10px;
+  color: #756e7f;
+}
+.heroNotes span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.heroNotes svg {
+  color: #807398;
+}
+.showcase {
+  position: relative;
+  max-width: 1100px;
+  margin: 58px auto 0;
+  padding: 20px 88px 36px 60px;
+}
+.showcaseBackdrop {
+  position: absolute;
+  inset: 0 -40px;
+  background: radial-gradient(
+    ellipse at 50% 65%,
+    #d9cdf1 0,
+    #eae2f6 42%,
+    #f6f1fc 64%,
+    transparent 77%
+  );
+  border-radius: 40px;
+}
+.browserFrame {
+  position: relative;
+  border-radius: 12px;
+  border: 1px solid #dcd6e8;
+  background: #fff;
+  box-shadow:
+    0 24px 65px #52436620,
+    0 0 0 7px #ffffff70;
+  overflow: hidden;
+}
+.browserChrome {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 13px;
+  color: #aaa3b7;
+  background: #f8f7fb;
+  border-bottom: 1px solid #ece9f1;
+  font-size: 9px;
+}
+.browserChrome > div,
+.browserChrome > span {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.browserChrome i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ddd7e5;
+}
+.browserChrome i:first-child {
+  background: #eebdb8;
+}
+.browserChrome i:nth-child(2) {
+  background: #e9d3a4;
+}
+.browserChrome i:nth-child(3) {
+  background: #b9d6b5;
+}
+.dashboard {
+  display: flex;
+  height: 463px;
+  text-align: left;
+  background: white;
+}
+.previewSidebar {
+  flex: 0 0 172px;
+  border-right: 1px solid #eeebf3;
+  padding: 19px 11px 9px;
+  display: flex;
+  flex-direction: column;
+  font-size: 10px;
+}
+.workspace {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  margin: 0 0 23px;
+  font-size: 10px;
+  font-weight: 650;
+}
+.workspace > span {
+  width: 26px;
+  height: 26px;
+  background: #ece5fa;
+  color: #8768b9;
+  display: grid;
+  place-items: center;
+  font-family: Georgia, serif;
+  font-size: 19px;
+  border-radius: 7px;
+}
+.workspace small,
+.previewProfile small {
+  display: block;
+  font-weight: 400;
+  font-size: 7px;
+  color: #97919f;
+  margin-top: 2px;
+}
+.sidebarItem,
+.sidebarActive {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  margin: 2px 0;
+  border-radius: 5px;
+  color: #89818e;
+}
+.sidebarActive {
+  background: #f0eafa;
+  color: #8963c0;
+  font-weight: 600;
+}
+.sidebarActive > span {
+  margin-left: auto;
+  background: #e6daf6;
+  padding: 0 5px;
+  border-radius: 3px;
+}
+.sidebarBottom {
+  margin-top: auto;
+  color: #938b9c;
+  font-size: 9px;
+}
+.sidebarBottom > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px;
+}
+.sidebarBottom .previewProfile {
+  border-top: 1px solid #eeeaf3;
+  margin-top: 6px;
+  padding-bottom: 0;
+  color: #655d70;
+}
+.previewProfile > span,
+.tinyAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ecdef0;
+  display: grid;
+  place-items: center;
+  font-size: 8px;
+  color: #8f6496;
+}
+.dashboardMain {
+  min-width: 0;
+  flex: 1;
+}
+.dashboardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 20px;
+  font-size: 9px;
+  border-bottom: 1px solid #eeeaf3;
+  color: #9c95a4;
+}
+.dashboardTop > span,
+.dashboardTop > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dashboardTop b {
+  color: #686171;
+  font-weight: 500;
+}
+.demoTag {
+  border: 1px solid #e8e2f0;
+  border-radius: 20px;
+  padding: 3px 7px;
+  font-size: 7px;
+}
+.agendaHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 22px 21px 16px;
+  gap: 10px;
+}
+.agendaHeading h3 {
+  font-size: 16px;
+  letter-spacing: -0.5px;
+  font-weight: 600;
+}
+.agendaHeading p {
+  margin-top: 4px;
+  font-size: 8px;
+  color: #938a9c;
+}
+.newAppointment {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 9px;
+  border-radius: 5px;
+  background: #9265c1;
+  color: white;
+  font-size: 8px;
+  white-space: nowrap;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 0 21px 18px;
+}
+.stats > div {
+  padding: 10px 12px;
+  border: 1px solid #ece8f1;
+  border-radius: 7px;
+}
+.stats span {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #92879c;
+  font-size: 8px;
+}
+.stats svg {
+  color: #ad98c1;
+}
+.stats strong {
+  font-size: 21px;
+  font-weight: 550;
+  display: block;
+  margin: 3px 0;
+}
+.stats small {
+  display: block;
+  font-size: 7px;
+  color: #92869c;
+}
+.calendarToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 21px 13px;
+  font-size: 10px;
+}
+.calendarToolbar b {
+  font-weight: 550;
+}
+.calendarToolbar > span {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: #91869c;
+  font-size: 8px;
+}
+.weekView {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e9e3ef;
+  border-radius: 4px;
+  padding: 4px 7px;
+}
+.calendar {
+  margin: 0 21px;
+  border: 1px solid #ece8f2;
+  border-radius: 7px;
+  overflow: hidden;
+}
+.calendarPeople {
+  display: grid;
+  grid-template-columns: 45px repeat(3, 1fr);
+  border-bottom: 1px solid #eee9f3;
+  padding: 8px 0;
+}
+.calendarPeople > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 8px;
+}
+.calendarPeople i {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 6px;
+  font-style: normal;
+}
+.avatarPeach {
+  background: #f9e4da;
+  color: #ad806c;
+}
+.avatarViolet {
+  background: #e9e1f4;
+  color: #8d73b4;
+}
+.avatarGreen {
+  background: #ddede5;
+  color: #709584;
+}
+.calendarGrid {
+  display: grid;
+  grid-template-columns: 45px repeat(3, 1fr);
+  height: 245px;
+  position: relative;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 59px,
+    #f0ecf5 60px
+  );
+}
+.hours {
+  display: flex;
+  flex-direction: column;
+  font-size: 7px;
+  color: #aba2b4;
+  padding: 8px;
+  gap: 47px;
+}
+.calendarColumn {
+  border-left: 1px solid #eee9f2;
+  position: relative;
+}
+.appointment {
+  position: absolute;
+  inset: 5px 5px auto;
+  min-height: 72px;
+  border-radius: 4px;
+  border-left: 2px solid;
+  padding: 9px 8px;
+  font-size: 8px;
+}
+.appointment b {
+  display: block;
+  font-size: 8px;
+  font-weight: 550;
+}
+.appointment span {
+  display: block;
+  margin-top: 4px;
+  font-size: 7px;
+}
+.appointment small {
+  display: block;
+  margin-top: 9px;
+  font-size: 7px;
+}
+.violetAppointment {
+  background: #eee5f8;
+  border-color: #bd9ddb;
+  color: #896aa2;
+}
+.peachAppointment {
+  background: #fcf0e6;
+  border-color: #e9bc93;
+  color: #ac856a;
+}
+.greenAppointment {
+  background: #e4f0e9;
+  border-color: #95c6a8;
+  color: #678d76;
+}
+.nowLine {
+  position: absolute;
+  top: 111px;
+  left: 44px;
+  right: 0;
+  display: flex;
+  align-items: center;
+}
+.nowLine span {
+  height: 5px;
+  width: 5px;
+  border-radius: 50%;
+  background: #cb939e;
+}
+.nowLine i {
+  height: 1px;
+  flex: 1;
+  background: #cb939e;
+  opacity: 0.7;
+}
+.notification {
+  position: absolute;
+  left: -5px;
+  bottom: 68px;
+  z-index: 3;
+  background: white;
+  border: 1px solid #e7e4eb;
+  box-shadow: 0 12px 30px #45345812;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 12px;
+  transform: rotate(-3deg);
+}
+.whatsappIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  width: 43px;
+  height: 43px;
+  background: #e0f3e6;
+  color: #3d9568;
+  flex-shrink: 0;
+}
+.notification b {
+  font-size: 11px;
+  font-weight: 650;
+}
+.notification p {
+  font-size: 9px;
+  color: #898290;
+  margin-top: 4px;
+}
+.notification small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #439970;
+  font-size: 8px;
+  margin-top: 7px;
+}
+.notificationDot {
+  width: 5px;
+  height: 5px;
+  background: #5baa78;
+  border-radius: 50%;
+  align-self: start;
+  margin-top: 5px;
+}
+.phoneFloat {
+  width: 203px;
+  position: absolute;
+  right: 0;
+  bottom: 8px;
+  background: white;
+  border: 5px solid #fff;
+  outline: 1px solid #ded7e7;
+  border-radius: 29px;
+  padding: 17px 8px 5px;
+  box-shadow: 0 19px 38px #4b3a6225;
+  z-index: 4;
+}
+.phoneNotch {
+  position: absolute;
+  top: 6px;
+  width: 56px;
+  height: 12px;
+  background: #282330;
+  border-radius: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.miniPhoneContent {
+  padding-top: 13px;
+}
+.phoneBrand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: Georgia, serif;
+  font-size: 21px;
+  color: #6c5679;
+}
+.phoneBrand > span {
+  font-size: 13px;
+  height: 23px;
+  width: 23px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d6c5e3;
+  border-radius: 50%;
+}
+.phoneGreeting {
+  display: block;
+  text-align: center;
+  font-size: 7px;
+  color: #9c8ca9;
+  margin-top: 6px;
+}
+.phoneArt {
+  height: 105px;
+  background: #e6daed;
+  color: #9a7dac;
+  border-radius: 62px 62px 8px 8px;
+  margin: 16px 18px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-image: radial-gradient(
+    ellipse at bottom left,
+    #c6adcf,
+    transparent 70%
+  );
+}
+.miniPhoneContent > b {
+  font-family: Georgia, serif;
+  font-size: 18px;
+  font-weight: 400;
+  display: block;
+  text-align: center;
+  color: #6e567e;
+}
+.miniPhoneContent > p {
+  font-size: 7px;
+  color: #9a8ca4;
+  text-align: center;
+  margin-top: 4px;
+}
+.phoneService {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 7px;
+  margin-top: 12px;
+  border: 1px solid #efe8f2;
+  border-radius: 5px;
+  font-size: 8px;
+  color: #7c648b;
+}
+.phoneService small {
+  display: block;
+  font-size: 6px;
+  margin-top: 4px;
+}
+.phoneCta {
+  background: #9874ad;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 5px;
+  font-size: 8px;
+  margin-top: 8px;
+  padding: 10px 5px;
+}
+.phoneNav {
+  display: flex;
+  justify-content: space-around;
+  padding: 13px 0 5px;
+  color: #af98bb;
+}
+.yourBrandNote {
+  position: absolute;
+  top: 0;
+  right: -5px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #9a82af;
+  font-size: 10px;
+  line-height: 1.6;
+  transform: rotate(6deg);
+}
+.yourBrandNote b {
+  font-weight: 500;
+}
+.showcaseCaption {
+  max-width: 800px;
+  margin: 4px auto 0;
+  display: flex;
+  justify-content: center;
+  gap: 26px;
+  align-items: center;
+  font-size: 10px;
+  color: #9a91a6;
+}
+.showcaseCaption > span {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.showcaseCaption button {
+  border: 0;
+  background: transparent;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 10px;
+  font-size: 10px;
+  color: #81758e;
+}
+.liveDot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  background: #8b72b3;
+  border-radius: 50%;
+}
+.businessTypes {
+  max-width: 1080px;
+  margin: 52px auto 0;
+  padding: 0 24px 51px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+.businessTypes > p {
+  font-size: 11px;
+  color: #8c8695;
+}
+.businessTypes > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 24px;
+}
+.businessTypes span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 550;
+  color: #82798d;
+}
+.businessTypes svg {
+  width: 20px;
+  stroke-width: 1.4;
+}
+.modulesSection,
+.customize,
+.stepsSection,
+.faqSection {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 90px 30px;
+}
+.sectionHeading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 37px;
+}
+.sectionLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #77608f;
+  font-size: 11px;
+  margin-bottom: 17px;
+}
+.sectionHeading > p,
+.centerHeading > p,
+.customizeCopy > p,
+.stepsSection p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.85;
+}
+.sectionHeading > p {
+  padding-bottom: 5px;
+}
+.moduleGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+.moduleCard {
+  position: relative;
+  background: white;
+  border: 1px solid #e8e4ed;
+  border-radius: 12px;
+  padding: 26px;
+  transition:
+    border-color 150ms,
+    background 150ms;
+}
+.moduleCard:hover {
+  border-color: #b49bcf;
+  background: #fefcff;
+}
+.moduleIcon {
+  width: 45px;
+  height: 45px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+}
+.violet {
+  background: #eee8fa;
+  color: #8e70ba;
+}
+.blue {
+  background: #e9effb;
+  color: #7491bc;
+}
+.peach {
+  background: #f9ece3;
+  color: #c0906d;
+}
+.green {
+  background: #e8f1e9;
+  color: #76a082;
+}
+.pink {
+  background: #f6e8f0;
+  color: #b47d9e;
+}
+.yellow {
+  background: #f6f0dc;
+  color: #b39d5a;
+}
+.moduleArrow {
+  position: absolute;
+  top: 29px;
+  right: 26px;
+  color: #c0b8ca;
+}
+.moduleCard h3 {
+  font-size: 17px;
+  font-weight: 550;
+  letter-spacing: -0.4px;
+  margin: 20px 0 9px;
+}
+.moduleCard p {
+  color: #746d7c;
+  font-size: 12px;
+  line-height: 1.85;
+  min-height: 65px;
+}
+.moduleCard small {
+  border-top: 1px solid #f0edf3;
+  display: block;
+  margin-top: 17px;
+  padding-top: 14px;
+  font-size: 9px;
+  color: #786e83;
+}
+.moduleFootnote {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 25px;
+  color: #908597;
+  font-size: 10px;
+}
+.moduleFootnote a {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  color: #7759a4;
+}
+.connections {
+  background: #f7f5fa;
+  border-block: 1px solid #eeebf2;
+  padding: 80px 30px;
+}
+.centerHeading {
+  text-align: center;
+}
+.centerHeading > p {
+  margin-top: 20px;
+}
+.connectionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 23px;
+  max-width: 1060px;
+  margin: 39px auto 0;
+}
+.whatsappCard,
+.aiCard {
+  padding: 29px 29px 19px;
+  border-radius: 17px;
+  border: 1px solid #e3e8e3;
+  background: #f0f6f1;
+  overflow: hidden;
+}
+.aiCard {
+  background: #efeaf7;
+  border-color: #e4dcef;
+}
+.connectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 550;
+}
+.connectionTitle .whatsappIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+.connectionTitle svg {
+  width: 18px;
+}
+.pill {
+  margin-left: auto;
+  font-size: 9px;
+  background: #ffffff80;
+  padding: 5px 8px;
+  border-radius: 20px;
+  color: #81758f;
+  white-space: nowrap;
+}
+.connectionGrid h3 {
+  font-size: 28px;
+  line-height: 1.25;
+  letter-spacing: -1px;
+  font-weight: 500;
+  margin-top: 24px;
+}
+.connectionGrid article > p {
+  color: #7b7d7d;
+  font-size: 12px;
+  line-height: 1.8;
+  max-width: 360px;
+  margin-top: 13px;
+}
+.aiIcon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #e0d5f0;
+  color: #9271b5;
+}
+.chatDemo {
+  min-height: 230px;
+  margin: 24px 0 12px;
+  padding: 14px 19px;
+  background: #e3eee4;
+  border: 1px solid #dce7dd;
+  border-radius: 12px;
+}
+.chatDate {
+  display: block;
+  text-align: center;
+  color: #8a998b;
+  font-size: 8px;
+  margin-bottom: 14px;
+}
+.chatBubble {
+  background: #fff;
+  border-radius: 2px 10px 10px;
+  padding: 14px 16px 8px;
+  font-size: 10px;
+  line-height: 1.7;
+  box-shadow: 0 2px 3px #2c483305;
+  max-width: 340px;
+}
+.chatBubble > b {
+  color: #4f8c63;
+  font-size: 10px;
+}
+.chatBubble > p {
+  margin: 8px 0;
+  font-size: 10px;
+  color: #65726a;
+}
+.chatBubble > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 9px;
+  color: #708479;
+}
+.chatBubble > small {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  font-size: 7px;
+  color: #83b7cc;
+}
+.aiConversation {
+  min-height: 230px;
+  margin: 24px 0 12px;
+  padding: 20px 0;
+}
+.aiQuestion {
+  background: #ffffff9c;
+  border: 1px solid #ded4eb;
+  border-radius: 10px 10px 2px;
+  padding: 13px 15px;
+  margin-left: auto;
+  width: fit-content;
+  color: #7d6d90;
+  font-size: 11px;
+}
+.aiAnswer {
+  display: flex;
+  gap: 10px;
+  margin-top: 26px;
+  font-size: 11px;
+  color: #8f6db4;
+}
+.aiAnswer > svg {
+  flex-shrink: 0;
+}
+.aiAnswer b {
+  color: #695376;
+  font-size: 11px;
+  font-weight: 550;
+}
+.aiAnswer p {
+  font-size: 9px;
+  color: #93809e;
+  margin-top: 5px;
+}
+.aiSlots {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+}
+.aiSlots span {
+  background: white;
+  border: 1px solid #dacbea;
+  border-radius: 6px;
+  color: #9676b2;
+  font-size: 10px;
+  padding: 7px 18px;
+}
+.aiAnswer small {
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8px;
+  color: #9d8aaf;
+}
+.integrationNote {
+  font-size: 8px;
+  color: #818582;
+  display: block;
+  text-align: center;
+}
+.aiCard .integrationNote {
+  color: #9582a4;
+}
+.customize {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 55px;
+  padding-block: 100px;
+}
+.customizeCopy h2 {
+  font-size: clamp(30px, 3.3vw, 42px);
+}
+.customizeCopy > p {
+  margin-top: 20px;
+  max-width: 420px;
+}
+.inputLabel,
+.paletteField legend,
+.modulesField legend {
+  font-size: 11px;
+  font-weight: 550;
+  display: block;
+  margin-bottom: 10px;
+}
+.inputLabel {
+  margin-top: 29px;
+}
+.businessInput {
+  width: 100%;
+  border: 1px solid #dfd9e6;
+  border-radius: 7px;
+  background: white;
+  padding: 12px 14px;
+  color: #65576f;
+  font-size: 13px;
+}
+.paletteField,
+.modulesField {
+  border: 0;
+  padding: 0;
+  margin: 22px 0;
+}
+.paletteField > div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.paletteField button {
+  border: 3px solid white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: white;
+  display: grid;
+  place-items: center;
+}
+.paletteField button[aria-pressed="true"] {
+  outline: 1px solid #b6a8c8;
+  outline-offset: 2px;
+}
+.paletteField span {
+  font-size: 10px;
+  color: #91859c;
+  padding-left: 5px;
+}
+.modulesField > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.modulesField button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  color: #8b7d98;
+  border: 1px solid #e5deec;
+  background: white;
+  border-radius: 6px;
+  padding: 10px 11px;
+}
+.modulesField button[aria-pressed="true"] {
+  color: #8664aa;
+  background: #f1eafa;
+  border-color: #d8c7ed;
+}
+.contactActions {
+  display: flex;
+  gap: 10px;
+}
+.downloadButton {
+  display: grid;
+  place-items: center;
+  background: white;
+  border: 1px solid #dfd5e9;
+  border-radius: 8px;
+  color: #8c73a4;
+  width: 49px;
+}
+.customizeCopy .downloadHint {
+  display: block;
+  font-size: 10px;
+  margin-top: 14px;
+}
+.contactEmail {
+  display: inline-block;
+  font-size: 11px;
+  color: #82669d;
+  margin-top: 8px;
+}
+.customizeVisual {
+  position: relative;
+  min-height: 730px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 200px 200px 24px 24px;
+  background: radial-gradient(
+    ellipse at center,
+    var(--preview-pale),
+    #f6f3fa 75%
+  );
+  padding: 58px 30px 65px;
+}
+.previewBadge {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 9px;
+  color: #92809e;
+  background: #ffffffb0;
+  padding: 7px 13px;
+  border: 1px solid #ece6f2;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.customPhone {
+  width: 284px;
+  border: 6px solid white;
+  outline: 1px solid #e2dae9;
+  border-radius: 34px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 18px 35px #69517d20;
+}
+.customPhoneStatus {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  padding: 9px 20px 13px;
+}
+.customPhoneBrand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px 16px;
+}
+.customPhoneBrand > span {
+  color: var(--preview-color);
+  background: var(--preview-pale);
+  width: 25px;
+  height: 25px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-family: Georgia, serif;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.customPhoneBrand b {
+  font-size: 12px;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.customPhoneBrand > svg {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--preview-color);
+}
+.customPhoneHero {
+  background: var(--preview-pale);
+  margin: 0 8px;
+  padding: 22px 19px;
+  border-radius: 8px;
+  position: relative;
+  color: var(--preview-color);
+}
+.customPhoneHero > svg {
+  position: absolute;
+  right: 20px;
+  top: 23px;
+}
+.customPhoneHero h3 {
+  font-family: Georgia, serif;
+  font-size: 30px;
+  line-height: 1.13;
+  letter-spacing: -0.8px;
+  font-weight: 400;
+}
+.customPhoneHero p {
+  font-size: 9px;
+  margin-top: 11px;
+}
+.customPhoneBody {
+  padding: 22px 15px 12px;
+}
+.serviceHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+.serviceHeading > svg {
+  color: var(--preview-color);
+}
+.bookingService {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 0;
+  border-bottom: 1px solid #eee8f2;
+}
+.serviceScissors {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--preview-pale);
+  color: var(--preview-color);
+}
+.bookingService b {
+  font-size: 10px;
+  display: block;
+  font-weight: 550;
+}
+.bookingService small {
+  font-size: 8px;
+  color: #998da3;
+  display: block;
+  margin-top: 5px;
+}
+.customPhoneBody .chooseTime {
+  font-size: 9px;
+  margin: 16px 0 9px;
+  color: #85758f;
+}
+.bookingSlots {
+  display: flex;
+  gap: 7px;
+}
+.bookingSlots button {
+  flex: 1;
+  border: 1px solid #e4dbea;
+  background: white;
+  color: #85758f;
+  border-radius: 5px;
+  padding: 8px;
+  font-size: 10px;
+}
+.bookingSlots button[aria-pressed="true"] {
+  color: var(--preview-color);
+  border-color: var(--preview-color);
+  background: var(--preview-pale);
+}
+.bookingButton {
+  background: var(--preview-color);
+  color: white;
+  border: 0;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 4px;
+  margin-top: 16px;
+  font-size: 10px;
+}
+.bookingDisclaimer {
+  display: block;
+  font-size: 7px;
+  line-height: 1.7;
+  text-align: center;
+  color: #998aa5;
+  margin-top: 10px;
+  min-height: 24px;
+}
+.selectedCount {
+  font-size: 8px;
+  text-align: center;
+  margin-top: 12px;
+  color: var(--preview-color);
+}
+.customPhoneFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #efeaf4;
+  padding: 14px 17px;
+  color: var(--preview-color);
+}
+.customPhoneFooter > span {
+  font-size: 7px;
+  max-width: 150px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.colorNote {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 14px 19px;
+  border: 1px solid #e8e0f0;
+  border-radius: 9px;
+  position: absolute;
+  bottom: 18px;
+  right: 20px;
+  box-shadow: 0 6px 17px #6f4c8b0a;
+  color: var(--preview-color);
+  font-size: 10px;
+}
+.colorNote small {
+  display: block;
+  color: #a08aaa;
+  font-size: 8px;
+  margin-top: 3px;
+}
+.emptyPreview {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  gap: 13px;
+  color: var(--preview-color);
+}
+.emptyPreview b {
+  font-size: 11px;
+}
+.emptyPreview p {
+  font-size: 10px;
+}
+.shopPreview {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 7px;
+  background: var(--preview-pale);
+  color: var(--preview-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+}
+.shopPreview small {
+  display: block;
+  font-size: 7px;
+  margin-top: 3px;
+}
+.shopPreview > svg:last-child {
+  margin-left: auto;
+}
+.stepsSection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 55px;
+  border-block: 1px solid var(--line);
+  padding-block: 65px;
+}
+.stepsSection ol {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.stepsSection li {
+  display: flex;
+  gap: 20px;
+  padding-bottom: 27px;
+  position: relative;
+}
+.stepsSection li:last-child {
+  padding-bottom: 0;
+}
+.stepsSection li > span {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  border-radius: 50%;
+  background: #f0eafa;
+  border: 1px solid #e0d4ee;
+  color: #9574b1;
+  font-size: 11px;
+  flex-shrink: 0;
+  z-index: 1;
+}
+.stepsSection li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 31px;
+  bottom: 0;
+  left: 15px;
+  width: 1px;
+  background: #e9e0f1;
+}
+.stepsSection h3 {
+  font-size: 15px;
+  font-weight: 550;
+  padding-top: 4px;
+}
+.stepsSection p {
+  font-size: 12px;
+  margin-top: 6px;
+}
+.faqSection {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 70px;
+}
+.faqSection h2 {
+  font-size: 34px;
+}
+.faqList details {
+  border-bottom: 1px solid #e9e3ef;
+}
+.faqList summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 21px 0;
+  font-size: 12px;
+  list-style: none;
+}
+.faqList summary::-webkit-details-marker {
+  display: none;
+}
+.faqList summary svg {
+  color: #a496b1;
+  flex-shrink: 0;
+}
+.faqList details[open] summary svg {
+  transform: rotate(45deg);
+}
+.faqList details p {
+  font-size: 12px;
+  line-height: 1.85;
+  color: #766a7e;
+  padding-bottom: 21px;
+}
+.finalCta {
+  margin: 0 30px;
+  padding: 65px 24px;
+  background: #f0eafa;
+  border: 1px solid #e5dcef;
+  border-radius: 20px;
+  text-align: center;
+}
+.ctaSpark {
+  display: grid;
+  place-items: center;
+  width: 55px;
+  height: 55px;
+  margin: 0 auto 23px;
+  background: #e4d7f5;
+  border: 1px solid #dbc9ee;
+  border-radius: 16px;
+  color: #9270b2;
+}
+.finalCta h2 {
+  font-size: clamp(30px, 3.4vw, 45px);
+}
+.finalCta > p {
+  color: #786087;
+  font-size: 13px;
+  margin: 17px 0 27px;
+}
+.exploreLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #9479a9;
+  font-size: 10px;
+  margin: 22px auto 0;
+  width: fit-content;
+}
+.footer {
+  max-width: 1200px;
+  padding: 40px 30px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 25px;
+}
+.footer .brand {
+  font-size: 21px;
+}
+.footer .brandMark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+.footer .brandMark svg {
+  width: 17px;
+}
+.footer > p {
+  font-size: 11px;
+  color: #776b81;
+}
+.footer > div {
+  display: flex;
+  align-items: center;
+  gap: 23px;
+  margin-left: auto;
+  font-size: 10px;
+  color: #8b7c97;
+}
+.footer > div a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.footer > span {
+  font-size: 11px;
+  color: #776b81;
+}
+@media (min-width: 1500px) {
+  .finalCta {
+    max-width: 1260px;
+    margin-inline: auto;
+  }
+}
+@media (max-width: 1000px) {
+  .desktopNav {
+    gap: 17px;
+  }
+  .header {
+    padding-inline: 25px;
+  }
+  .headerActions {
+    gap: 13px;
+  }
+  .login {
+    display: none;
+  }
+  .showcase {
+    padding-left: 30px;
+    padding-right: 85px;
+  }
+  .previewSidebar {
+    flex-basis: 140px;
+  }
+  .workspace {
+    font-size: 9px;
+  }
+  .phoneFloat {
+    width: 180px;
+  }
+  .yourBrandNote {
+    display: none;
+  }
+  .notification {
+    left: 0;
+    bottom: 38px;
+  }
+  .customize {
+    gap: 30px;
+  }
+  .customizeVisual {
+    padding-inline: 15px;
+  }
+  .businessTypes span {
+    font-size: 12px;
+  }
+  .connectionGrid {
+    gap: 16px;
+  }
+  .connectionGrid article {
+    padding-inline: 23px;
+  }
+  .pill {
+    font-size: 8px;
+  }
+  .footer > p {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .header {
+    height: 72px;
+    padding-inline: 20px;
+  }
+  .brand {
+    font-size: 24px;
+  }
+  .desktopNav {
+    display: none;
+  }
+  .menuButton {
+    display: block;
+  }
+  .smallCta {
+    font-size: 11px;
+    padding: 10px 12px;
+  }
+  .mobileNav {
+    display: flex;
+    position: absolute;
+    top: 71px;
+    inset-inline: 0;
+    padding: 15px 25px;
+    flex-direction: column;
+    border-bottom: 1px solid var(--line);
+    background: #fdfcfe;
+    box-shadow: 0 15px 20px #4230520a;
+  }
+  .mobileNav a {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid #eee8f4;
+    font-size: 13px;
+  }
+  .hero {
+    padding: 42px 18px 0;
+  }
+  .announcement {
+    font-size: 9px;
+    gap: 7px;
+  }
+  .announcement > span {
+    font-size: 9px;
+  }
+  .heroCopy h1 {
+    font-size: clamp(43px, 8vw, 62px);
+    letter-spacing: -2.7px;
+    margin-top: 24px;
+  }
+  .heroCopy > p {
+    font-size: 14px;
+    max-width: 440px;
+    margin-inline: auto;
+  }
+  .desktopBreak {
+    display: none;
+  }
+  .heroActions {
+    gap: 9px;
+  }
+  .primaryButton,
+  .secondaryButton {
+    font-size: 12px;
+    padding: 14px 18px;
+    gap: 10px;
+  }
+  .heroNotes {
+    gap: 12px;
+    font-size: 9px;
+  }
+  .showcase {
+    margin-top: 35px;
+    padding: 15px 38px 30px 5px;
+  }
+  .dashboard {
+    height: 330px;
+  }
+  .previewSidebar {
+    display: none;
+  }
+  .dashboardTop {
+    padding: 9px 14px;
+  }
+  .agendaHeading {
+    margin: 15px 14px 13px;
+  }
+  .agendaHeading h3 {
+    font-size: 13px;
+  }
+  .agendaHeading p {
+    font-size: 7px;
+  }
+  .stats {
+    margin-inline: 14px;
+    gap: 7px;
+    margin-bottom: 14px;
+  }
+  .stats > div {
+    padding: 8px;
+  }
+  .stats strong {
+    font-size: 17px;
+  }
+  .stats small {
+    font-size: 6px;
+  }
+  .calendarToolbar {
+    padding-inline: 14px;
+    font-size: 8px;
+  }
+  .calendar {
+    margin-inline: 14px;
+  }
+  .calendarGrid {
+    height: 200px;
+  }
+  .phoneFloat {
+    width: 137px;
+    border-width: 4px;
+    border-radius: 21px;
+    right: -3px;
+    bottom: 1px;
+    padding: 15px 5px 5px;
+  }
+  .phoneNotch {
+    width: 42px;
+    height: 9px;
+  }
+  .phoneBrand {
+    font-size: 17px;
+  }
+  .phoneGreeting {
+    font-size: 5px;
+  }
+  .phoneArt {
+    height: 65px;
+    margin: 10px 12px;
+  }
+  .phoneArt > svg:first-child {
+    width: 29px;
+  }
+  .phoneArt > svg:last-child {
+    width: 14px;
+  }
+  .miniPhoneContent > b {
+    font-size: 13px;
+  }
+  .miniPhoneContent > p {
+    font-size: 5px;
+  }
+  .phoneService {
+    font-size: 6px;
+    padding: 8px 5px;
+  }
+  .phoneCta {
+    font-size: 6px;
+    gap: 4px;
+    padding: 8px 3px;
+  }
+  .phoneNav {
+    padding-top: 9px;
+  }
+  .phoneNav svg {
+    width: 12px;
+  }
+  .notification {
+    padding: 10px;
+    left: 0;
+    bottom: 7px;
+    gap: 8px;
+  }
+  .notification b {
+    font-size: 9px;
+  }
+  .notification p {
+    font-size: 7px;
+  }
+  .notification small {
+    font-size: 7px;
+  }
+  .notification .whatsappIcon {
+    width: 29px;
+    height: 29px;
+    border-radius: 8px;
+  }
+  .notification .whatsappIcon svg {
+    width: 17px;
+  }
+  .showcaseCaption {
+    margin-top: 11px;
+    font-size: 8px;
+    gap: 8px;
+  }
+  .businessTypes {
+    margin-top: 30px;
+    padding-bottom: 32px;
+  }
+  .businessTypes > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    text-align: left;
+    gap: 22px;
+    max-width: 410px;
+    margin-inline: auto;
+  }
+  .businessTypes span {
+    font-size: 11px;
+    gap: 7px;
+  }
+  .businessTypes svg {
+    width: 17px;
+  }
+  .modulesSection,
+  .customize,
+  .stepsSection,
+  .faqSection {
+    padding: 58px 23px;
+  }
+  .sectionHeading {
+    align-items: start;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .sectionHeading > p {
+    font-size: 13px;
+  }
+  .moduleGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .moduleCard {
+    padding: 20px;
+  }
+  .moduleCard p {
+    font-size: 11px;
+    min-height: 76px;
+  }
+  .moduleCard small {
+    font-size: 8px;
+    line-height: 1.7;
+  }
+  .moduleArrow {
+    right: 16px;
+    top: 22px;
+    width: 16px;
+  }
+  .moduleCard h3 {
+    font-size: 15px;
+  }
+  .moduleFootnote {
+    align-items: start;
+    flex-wrap: wrap;
+    line-height: 1.8;
+    text-align: center;
+  }
+  .moduleFootnote > span {
+    flex-basis: 85%;
+  }
+  .connections {
+    padding: 55px 23px;
+  }
+  .centerHeading h2 {
+    font-size: 32px;
+  }
+  .centerHeading > p {
+    font-size: 12px;
+  }
+  .connectionGrid {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+  }
+  .customize {
+    grid-template-columns: 1fr;
+    gap: 38px;
+  }
+  .customizeCopy {
+    max-width: 480px;
+    margin-inline: auto;
+    width: 100%;
+  }
+  .customizeVisual {
+    min-height: 695px;
+    max-width: 440px;
+    width: 100%;
+    margin-inline: auto;
+  }
+  .stepsSection {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+  .faqSection {
+    grid-template-columns: 1fr;
+    gap: 23px;
+  }
+  .finalCta {
+    margin-inline: 15px;
+    padding: 44px 20px;
+  }
+  .finalCta h2 {
+    font-size: 31px;
+    letter-spacing: -1.3px;
+  }
+  .footer {
+    padding: 30px 23px;
+    gap: 20px;
+  }
+  .footer > div {
+    gap: 15px;
+  }
+  .footer > span {
+    flex-basis: 100%;
+    text-align: center;
+  }
+}
+@media (max-width: 400px) {
+  .announcement {
+    font-size: 8px;
+    padding-right: 7px;
+    gap: 5px;
+  }
+  .announcement > span {
+    font-size: 8px;
+    padding-inline: 6px;
+  }
+  .heroCopy h1 {
+    font-size: 43px;
+  }
+  .heroNotes {
+    gap: 8px;
+    font-size: 9px;
+    flex-wrap: wrap;
+  }
+  .heroActions {
+    gap: 7px;
+  }
+  .heroActions :is(a, button) {
+    padding: 13px;
+    font-size: 11px;
+  }
+  .moduleCard {
+    padding: 16px;
+  }
+  .moduleCard p {
+    min-height: 100px;
+  }
+  .moduleCard h3 {
+    font-size: 14px;
+  }
+  .moduleIcon {
+    width: 38px;
+    height: 38px;
+  }
+  .moduleArrow {
+    display: none;
+  }
+  .newAppointment {
+    display: none;
+  }
+  .phoneFloat {
+    right: -7px;
+  }
+  .notification {
+    left: -5px;
+  }
+  .connectionTitle {
+    gap: 7px;
+    font-size: 11px;
+  }
+  .aiSlots span {
+    padding-inline: 13px;
+  }
+  .chatDemo {
+    padding-inline: 10px;
+  }
+  .footer > div {
+    width: 100%;
+    margin: 0;
+  }
+  .footer > span {
+    text-align: left;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing *,
+  .landing *::before,
+  .landing *::after {
+    scroll-behavior: auto;
+    transition: none;
+    animation: none;
+  }
+}
