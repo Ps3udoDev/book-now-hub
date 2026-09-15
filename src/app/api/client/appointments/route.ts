@@ -133,13 +133,25 @@ export async function POST(request: NextRequest) {
         estimated_price: basePrice,
         currency_code: currency,
         customer_notes: body.customer_notes?.trim() || null,
-        source: "client_app",
+        source: "app",
       })
       .select()
       .single();
 
     if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      // Se omite `details`: Postgres incluye ahí los valores de la fila (datos del cliente)
+      console.error(
+        "Error inserting appointment in POST /api/client/appointments:",
+        {
+          code: insertError.code,
+          message: insertError.message,
+          hint: insertError.hint,
+        },
+      );
+      return NextResponse.json(
+        { error: "No se pudo crear la cita" },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({ appointment }, { status: 201 });
