@@ -13,28 +13,14 @@
 //   SENTRY_CHAT_ROUTES           (opcional) JSON { "<slug|id|space>": "<webhook>" }
 //   SENTRY_CHAT_CLIENT_SECRET    (opcional) Client Secret de la integracion,
 //                                para validar la firma Sentry-Hook-Signature
-import crypto from "node:crypto";
+import {
+  type Alerta,
+  firmaEsperada,
+  normalizarAlerta,
+  secretosIguales,
+} from "@/lib/monitoring/sentry-webhook";
 
 export const dynamic = "force-dynamic";
-
-interface Alerta {
-  issueId: string;
-  proyecto: string;
-  titulo: string;
-  culprit: string;
-  nivel: string;
-  entorno: string;
-  url: string;
-  regla: string;
-}
-
-/** Comparacion en tiempo constante; evita filtrar el secreto por timing. */
-function secretosIguales(a: string, b: string): boolean {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) return false;
-  return crypto.timingSafeEqual(bufA, bufB);
-}
 
 /**
  * Sentry firma el cuerpo con HMAC-SHA256 usando el Client Secret de la
@@ -45,10 +31,7 @@ function firmaValida(rawBody: string, headers: Headers): boolean {
   if (!secret) return true; // verificacion opcional: sin secret, no se exige
 
   const firma = headers.get("sentry-hook-signature");
-  const esperada = crypto
-    .createHmac("sha256", secret)
-    .update(rawBody, "utf8")
-    .digest("hex");
+  const esperada = firmaEsperada(rawBody, secret);
   const ok = firma !== null && secretosIguales(esperada, firma);
 
   if (!ok) {
@@ -68,52 +51,6 @@ function firmaValida(rawBody: string, headers: Headers): boolean {
     });
   }
   return ok;
-}
-
-/** Los tags de Sentry llegan como pares [["environment","production"], ...]. */
-function valorDeTag(tags: unknown, clave: string): string {
-  if (!Array.isArray(tags)) return "";
-  for (const par of tags) {
-    if (Array.isArray(par) && par[0] === clave) return String(par[1] ?? "");
-  }
-  return "";
-}
-
-function texto(valor: unknown): string {
-  return typeof valor === "string" ? valor : "";
-}
-
-/** Aplana los dos formatos que manda Sentry a una sola estructura. */
-function normalizar(p: Record<string, unknown>): Alerta {
-  const data = p.data as Record<string, unknown> | undefined;
-
-  // Formato A - Integracion interna: { action, data: { event | issue } }
-  if (data && (data.event || data.issue)) {
-    const ev = (data.event ?? data.issue) as Record<string, unknown>;
-    return {
-      issueId: String(ev.issue_id ?? ev.id ?? ""),
-      proyecto: texto(ev.project_slug) || texto(ev.project) || "desconocido",
-      titulo: texto(ev.title) || texto(ev.message) || "Error sin titulo",
-      culprit: texto(ev.culprit),
-      nivel: (texto(ev.level) || "error").toUpperCase(),
-      entorno: texto(ev.environment) || valorDeTag(ev.tags, "environment"),
-      url: texto(ev.web_url) || texto(ev.url),
-      regla: texto(data.triggered_rule),
-    };
-  }
-
-  // Formato B - Legacy WebHooks plugin: { id, project, culprit, level, ... }
-  const ev = (p.event ?? {}) as Record<string, unknown>;
-  return {
-    issueId: String(p.id ?? ev.issue_id ?? ""),
-    proyecto: texto(p.project) || "desconocido",
-    titulo: texto(p.message) || texto(ev.title) || "Error sin titulo",
-    culprit: texto(p.culprit) || texto(ev.culprit),
-    nivel: (texto(p.level) || texto(ev.level) || "error").toUpperCase(),
-    entorno: texto(ev.environment) || valorDeTag(ev.tags, "environment"),
-    url: texto(p.url) || texto(ev.web_url),
-    regla: "",
-  };
 }
 
 /**
@@ -241,7 +178,7 @@ export async function POST(request: Request) {
     }
 
     const payload = JSON.parse(rawBody) as Record<string, unknown>;
-    const alerta = normalizar(payload);
+    const alerta = normalizarAlerta(payload);
     const destino = resolverDestino(alerta, url.searchParams.get("space"));
 
     if (!destino) {

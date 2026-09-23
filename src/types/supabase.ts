@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -3854,6 +3854,42 @@ export type Database = {
           },
         ]
       }
+      sentry_odoo_tickets: {
+        Row: {
+          alertas: number
+          created_at: string
+          id: string
+          last_alert_at: string
+          odoo_ticket_id: number
+          sentry_issue_id: string
+          sentry_project: string | null
+          ticket_anterior: number | null
+          titulo: string
+        }
+        Insert: {
+          alertas?: number
+          created_at?: string
+          id?: string
+          last_alert_at?: string
+          odoo_ticket_id: number
+          sentry_issue_id: string
+          sentry_project?: string | null
+          ticket_anterior?: number | null
+          titulo: string
+        }
+        Update: {
+          alertas?: number
+          created_at?: string
+          id?: string
+          last_alert_at?: string
+          odoo_ticket_id?: number
+          sentry_issue_id?: string
+          sentry_project?: string | null
+          ticket_anterior?: number | null
+          titulo?: string
+        }
+        Relationships: []
+      }
       service_variants: {
         Row: {
           created_at: string | null
@@ -6162,6 +6198,7 @@ export type Database = {
         Args: { p_customer_id: string; p_user_id: string }
         Returns: boolean
       }
+      purge_mcp_tool_calls: { Args: never; Returns: number }
       resolve_commission_rule: {
         Args: {
           p_item_id: string

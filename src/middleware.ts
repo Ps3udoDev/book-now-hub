@@ -28,6 +28,8 @@ const PUBLIC_API_PREFIXES = [
   "/api/sentry-alert-test",
   // Webhook entrante de Sentry: no se autentica con sesion, valida ?token=.
   "/api/sentry-chat",
+  // Webhook entrante de Sentry hacia Odoo Helpdesk: valida ?token=.
+  "/api/sentry-odoo",
 ];
 
 // Ruta tunel del SDK de Sentry (next.config.ts -> tunnelRoute). Debe quedar
