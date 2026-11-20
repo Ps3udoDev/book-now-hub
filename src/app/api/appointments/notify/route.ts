@@ -1,8 +1,10 @@
 // src/app/api/appointments/notify/route.ts
-import { NextRequest, NextResponse } from "next/server";
+
 import { createClient } from "@supabase/supabase-js";
+import { type NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import twilio from "twilio";
+import { requireTenantAccess, requireTenantUser } from "@/lib/api/tenant-auth";
 import {
   generateClientICS,
   generateSpecialistICS,
@@ -11,12 +13,14 @@ import {
 
 // Email (Resend)
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || "Elvis Studio <onboarding@resend.dev>";
+const FROM_EMAIL =
+  process.env.FROM_EMAIL || "Elvis Studio <onboarding@resend.dev>";
 
 // WhatsApp (Twilio)
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM || "whatsapp:+14155238886";
+const TWILIO_WHATSAPP_FROM =
+  process.env.TWILIO_WHATSAPP_FROM || "whatsapp:+14155238886";
 const TWILIO_CONTENT_SID = process.env.TWILIO_CONTENT_SID;
 
 interface NotifyRequest {
@@ -31,13 +35,13 @@ export async function POST(request: NextRequest) {
     if (!appointmentId) {
       return NextResponse.json(
         { error: "appointmentId es requerido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
     // Obtener la cita con relaciones (incluye phone_country_code del customer)
@@ -67,7 +71,23 @@ export async function POST(request: NextRequest) {
     if (error || !appointment) {
       return NextResponse.json(
         { error: "Cita no encontrada" },
-        { status: 404 }
+        { status: 404 },
+      );
+    }
+
+    const [tenantUserAccess, profileAccess] = await Promise.all([
+      requireTenantUser(appointment.tenant_id),
+      requireTenantAccess(appointment.tenant_id),
+    ]);
+
+    if (!tenantUserAccess.ok && !profileAccess.ok) {
+      const status =
+        tenantUserAccess.status === 401 || profileAccess.status === 401
+          ? 401
+          : 403;
+      return NextResponse.json(
+        { error: "Sin acceso a este tenant" },
+        { status },
       );
     }
 
@@ -159,7 +179,8 @@ export async function POST(request: NextRequest) {
           notification_type: "appointment_confirmation",
           reference_id: appointmentId,
           reference_type: "appointment",
-          error_message: emailErr instanceof Error ? emailErr.message : "Error desconocido",
+          error_message:
+            emailErr instanceof Error ? emailErr.message : "Error desconocido",
         });
       }
     }
@@ -178,7 +199,10 @@ export async function POST(request: NextRequest) {
           specialistEmail: appointment.specialist.email,
           workstationName: appointment.workstation?.name || undefined,
           appointmentId: appointment.id,
-          notes: appointment.customer_notes || appointment.internal_notes || undefined,
+          notes:
+            appointment.customer_notes ||
+            appointment.internal_notes ||
+            undefined,
         });
 
         await sendEmail({
@@ -194,7 +218,8 @@ export async function POST(request: NextRequest) {
             date: dateFormatted,
             time: timeFormatted,
             duration: appointment.service?.duration_minutes || 60,
-            notes: appointment.customer_notes || appointment.internal_notes || null,
+            notes:
+              appointment.customer_notes || appointment.internal_notes || null,
           }),
           icsContent: specialistICS,
           icsFilename: "cita-trabajo.ics",
@@ -213,7 +238,9 @@ export async function POST(request: NextRequest) {
           reference_type: "appointment",
         });
 
-        notifiedChannels.push(`email:especialista(${appointment.specialist.email})`);
+        notifiedChannels.push(
+          `email:especialista(${appointment.specialist.email})`,
+        );
       } catch (emailErr) {
         console.error("Error enviando email al especialista:", emailErr);
         await logNotification(supabase, {
@@ -227,15 +254,21 @@ export async function POST(request: NextRequest) {
           notification_type: "appointment_confirmation",
           reference_id: appointmentId,
           reference_type: "appointment",
-          error_message: emailErr instanceof Error ? emailErr.message : "Error desconocido",
+          error_message:
+            emailErr instanceof Error ? emailErr.message : "Error desconocido",
         });
       }
     }
 
     // 3. WhatsApp al cliente (si tiene telefono y Twilio configurado)
-    if (appointment.customer?.phone && TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN) {
+    if (
+      appointment.customer?.phone &&
+      TWILIO_ACCOUNT_SID &&
+      TWILIO_AUTH_TOKEN
+    ) {
       try {
-        const phoneCountryCode = appointment.customer.phone_country_code || "+58";
+        const phoneCountryCode =
+          appointment.customer.phone_country_code || "+58";
         const cleanPhone = appointment.customer.phone.replace(/\D/g, "");
         const whatsappTo = `whatsapp:${phoneCountryCode}${cleanPhone}`;
 
@@ -272,7 +305,8 @@ export async function POST(request: NextRequest) {
           notification_type: "appointment_confirmation",
           reference_id: appointmentId,
           reference_type: "appointment",
-          error_message: waErr instanceof Error ? waErr.message : "Error desconocido",
+          error_message:
+            waErr instanceof Error ? waErr.message : "Error desconocido",
         });
       }
     }
@@ -285,7 +319,7 @@ export async function POST(request: NextRequest) {
     console.error("Error sending notifications:", error);
     return NextResponse.json(
       { error: "Error al enviar notificaciones" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -335,7 +369,10 @@ async function sendEmail(params: {
   icsFilename: string;
 }) {
   if (!RESEND_API_KEY) {
-    console.warn("RESEND_API_KEY no configurada, email no enviado a:", params.to);
+    console.warn(
+      "RESEND_API_KEY no configurada, email no enviado a:",
+      params.to,
+    );
     return;
   }
 
@@ -380,7 +417,7 @@ async function logNotification(
     reference_id?: string;
     reference_type?: string;
     error_message?: string;
-  }
+  },
 ) {
   try {
     await supabase.from("notifications").insert({
