@@ -151,9 +151,9 @@ export default function CampaignDetailPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Enviar campaña</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Se marcarán {recipientCounts.queued} destinatarios como
-                      enviados. El envío real por WhatsApp aún no está conectado
-                      (esta acción es una simulación).
+                      Se procesará el envío para {recipientCounts.queued}{" "}
+                      destinatario(s) en cola y se actualizará el estado de
+                      entrega de la campaña.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
