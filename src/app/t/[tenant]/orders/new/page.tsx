@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2, Send } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useActiveBranches } from "@/hooks/supabase/use-branches";
+import { useActiveSpecialists } from "@/hooks/supabase/use-specialists";
 import {
   type Order,
   type OrderItem,
@@ -31,6 +32,7 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 
 const formSchema = z.object({
   branch_id: z.string().min(1, "Selecciona una sucursal"),
+  specialist_id: z.string().min(1, "Selecciona un especialista"),
   currency_code: z.string().min(1, "Selecciona una moneda"),
   notes: z.string().optional(),
 });
@@ -48,6 +50,9 @@ export default function NuevaComandaPage() {
   const { tenant: tenantSlug } = useParams<{ tenant: string }>();
   const { tenant, tenantUser } = useAuthStore();
   const { branches, isLoading: loadingBranches } = useActiveBranches(
+    tenant?.id ?? null,
+  );
+  const { specialists, isLoading: loadingSpecialists } = useActiveSpecialists(
     tenant?.id ?? null,
   );
 
@@ -69,19 +74,45 @@ export default function NuevaComandaPage() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { currency_code: "USD" },
+    defaultValues: {
+      branch_id: "",
+      specialist_id: "",
+      currency_code: "USD",
+    },
   });
 
+  const selectedBranchId = watch("branch_id");
+  const selectedSpecialistId = watch("specialist_id");
   const selectedCurrency = watch("currency_code") || "USD";
 
+  // Preseleccionar sucursal y especialista por defecto
+  useEffect(() => {
+    if (!selectedBranchId && branches.length > 0) {
+      setValue("branch_id", branches[0].id);
+    }
+    if (!selectedSpecialistId && specialists.length > 0) {
+      const ownSpecialist = specialists.find(
+        (s) => s.id === tenantUser?.auth_user_id,
+      );
+      setValue("specialist_id", ownSpecialist?.id ?? specialists[0].id);
+    }
+  }, [
+    branches,
+    specialists,
+    selectedBranchId,
+    selectedSpecialistId,
+    tenantUser?.auth_user_id,
+    setValue,
+  ]);
+
   async function onCreateOrder(values: FormValues) {
-    if (!tenant?.id || !tenantUser?.auth_user_id) return;
+    if (!tenant?.id) return;
     setCreating(true);
     try {
       const created = await ordersService.createOrder({
         tenant_id: tenant.id,
         branch_id: values.branch_id,
-        specialist_id: tenantUser.auth_user_id,
+        specialist_id: values.specialist_id,
         currency_code: values.currency_code,
         notes: values.notes || null,
       });
@@ -143,7 +174,10 @@ export default function NuevaComandaPage() {
               <div className="space-y-1.5">
                 <Label>Sucursal</Label>
                 <Select
-                  onValueChange={(v) => setValue("branch_id", v)}
+                  value={selectedBranchId}
+                  onValueChange={(v) =>
+                    setValue("branch_id", v, { shouldValidate: true })
+                  }
                   disabled={loadingBranches}
                 >
                   <SelectTrigger>
@@ -160,6 +194,34 @@ export default function NuevaComandaPage() {
                 {errors.branch_id && (
                   <p className="text-xs text-destructive">
                     {errors.branch_id.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Especialista */}
+              <div className="space-y-1.5">
+                <Label>Especialista</Label>
+                <Select
+                  value={selectedSpecialistId}
+                  onValueChange={(v) =>
+                    setValue("specialist_id", v, { shouldValidate: true })
+                  }
+                  disabled={loadingSpecialists}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona especialista" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {specialists.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.specialist_id && (
+                  <p className="text-xs text-destructive">
+                    {errors.specialist_id.message}
                   </p>
                 )}
               </div>

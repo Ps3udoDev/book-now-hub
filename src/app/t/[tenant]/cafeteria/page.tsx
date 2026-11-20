@@ -63,7 +63,7 @@ type CartItem = {
   notes: string;
 };
 
-type CafeteriaMode = "client" | "specialist" | null;
+type CafeteriaMode = "client" | "specialist" | "admin" | null;
 
 export default function CafeteriaPage() {
   const { tenant, tenantUser, user } = useAuthStore();
@@ -145,7 +145,9 @@ export default function CafeteriaPage() {
     ? "client"
     : specialistProfile
       ? "specialist"
-      : null;
+      : canManageCafeteria
+        ? "admin"
+        : null;
 
   const {
     menu,
@@ -344,12 +346,17 @@ export default function CafeteriaPage() {
   }
 
   const isSpecialistMode = mode === "specialist";
-  const pageTitle = isSpecialistMode
-    ? "Pide a cuenta de tu jornada"
-    : "Pide sin salir de la app";
-  const pageDescription = isSpecialistMode
-    ? "Puedes hacer pedidos de cafetería y decidir si se descuentan de tus comisiones."
-    : "Selecciona sucursal, arma tu pedido y sigue el estado en tiempo real.";
+  const isAdminMode = mode === "admin";
+  const pageTitle = isAdminMode
+    ? "Menú y operación de cafetería"
+    : isSpecialistMode
+      ? "Pide a cuenta de tu jornada"
+      : "Pide sin salir de la app";
+  const pageDescription = isAdminMode
+    ? "Explora el catálogo activo por sucursal o accede a la gestión de menú, tablero de cocina y códigos QR."
+    : isSpecialistMode
+      ? "Puedes hacer pedidos de cafetería y decidir si se descuentan de tus comisiones."
+      : "Selecciona sucursal, arma tu pedido y sigue el estado en tiempo real.";
 
   return (
     <div className="space-y-8">
@@ -357,7 +364,11 @@ export default function CafeteriaPage() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-3">
             <Badge variant="secondary" className="rounded-full px-3 py-1">
-              {isSpecialistMode ? "Cafetería especialista" : "Cafetería"}
+              {isAdminMode
+                ? "Cafetería · Vista administración"
+                : isSpecialistMode
+                  ? "Cafetería especialista"
+                  : "Cafetería"}
             </Badge>
             <div>
               <h1 className="text-3xl font-semibold tracking-tight">
@@ -528,71 +539,83 @@ export default function CafeteriaPage() {
         )}
       </section>
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Mis pedidos de hoy</h2>
-          <Button variant="outline" size="sm" onClick={() => mutateOrders()}>
-            Actualizar
-          </Button>
-        </div>
-        {orders.length === 0 ? (
-          <Card>
-            <CardContent className="py-10 text-center text-muted-foreground">
-              Aún no has enviado pedidos hoy.
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-3">
-            {orders.map((order) => (
-              <Card key={order.id}>
-                <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold">
-                        Pedido #{order.order_number}
-                      </p>
-                      <Badge
-                        variant="outline"
-                        className={getCafeOrderStatusClassName(order.status)}
-                      >
-                        {getCafeOrderStatusLabel(order.status)}
-                      </Badge>
-                      {isSpecialistMode && order.charge_to_commissions ? (
-                        <Badge variant="secondary">A comisiones</Badge>
-                      ) : null}
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {order.items
-                        .map((item) => `${item.quantity}x ${item.description}`)
-                        .join(" · ")}
-                    </p>
-                  </div>
-                  <div className="text-sm">
-                    <p className="font-semibold">
-                      ${Number(order.total).toFixed(2)}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {new Date(order.created_at).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
+      {mode !== "admin" && (
+        <>
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Mis pedidos de hoy</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => mutateOrders()}
+              >
+                Actualizar
+              </Button>
+            </div>
+            {orders.length === 0 ? (
+              <Card>
+                <CardContent className="py-10 text-center text-muted-foreground">
+                  Aún no has enviado pedidos hoy.
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
-      </section>
+            ) : (
+              <div className="grid gap-3">
+                {orders.map((order) => (
+                  <Card key={order.id}>
+                    <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">
+                            Pedido #{order.order_number}
+                          </p>
+                          <Badge
+                            variant="outline"
+                            className={getCafeOrderStatusClassName(
+                              order.status,
+                            )}
+                          >
+                            {getCafeOrderStatusLabel(order.status)}
+                          </Badge>
+                          {isSpecialistMode && order.charge_to_commissions ? (
+                            <Badge variant="secondary">A comisiones</Badge>
+                          ) : null}
+                        </div>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {order.items
+                            .map(
+                              (item) => `${item.quantity}x ${item.description}`,
+                            )
+                            .join(" · ")}
+                        </p>
+                      </div>
+                      <div className="text-sm">
+                        <p className="font-semibold">
+                          ${Number(order.total).toFixed(2)}
+                        </p>
+                        <p className="text-muted-foreground">
+                          {new Date(order.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
 
-      <Button
-        type="button"
-        onClick={() => setCartOpen(true)}
-        className="fixed bottom-6 right-6 z-40 rounded-full px-5 shadow-lg"
-      >
-        <ShoppingBag className="mr-2 h-4 w-4" />
-        {cartCount} item(s) · ${cartTotal.toFixed(2)}
-      </Button>
+          <Button
+            type="button"
+            onClick={() => setCartOpen(true)}
+            className="fixed bottom-6 right-6 z-40 rounded-full px-5 shadow-lg"
+          >
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            {cartCount} item(s) · ${cartTotal.toFixed(2)}
+          </Button>
+        </>
+      )}
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="sm:max-w-2xl">
@@ -681,16 +704,28 @@ export default function CafeteriaPage() {
               </div>
 
               <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDetailOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button type="button" onClick={handleAddToCart}>
-                  Agregar al pedido
-                </Button>
+                {isAdminMode ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDetailOpen(false)}
+                  >
+                    Cerrar
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setDetailOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button type="button" onClick={handleAddToCart}>
+                      Agregar al pedido
+                    </Button>
+                  </>
+                )}
               </DialogFooter>
             </>
           ) : null}
