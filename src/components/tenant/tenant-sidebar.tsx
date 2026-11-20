@@ -104,13 +104,16 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
   ];
 
   const moduleItems: SidebarItem[] = modules
-    // El ecommerce se configura desde Settings, no se muestra como ítem de nav.
-    .filter((module) => module.slug !== "ecommerce")
+    // Solo mostrar módulos con ruta de navegación propia en el sidebar (excluye ecommerce y slugs sin vista).
+    .filter(
+      (module) =>
+        module.slug !== "ecommerce" && implementedModuleSlugs.has(module.slug),
+    )
     .map((module) => ({
       title: module.name,
       url: `${basePath}/${module.slug}`,
       icon: moduleIcons[module.slug] || Scissors,
-      available: implementedModuleSlugs.has(module.slug),
+      available: true,
     }));
 
   const operationItems: SidebarItem[] = [

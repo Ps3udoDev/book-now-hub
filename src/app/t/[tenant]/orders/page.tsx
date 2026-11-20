@@ -30,16 +30,17 @@ const STATUS_OPTIONS: { value: "all" | OrderStatus; label: string }[] = [
 
 export default function OrdersPage() {
   const { tenant: tenantSlug } = useParams<{ tenant: string }>();
-  const { tenant, tenantUser } = useAuthStore();
+  const { tenant, tenantUser, user } = useAuthStore();
   const [statusFilter, setStatusFilter] = useState<"all" | OrderStatus>("all");
   const [selectedOrder, setSelectedOrder] = useState<OrderWithItems | null>(
     null,
   );
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  const specialistProfileId = tenantUser?.auth_user_id ?? user?.id ?? null;
   const { orders, isLoading, mutate } = useMyOrders(
     tenant?.id ?? null,
-    tenantUser?.id ?? null,
+    specialistProfileId,
   );
 
   const filtered =
