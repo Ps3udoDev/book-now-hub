@@ -1,6 +1,7 @@
 // src/hooks/supabase/use-tenants.ts
 import useSWR from "swr";
 import { type TenantWithModules, tenantsService } from "@/lib/services/tenants";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import type { PublicTenant, Tenant } from "@/types";
 
 /**
@@ -44,12 +45,24 @@ export function useTenantsStats() {
   };
 }
 /**
- * Hook para obtener datos del tenant con sus módulos usando SWR
+ * Hook para obtener datos del tenant con sus módulos usando SWR.
+ * La clave incluye el usuario autenticado para evitar que la caché anónima
+ * de páginas públicas (p. ej. /login, donde RLS devuelve 0 módulos) se reutilice
+ * al iniciar sesión o al cambiar de cuenta.
  */
 export function useTenantData(tenantSlug: string | null) {
+  const authUserId = useAuthStore((state) => state.user?.id ?? "anon");
+
   const { data, error, isLoading, mutate } = useSWR<TenantWithModules | null>(
-    tenantSlug ? `tenant:${tenantSlug}` : null,
-    () => (tenantSlug ? tenantsService.getTenantWithModules(tenantSlug) : null),
+    tenantSlug ? `tenant:${tenantSlug}:${authUserId}` : null,
+    async () => {
+      if (!tenantSlug) return null;
+      if (authUserId === "anon") {
+        const tenant = await tenantsService.getTenantBySlug(tenantSlug);
+        return tenant ? { tenant, modules: [] } : null;
+      }
+      return tenantsService.getTenantWithModules(tenantSlug);
+    },
     {
       revalidateOnFocus: false,
       dedupingInterval: 30000,
