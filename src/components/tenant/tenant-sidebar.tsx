@@ -208,7 +208,7 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b px-4 py-3">
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
         <Link
           href={`${basePath}/dashboard`}
           className="flex items-center gap-3"
@@ -220,7 +220,7 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
               className="h-8 w-8 rounded-lg object-cover"
             />
           ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-semibold text-primary-foreground">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary font-semibold text-sidebar-primary-foreground">
               {tenant?.name?.charAt(0) || "T"}
             </div>
           )}
@@ -228,7 +228,7 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
             <span className="max-w-[160px] truncate text-sm font-semibold">
               {tenant?.name || "Mi Empresa"}
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-sidebar-foreground/70">
               Panel de control
             </span>
           </div>
@@ -278,11 +278,11 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t">
+      <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="flex items-center gap-3 px-2 py-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
                 <span className="text-sm font-medium">
                   {tenantUser?.full_name?.charAt(0) || "U"}
                 </span>
@@ -291,7 +291,7 @@ export function TenantSidebar({ onLogout }: TenantSidebarProps) {
                 <p className="truncate text-sm font-medium">
                   {tenantUser?.full_name || "Usuario"}
                 </p>
-                <p className="truncate text-xs text-muted-foreground">
+                <p className="truncate text-xs text-sidebar-foreground/70">
                   {tenantUser?.email}
                 </p>
               </div>

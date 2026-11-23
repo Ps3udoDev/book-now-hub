@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 type ThemeMode = "light" | "dark" | "system";
 
@@ -24,6 +31,13 @@ export function ThemeProvider({
   defaultMode = "system",
   storageKey = "theme-mode",
 }: ThemeProviderProps) {
+  const pathname = usePathname();
+  // Las rutas de tenant (/t/...) y app cliente (/c/...) usan únicamente el tema asignado a la empresa,
+  // sin aplicar el modo oscuro/claro del navegador.
+  const isTenantScopedRoute =
+    Boolean(pathname?.startsWith("/t/")) ||
+    Boolean(pathname?.startsWith("/c/"));
+
   const [mode, setModeState] = useState<ThemeMode>(defaultMode);
   const [resolvedMode, setResolvedMode] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
@@ -39,7 +53,9 @@ export function ThemeProvider({
   useEffect(() => {
     const updateResolvedMode = () => {
       if (mode === "system") {
-        const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const systemPrefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
         setResolvedMode(systemPrefersDark ? "dark" : "light");
       } else {
         setResolvedMode(mode);
@@ -55,11 +71,15 @@ export function ThemeProvider({
     return () => mediaQuery.removeEventListener("change", handler);
   }, [mode]);
 
+  const effectiveResolvedMode: "light" | "dark" = isTenantScopedRoute
+    ? "light"
+    : resolvedMode;
+
   useEffect(() => {
     const root = document.documentElement;
-    if (resolvedMode === "dark") root.classList.add("dark");
+    if (effectiveResolvedMode === "dark") root.classList.add("dark");
     else root.classList.remove("dark");
-  }, [resolvedMode]);
+  }, [effectiveResolvedMode]);
 
   const setMode = (newMode: ThemeMode) => {
     setModeState(newMode);
@@ -67,7 +87,9 @@ export function ThemeProvider({
   };
 
   return (
-    <ThemeContext.Provider value={{ mode, setMode, resolvedMode, mounted }}>
+    <ThemeContext.Provider
+      value={{ mode, setMode, resolvedMode: effectiveResolvedMode, mounted }}
+    >
       <div style={{ visibility: mounted ? "visible" : "hidden" }}>
         {children}
       </div>

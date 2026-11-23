@@ -1,8 +1,6 @@
 // src/app/t/[tenant]/settings/appearance/page.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Check,
@@ -10,11 +8,11 @@ import {
   Palette,
   RotateCcw,
   Save,
-  Sun,
-  Moon,
 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,14 +22,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useAuthStore } from "@/lib/stores/auth-store";
-import { useThemes, useTenantTheme } from "@/hooks/supabase/use-appearance";
+import { useTenantTheme, useThemes } from "@/hooks/supabase/use-appearance";
 import { appearanceService } from "@/lib/services/appearance";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import {
+  applyTenantThemeToDocument,
+  getThemeBaseVariables,
+  resolveTenantThemeVariables,
+  SIDEBAR_FALLBACK_SOURCE,
+} from "@/lib/theme-utils";
 import type { Theme, ThemeCSSVariables } from "@/types";
 
-// Variables CSS principales que se pueden personalizar
+// Variables CSS principales y del menú lateral que se pueden personalizar
 const EDITABLE_VARIABLES = [
   {
     key: "--primary",
@@ -58,6 +61,26 @@ const EDITABLE_VARIABLES = [
     key: "--foreground",
     label: "Texto",
     description: "Color de texto principal",
+  },
+  {
+    key: "--sidebar",
+    label: "Fondo del menú lateral",
+    description: "Color de fondo del sidebar",
+  },
+  {
+    key: "--sidebar-foreground",
+    label: "Texto del menú lateral",
+    description: "Color de texto e íconos del sidebar",
+  },
+  {
+    key: "--sidebar-accent",
+    label: "Resaltado del menú lateral",
+    description: "Color de elementos activos o hover del sidebar",
+  },
+  {
+    key: "--sidebar-accent-foreground",
+    label: "Texto resaltado lateral",
+    description: "Texto sobre elementos activos del sidebar",
   },
   { key: "--card", label: "Tarjeta", description: "Fondo de tarjetas" },
   {
@@ -180,7 +203,7 @@ function hexToOklch(hex: string): string {
 }
 
 /**
- * Obtener las variables CSS actuales del documento
+ * Obtener las variables CSS actuales del documento como respaldo
  */
 function getCurrentCSSVariables(): Record<string, string> {
   const root = document.documentElement;
@@ -212,77 +235,117 @@ export default function AppearancePage() {
 
   const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
   const [editedVars, setEditedVars] = useState<Record<string, string>>({});
+  const [hasCustomEdits, setHasCustomEdits] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [editMode, setEditMode] = useState<"light" | "dark">("light");
+
+  // Mantener referencia al tema guardado para restaurar si el usuario sale sin guardar
+  const savedThemeRef = useRef<{
+    customTheme: ThemeCSSVariables | null;
+    theme: Theme | null;
+  }>({ customTheme: null, theme: null });
+  const hasUnsavedPreviewRef = useRef(false);
+
+  useEffect(() => {
+    savedThemeRef.current = { customTheme, theme: currentTheme };
+  }, [customTheme, currentTheme]);
+
+  // Restaurar el tema guardado del tenant solo si se navega a otra vista del mismo tenant con cambios sin guardar
+  useEffect(() => {
+    return () => {
+      if (
+        !hasUnsavedPreviewRef.current ||
+        !window.location.pathname.startsWith(`/t/${tenantSlug}`)
+      ) {
+        return;
+      }
+      const { customTheme: savedCustom, theme: savedTheme } =
+        savedThemeRef.current;
+      const savedVars = resolveTenantThemeVariables(savedCustom, savedTheme);
+      const savedFonts = (savedTheme?.fonts ?? null) as Record<
+        string,
+        string
+      > | null;
+      applyTenantThemeToDocument(savedVars, savedFonts);
+    };
+  }, [tenantSlug]);
+
+  const selectedTheme = useMemo(
+    () => themes.find((t) => t.id === selectedThemeId) ?? currentTheme ?? null,
+    [themes, selectedThemeId, currentTheme],
+  );
 
   // Inicializar estado desde datos del tenant
   useEffect(() => {
     if (loadingTenantTheme) return;
+
     setSelectedThemeId(themeId);
-  }, [themeId, loadingTenantTheme]);
+    const resolvedVars = resolveTenantThemeVariables(customTheme, currentTheme);
+    const hasSavedCustom =
+      Boolean(
+        customTheme?.light && Object.keys(customTheme.light).length > 0,
+      ) ||
+      Boolean(customTheme?.dark && Object.keys(customTheme.dark).length > 0);
 
-  // Cargar variables actuales al montar o cambiar editMode
-  useEffect(() => {
-    if (loadingTenantTheme) return;
+    setHasCustomEdits(hasSavedCustom);
+    setEditedVars(
+      Object.keys(resolvedVars).length > 0
+        ? resolvedVars
+        : getCurrentCSSVariables(),
+    );
+  }, [themeId, customTheme, currentTheme, loadingTenantTheme]);
 
-    if (customTheme?.[editMode]) {
-      // Si hay tema personalizado, usarlo
-      setEditedVars(customTheme[editMode]);
-    } else if (currentTheme?.css_variables) {
-      // Si hay tema base seleccionado, usar sus variables
-      const themeVars =
-        currentTheme.css_variables as unknown as ThemeCSSVariables;
-      if (themeVars[editMode]) {
-        setEditedVars(themeVars[editMode]);
-      }
-    } else {
-      // Leer las variables CSS actuales del documento
-      setEditedVars(getCurrentCSSVariables());
-    }
-  }, [editMode, customTheme, currentTheme, loadingTenantTheme]);
-
-  const handleVariableChange = useCallback((key: string, hexValue: string) => {
-    const oklchValue = hexToOklch(hexValue);
-    setEditedVars((prev) => ({ ...prev, [key]: oklchValue }));
-
-    // Vista previa en vivo
-    document.documentElement.style.setProperty(key, oklchValue);
-  }, []);
-
-  const handleSelectTheme = useCallback(
-    async (theme: Theme) => {
-      setSelectedThemeId(theme.id);
-      const themeVars = theme.css_variables as unknown as ThemeCSSVariables;
-      const modeVars = themeVars[editMode] || {};
-      setEditedVars(modeVars);
-
-      // Vista previa en vivo
-      for (const [key, value] of Object.entries(modeVars)) {
-        document.documentElement.style.setProperty(key, value as string);
-      }
+  const handleVariableChange = useCallback(
+    (key: string, hexValue: string) => {
+      const oklchValue = hexToOklch(hexValue);
+      hasUnsavedPreviewRef.current = true;
+      setHasCustomEdits(true);
+      setEditedVars((prev) => {
+        const nextVars = { ...prev, [key]: oklchValue };
+        const fonts = (selectedTheme?.fonts ?? null) as Record<
+          string,
+          string
+        > | null;
+        // Vista previa en vivo limpiando variables obsoletas y sincronizando sidebar
+        applyTenantThemeToDocument(nextVars, fonts);
+        return nextVars;
+      });
     },
-    [editMode],
+    [selectedTheme],
   );
+
+  const handleSelectTheme = useCallback((theme: Theme) => {
+    hasUnsavedPreviewRef.current = true;
+    setSelectedThemeId(theme.id);
+    setHasCustomEdits(false);
+
+    const baseVars = getThemeBaseVariables(theme);
+    setEditedVars(baseVars);
+
+    // Vista previa en vivo: limpia --sidebar* del tema anterior y aplica el nuevo tema completo
+    const fonts = (theme.fonts ?? null) as Record<string, string> | null;
+    applyTenantThemeToDocument(baseVars, fonts);
+  }, []);
 
   const handleSave = async () => {
     if (!tenantId) return;
     setSaving(true);
 
     try {
-      // Construir el custom_theme con ambos modos
-      const otherMode = editMode === "light" ? "dark" : "light";
-      const existingOtherMode = customTheme?.[otherMode] || {};
-
-      const newCustomTheme: ThemeCSSVariables = {
-        [editMode]: editedVars,
-        [otherMode]: existingOtherMode,
-      } as unknown as ThemeCSSVariables;
+      // Si el usuario eligió un tema predefinido sin modificar colores, limpiamos custom_theme
+      // para que herede directamente el tema base sin arrastrar variables antiguas.
+      const customThemePayload: ThemeCSSVariables | null = hasCustomEdits
+        ? {
+            light: editedVars,
+            dark: editedVars,
+          }
+        : null;
 
       await appearanceService.updateTenantAppearance(tenantId, {
         theme_id: selectedThemeId,
-        custom_theme: newCustomTheme,
+        custom_theme: customThemePayload,
       });
 
+      hasUnsavedPreviewRef.current = false;
       await mutate();
       toast.success("Apariencia actualizada correctamente");
     } catch {
@@ -293,14 +356,28 @@ export default function AppearancePage() {
   };
 
   const handleReset = useCallback(() => {
-    // Limpiar estilos inline y recargar variables del documento
-    for (const { key } of EDITABLE_VARIABLES) {
-      document.documentElement.style.removeProperty(key);
-    }
-    setEditedVars(getCurrentCSSVariables());
+    hasUnsavedPreviewRef.current = false;
+    const resolvedVars = resolveTenantThemeVariables(customTheme, currentTheme);
+    const fonts = (currentTheme?.fonts ?? null) as Record<
+      string,
+      string
+    > | null;
+
+    applyTenantThemeToDocument(resolvedVars, fonts);
+    setEditedVars(
+      Object.keys(resolvedVars).length > 0
+        ? resolvedVars
+        : getCurrentCSSVariables(),
+    );
     setSelectedThemeId(themeId);
+    setHasCustomEdits(
+      Boolean(
+        customTheme?.light && Object.keys(customTheme.light).length > 0,
+      ) ||
+        Boolean(customTheme?.dark && Object.keys(customTheme.dark).length > 0),
+    );
     toast.info("Cambios descartados");
-  }, [themeId]);
+  }, [themeId, customTheme, currentTheme]);
 
   if (loadingThemes || loadingTenantTheme) {
     return (
@@ -403,44 +480,26 @@ export default function AppearancePage() {
       {/* Editor de colores */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Palette className="h-4 w-4" />
-                Personalizar colores
-              </CardTitle>
-              <CardDescription>
-                Ajusta cada color de la paleta. Los cambios se previsualizan en
-                tiempo real.
-              </CardDescription>
-            </div>
-            {/* Toggle modo claro/oscuro para editar */}
-            <div className="flex items-center gap-1 rounded-lg border p-1">
-              <Button
-                variant={editMode === "light" ? "default" : "ghost"}
-                size="sm"
-                className="h-7 px-2.5"
-                onClick={() => setEditMode("light")}
-              >
-                <Sun className="mr-1.5 h-3.5 w-3.5" />
-                Claro
-              </Button>
-              <Button
-                variant={editMode === "dark" ? "default" : "ghost"}
-                size="sm"
-                className="h-7 px-2.5"
-                onClick={() => setEditMode("dark")}
-              >
-                <Moon className="mr-1.5 h-3.5 w-3.5" />
-                Oscuro
-              </Button>
-            </div>
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              Personalizar colores
+            </CardTitle>
+            <CardDescription>
+              Ajusta cada color de la paleta y del menú lateral. Los cambios se
+              previsualizan en tiempo real.
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {EDITABLE_VARIABLES.map(({ key, label, description }) => {
-              const value = editedVars[key] || "";
+              // Para variables del sidebar sin valor explícito, mostrar el color derivado
+              const fallbackKey = SIDEBAR_FALLBACK_SOURCE[key];
+              const value =
+                editedVars[key] ||
+                (fallbackKey ? editedVars[fallbackKey] : "") ||
+                "";
               const hexValue = cssToHex(value);
 
               return (

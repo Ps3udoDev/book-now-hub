@@ -95,7 +95,12 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
 
   // A. Páginas públicas
   if (isPublicPage) {
-    return <TenantProvider tenantSlug={tenantSlug}>{children}</TenantProvider>;
+    return (
+      <TenantProvider tenantSlug={tenantSlug}>
+        <TenantThemeApplier />
+        {children}
+      </TenantProvider>
+    );
   }
 
   // B. Loading
