@@ -1,6 +1,6 @@
 // src/lib/services/appearance.ts
 import { createBrowserSB } from "@/lib/supabase/client";
-import type { Theme, ThemeCSSVariables, Database } from "@/types";
+import type { Database, Theme, ThemeCSSVariables } from "@/types";
 
 type Json = Database["public"]["Tables"]["tenants"]["Row"]["custom_theme"];
 
@@ -39,7 +39,7 @@ class AppearanceService {
   }
 
   /**
-   * Obtener el tema actual del tenant (incluyendo relación con theme)
+   * Obtener el tema actual del tenant (funciona en vistas autenticadas y públicas)
    */
   async getTenantTheme(tenantId: string): Promise<{
     theme_id: string | null;
@@ -47,18 +47,21 @@ class AppearanceService {
     theme: Theme | null;
   }> {
     const { data, error } = await this.supabase
-      .from("tenants")
-      .select("theme_id, custom_theme, theme:themes(*)")
+      .from("v_tenants_public")
+      .select("theme_id, custom_theme")
       .eq("id", tenantId)
       .single();
 
     if (error) throw error;
 
+    const themeId = data?.theme_id || null;
+    const theme = themeId ? await this.getThemeById(themeId) : null;
+
     return {
-      theme_id: data?.theme_id || null,
+      theme_id: themeId,
       custom_theme:
         (data?.custom_theme as unknown as ThemeCSSVariables) || null,
-      theme: (data?.theme as unknown as Theme) || null,
+      theme,
     };
   }
 
